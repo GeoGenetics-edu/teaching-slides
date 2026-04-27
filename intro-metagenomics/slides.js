@@ -902,7 +902,7 @@ class TrimTech{
     c.globalAlpha=.7;c.font='500 10px "DM Sans"';c.textAlign='left';c.fillStyle='#0f172a';
     c.fillText('5\u2032 end (high quality)',px,py-6);c.textAlign='right';c.fillText('3\u2032 end (quality degrades)',px+nBases*bw,py-6);
     // Generate quality values: high left, degrading right
-    const quals=[];for(let i=0;i<nBases;i++){const base=37-i*1.1;quals.push(Math.max(4,base+(R()-.5)*5))}
+    const quals=[];for(let i=0;i<nBases;i++){const base=i<20?35-(R()*3):18-((i-20)*1.8);quals.push(Math.max(4,base+(R()-.5)*3))}
     const qMax=42,barMax=h*.3,threshQ=20,threshY=py+bh+8+(1-threshQ/qMax)*barMax;
     // Draw bases and quality bars
     const baseChars='ACGT';
@@ -941,16 +941,76 @@ class TrimTech{
     // Sliding window bracket (4 bases wide, scanning right to left)
     const winW=4;
     const scanStart=nBases-winW,scanEnd=0;
+    // Pre-compute window means at every position
+    const winMeans=[];
+    for(let i=0;i<=nBases-winW;i++){let sum=0;for(let j=0;j<winW;j++)sum+=quals[i+j];winMeans.push(sum/winW)}
     // find actual cut point
     let cutIdx=nBases;
-    for(let i=nBases-winW;i>=0;i--){let sum=0;for(let j=0;j<winW;j++)sum+=quals[i+j];if(sum/winW>=threshQ){cutIdx=i+winW;break}}
+    for(let i=nBases-winW;i>=0;i--){if(winMeans[i]>=threshQ){cutIdx=i+winW;break}}
     // window position based on progress
     const winIdx=Math.round(scanStart-(scanStart-scanEnd)*Math.min(p*1.3,1));
     const winX=px+winIdx*bw,winEndX=winX+winW*bw;
-    let winMean=0;for(let j=0;j<winW&&winIdx+j<nBases;j++)winMean+=quals[winIdx+j];winMean/=winW;
+    const winMean=winMeans[winIdx]||0;
     const winBad=winMean<threshQ;
+
+    // ── Running mean line plot ──
+    const lpTop=py+bh+8+barMax+38, lpH=h*.16, lpBot=lpTop+lpH;
+    // Background box
+    c.globalAlpha=.04;c.fillStyle='#334155';c.beginPath();c.roundRect(px-20,lpTop-4,nBases*bw+40,lpH+16,6);c.fill();
+    // Axes
+    c.globalAlpha=.3;c.strokeStyle='#94a3b8';c.lineWidth=1;c.setLineDash([]);
+    c.beginPath();c.moveTo(px,lpTop);c.lineTo(px,lpBot);c.lineTo(px+nBases*bw,lpBot);c.stroke();
+    // Y labels
+    c.globalAlpha=.4;c.font='400 9px "DM Mono"';c.textAlign='right';c.fillStyle='#334155';
+    c.fillText('Q40',px-4,lpTop+4);c.fillText('Q0',px-4,lpBot+3);
+    // Q20 threshold in line plot
+    const lpThreshY=lpBot-(threshQ/qMax)*lpH;
+    c.globalAlpha=.4;c.strokeStyle=COLORS.bad;c.lineWidth=1;c.setLineDash([3,3]);
+    c.beginPath();c.moveTo(px,lpThreshY);c.lineTo(px+nBases*bw,lpThreshY);c.stroke();c.setLineDash([]);
+    c.font='500 9px "DM Sans"';c.textAlign='left';c.fillStyle=COLORS.bad;c.fillText('Q20',px+nBases*bw+4,lpThreshY+3);
+    // Label
+    c.globalAlpha=.5;c.font='500 10px "DM Sans"';c.textAlign='center';c.fillStyle='#334155';
+    c.fillText('Sliding window mean (w='+winW+')',px+nBases*bw/2,lpTop-10);
+    // Draw the running mean line (revealed progressively during scan)
+    const revealUpTo=p>=1?winMeans.length:Math.max(0,winMeans.length-1-winIdx);
+    if(revealUpTo>0){
+      // Draw from right to left (scan direction), but plot left to right
+      c.beginPath();
+      for(let i=0;i<winMeans.length;i++){
+        const mx=px+(i+winW/2)*bw;
+        const my=lpBot-(winMeans[i]/qMax)*lpH;
+        const revealed=i<=winMeans.length-1-(scanStart-Math.round(scanStart-(scanStart-scanEnd)*Math.min(p*1.3,1)));
+        if(!revealed&&p<1)continue;
+        const col=winMeans[i]>=threshQ?'#16a34a':'#dc2626';
+        // Draw dot
+        c.globalAlpha=revealed?.7:.15;
+        c.beginPath();c.arc(mx,my,2.5,0,Math.PI*2);c.fillStyle=col;c.fill();
+      }
+      // Draw connecting line for revealed portion
+      c.beginPath();c.globalAlpha=.5;c.lineWidth=1.5;
+      let started=false;
+      for(let i=0;i<winMeans.length;i++){
+        const revealed=p>=1||i<=winMeans.length-1-(scanStart-Math.round(scanStart-(scanStart-scanEnd)*Math.min(p*1.3,1)));
+        if(!revealed)continue;
+        const mx=px+(i+winW/2)*bw;
+        const my=lpBot-(winMeans[i]/qMax)*lpH;
+        if(!started){c.moveTo(mx,my);started=true;c.strokeStyle=winMeans[i]>=threshQ?'#16a34a':'#d97706'}
+        else c.lineTo(mx,my);
+      }
+      c.strokeStyle='#3b82f6';c.stroke();
+      // Mark cut point on the line plot
+      if(p>.7&&cutIdx<nBases){
+        const cp=Math.min((p-.7)/.2,1);
+        const cutMx=px+cutIdx*bw;
+        c.globalAlpha=cp*.8;c.strokeStyle=COLORS.bad;c.lineWidth=2;c.setLineDash([]);
+        c.beginPath();c.moveTo(cutMx,lpTop-2);c.lineTo(cutMx,lpBot+2);c.stroke();
+        c.font='600 10px "DM Sans"';c.textAlign='center';c.fillStyle=COLORS.bad;
+        c.fillText('\u2702 cut here',cutMx,lpTop-14);
+      }
+    }
+
     if(p>0&&p<1){
-      // draw bracket
+      // draw bracket on bases
       c.globalAlpha=.7;c.strokeStyle=winBad?COLORS.bad:'#16a34a';c.lineWidth=2;c.setLineDash([]);
       c.beginPath();c.roundRect(winX-1,py-6,winW*bw+2,bh+14,4);c.stroke();
       // shaded window area over bars
@@ -966,19 +1026,14 @@ class TrimTech{
     if(p>.8){
       const sp=Math.min((p-.8)/.15,1);
       const cutX=px+cutIdx*bw;
-      c.globalAlpha=sp;c.font='20px serif';c.textAlign='center';
-      c.fillText('\u2702',cutX,py+bh+8+barMax+28);
-      // dim the low-quality region
-      c.globalAlpha=sp*.12;c.fillStyle='#dc2626';c.beginPath();c.roundRect(cutX,py-8,px+nBases*bw-cutX+6,bh+8+barMax+16,4);c.fill();
-      c.globalAlpha=sp*.5;c.strokeStyle='#dc2626';c.lineWidth=1.5;c.setLineDash([4,3]);c.beginPath();c.roundRect(cutX,py-8,px+nBases*bw-cutX+6,bh+8+barMax+16,4);c.stroke();c.setLineDash([]);
-      // "removed" label
-      c.globalAlpha=sp*.5;c.font='600 10px "DM Sans"';c.textAlign='center';c.fillStyle=COLORS.bad;
-      c.fillText('trimmed',(cutX+px+nBases*bw)/2,py+bh+8+barMax+28);
+      // dim the low-quality region (bars only, no overlap with line plot)
+      c.globalAlpha=sp*.12;c.fillStyle='#dc2626';c.beginPath();c.roundRect(cutX,py-8,px+nBases*bw-cutX+6,bh+8+barMax+10,4);c.fill();
+      c.globalAlpha=sp*.5;c.strokeStyle='#dc2626';c.lineWidth=1.5;c.setLineDash([4,3]);c.beginPath();c.roundRect(cutX,py-8,px+nBases*bw-cutX+6,bh+8+barMax+10,4);c.stroke();c.setLineDash([]);
     }
     // Summary line at bottom
     if(p>=1){
-      c.globalAlpha=.7;c.font='500 12px "DM Sans"';c.textAlign='center';c.fillStyle='#0f172a';
-      c.fillText('Window mean dropped below Q20 \u2192 trim the low-quality tail',w/2,h-18);
+      c.globalAlpha=.7;c.font='500 11px "DM Sans"';c.textAlign='center';c.fillStyle='#0f172a';
+      c.fillText('Window mean dropped below Q20 at the cut point: trim the low-quality tail',w/2,h-10);
     }
     c.globalAlpha=1;
   }
