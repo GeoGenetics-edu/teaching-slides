@@ -974,27 +974,25 @@ class TrimTech{
     // Draw the running mean line (revealed progressively during scan)
     const revealUpTo=p>=1?winMeans.length:Math.max(0,winMeans.length-1-winIdx);
     if(revealUpTo>0){
-      // Draw from right to left (scan direction), but plot left to right
-      c.beginPath();
+      // Dots revealed right-to-left as window scans
       for(let i=0;i<winMeans.length;i++){
         const mx=px+(i+winW/2)*bw;
         const my=lpBot-(winMeans[i]/qMax)*lpH;
-        const revealed=i<=winMeans.length-1-(scanStart-Math.round(scanStart-(scanStart-scanEnd)*Math.min(p*1.3,1)));
-        if(!revealed&&p<1)continue;
+        const revealed=p>=1||i>=winIdx;
+        if(!revealed)continue;
         const col=winMeans[i]>=threshQ?'#16a34a':'#dc2626';
-        // Draw dot
-        c.globalAlpha=revealed?.7:.15;
+        c.globalAlpha=.7;
         c.beginPath();c.arc(mx,my,2.5,0,Math.PI*2);c.fillStyle=col;c.fill();
       }
-      // Draw connecting line for revealed portion
+      // Connecting line through revealed dots (right-to-left)
       c.beginPath();c.globalAlpha=.5;c.lineWidth=1.5;
       let started=false;
       for(let i=0;i<winMeans.length;i++){
-        const revealed=p>=1||i<=winMeans.length-1-(scanStart-Math.round(scanStart-(scanStart-scanEnd)*Math.min(p*1.3,1)));
+        const revealed=p>=1||i>=winIdx;
         if(!revealed)continue;
         const mx=px+(i+winW/2)*bw;
         const my=lpBot-(winMeans[i]/qMax)*lpH;
-        if(!started){c.moveTo(mx,my);started=true;c.strokeStyle=winMeans[i]>=threshQ?'#16a34a':'#d97706'}
+        if(!started){c.moveTo(mx,my);started=true}
         else c.lineTo(mx,my);
       }
       c.strokeStyle='#3b82f6';c.stroke();
