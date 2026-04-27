@@ -895,7 +895,7 @@ class TrimTech{
   /* Phase 3: sliding window quality */
   drawSlidingWindow(p){
     const c=this.ctx,w=this.w,h=this.h;
-    const nBases=32,bw=Math.min(24,(w-100)/nBases),bh=18,px=44,py=h*.18;
+    const nBases=32,bw=Math.min(24,(w-100)/nBases),bh=18,px=Math.max(44,(w-nBases*bw)/2),py=h*.25;
     const R=rng(55);
     c.clearRect(0,0,w,h);
     // Title
