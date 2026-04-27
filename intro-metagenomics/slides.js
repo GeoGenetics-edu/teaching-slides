@@ -2768,7 +2768,7 @@ Reveal.initialize({
   transition:'fade',transitionSpeed:'default',
   width:1440,height:810,
   margin:0.02,center:false,showNotes:false,
-  keyboard:{78:()=>Reveal.configure({showNotes:!Reveal.getConfig().showNotes})}
+  keyboard:{78:()=>Reveal.configure({showNotes:!Reveal.getConfig().showNotes}),77:()=>{if(typeof toggleNav==='function')toggleNav()}}
 }).then(()=>{
   // pipeline-particles canvas removed from title slide
   pp=null;

@@ -937,6 +937,84 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
 
 </div></div>
 
+<!-- Help overlay (?) -->
+<div id="help-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);justify-content:center;align-items:center">
+  <div style="background:#fff;border-radius:16px;padding:32px 36px;max-width:520px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.25);font-family:'DM Sans',system-ui,sans-serif;color:#1e293b">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h3 style="margin:0;font-size:1.3em;font-weight:700">Keyboard shortcuts</h3>
+      <button onclick="toggleHelp()" style="background:none;border:none;font-size:1.5em;cursor:pointer;color:#94a3b8;line-height:1">&times;</button>
+    </div>
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:14px;line-height:1.8">
+      <kbd style="background:#f1f5f9;padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:12px;font-weight:600">&larr; &rarr;</kbd><span>Navigate slides</span>
+      <kbd style="background:#f1f5f9;padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:12px;font-weight:600">&darr; &uarr;</kbd><span>Navigate fragments (steps)</span>
+      <kbd style="background:#f1f5f9;padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:12px;font-weight:600">O</kbd><span>Overview grid</span>
+      <kbd style="background:#f1f5f9;padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:12px;font-weight:600">F</kbd><span>Fullscreen</span>
+      <kbd style="background:#f1f5f9;padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:12px;font-weight:600">M</kbd><span>Slide navigator</span>
+      <kbd style="background:#f1f5f9;padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:12px;font-weight:600">N</kbd><span>Toggle speaker notes</span>
+      <kbd style="background:#f1f5f9;padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:12px;font-weight:600">S</kbd><span>Speaker view (new window)</span>
+      <kbd style="background:#f1f5f9;padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:12px;font-weight:600">?</kbd><span>This help panel</span>
+    </div>
+  </div>
+</div>
+
+<!-- Slide navigator (M) -->
+<div id="nav-overlay" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);justify-content:center;align-items:center">
+  <div style="background:#fff;border-radius:16px;padding:28px 32px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);font-family:'DM Sans',system-ui,sans-serif;color:#1e293b">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="margin:0;font-size:1.3em;font-weight:700">Slide navigator</h3>
+      <button onclick="toggleNav()" style="background:none;border:none;font-size:1.5em;cursor:pointer;color:#94a3b8;line-height:1">&times;</button>
+    </div>
+    <input id="nav-search" type="text" placeholder="Search slides..." style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:inherit;margin-bottom:12px;outline:none" oninput="filterNav(this.value)">
+    <div id="nav-list" style="display:flex;flex-direction:column;gap:4px"></div>
+  </div>
+</div>
+
+<script>
+function toggleHelp(){const o=document.getElementById('help-overlay');o.style.display=o.style.display==='flex'?'none':'flex'}
+function toggleNav(){
+  const o=document.getElementById('nav-overlay');
+  if(o.style.display==='flex'){o.style.display='none';return}
+  o.style.display='flex';
+  buildNavList();
+  const s=document.getElementById('nav-search');s.value='';s.focus();
+}
+function buildNavList(){
+  const list=document.getElementById('nav-list');list.innerHTML='';
+  const sections=document.querySelectorAll('.reveal .slides>section');
+  const colors={'tag-prep':'#0d9488','tag-asm':'#3b82f6','tag-bin':'#8b5cf6'};
+  sections.forEach((sec,i)=>{
+    const id=sec.getAttribute('data-slide-id')||'';
+    const h=sec.querySelector('h1,h2');
+    const tag=sec.querySelector('.tag');
+    const title=h?h.textContent:id||'Slide '+(i+1);
+    const tagText=tag?tag.textContent:'';
+    const tagClass=tag?tag.className:'';
+    let col='#94a3b8';
+    for(const[cls,c]of Object.entries(colors)){if(tagClass.includes(cls)){col=c;break}}
+    if(id.includes('act')&&id.includes('intro'))col=id.includes('1')?'#0d9488':id.includes('2')?'#3b82f6':'#8b5cf6';
+    const btn=document.createElement('button');
+    btn.className='nav-item';
+    btn.dataset.search=(title+' '+tagText+' '+id).toLowerCase();
+    btn.style.cssText='display:flex;align-items:center;gap:10px;width:100%;padding:8px 12px;border:none;background:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;text-align:left;color:#1e293b;transition:background .15s';
+    btn.onmouseenter=()=>btn.style.background='#f1f5f9';
+    btn.onmouseleave=()=>btn.style.background='none';
+    btn.innerHTML='<span style="min-width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:'+col+'14;color:'+col+';font-weight:700;font-size:11px">'+(i+1)+'</span>'
+      +'<span style="flex:1;font-weight:500">'+title+'</span>'
+      +(tagText?'<span style="font-size:10px;color:'+col+';font-weight:600;text-transform:uppercase;letter-spacing:.5px">'+tagText+'</span>':'');
+    btn.onclick=()=>{Reveal.slide(i);toggleNav()};
+    list.appendChild(btn);
+  });
+}
+function filterNav(q){
+  q=q.toLowerCase();
+  document.querySelectorAll('.nav-item').forEach(b=>{b.style.display=b.dataset.search.includes(q)?'flex':'none'});
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='?'&&!e.ctrlKey&&!e.metaKey){e.preventDefault();toggleHelp()}
+  if(e.key==='Escape'){document.getElementById('help-overlay').style.display='none';document.getElementById('nav-overlay').style.display='none'}
+});
+</script>
+
 <script src="reveal.min.js"></script>
 <script src="slides.js"></script>
 </body></html>
