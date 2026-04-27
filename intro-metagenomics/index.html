@@ -447,6 +447,58 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
   <span class="tech-note" style="margin-top:4px">Tools like fastp combine all three techniques in a single pass</span>
 </section>
 
+<!-- REFLECTION 1 -->
+<section data-slide-id="reflect1" style="display:flex;justify-content:center;align-items:center;text-align:center;background:linear-gradient(135deg,#ecfdf5 0%,#f0fdfa 100%)">
+  <div style="max-width:740px">
+    <div style="display:inline-block;font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:3px;padding:3px 12px;border-radius:4px;background:#d1fae5;color:var(--ga);margin-bottom:16px">Reflection</div>
+    <h2 style="font-size:2.2em;font-weight:700;color:var(--ink);margin:0 0 20px;line-height:1.2">Why can't we just use the reads straight from the sequencer?</h2>
+    <p style="font-size:1em;color:var(--ink-3);margin:0 0 32px;line-height:1.6">Think about what you just learned: what is hiding in a raw read besides the DNA you care about, and what would happen if you ignored it?</p>
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 24px;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-sm)">
+      <span style="font-size:1.4em">&#x1F4AD;</span>
+      <span style="font-size:.95em;color:var(--ink-2);font-weight:500">Think for 30 seconds. One or two answers.</span>
+    </div>
+  </div>
+</section>
+
+<!-- MINI-ACTIVITY: Which QC problem is this? -->
+<section data-slide-id="qc-activity">
+  <div class="tag tag-prep">Pair activity &mdash; 8 min</div>
+  <h2 class="stitle">Which QC problem is this?</h2>
+  <p class="sub">In pairs: identify the problem and choose an action. 4 minutes discussion, then reveal answers.</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="col g-12 f1">
+      <div class="card" style="flex:1;padding:18px 20px">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--ga);margin-bottom:8px">Scenario A</div>
+        <p style="font-size:13px;line-height:1.55;color:var(--ink-2);margin:0">Per-base quality is fine, but you see a sharp spike in the "Overrepresented sequences" module. The top hit is <code style="font-size:11px;background:#f1f5f9;padding:2px 6px;border-radius:3px">AGATCGGAAGAGC</code>.</p>
+        <div class="fragment" style="margin-top:12px;padding:10px 14px;background:#ecfdf5;border-radius:6px;font-size:12px;color:var(--ga);font-weight:500">Adapter contamination. Trim with adapter removal.</div>
+      </div>
+      <div class="card" style="flex:1;padding:18px 20px">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--gb);margin-bottom:8px">Scenario B</div>
+        <p style="font-size:13px;line-height:1.55;color:var(--ink-2);margin:0">The GC content plot shows two clear peaks: one around 40% and another around 65%. You expected a single soil community.</p>
+        <div class="fragment" style="margin-top:12px;padding:10px 14px;background:#eff6ff;border-radius:6px;font-size:12px;color:var(--gb);font-weight:500">Normal for metagenomes. Multiple organisms = multiple GC peaks. Not a problem to fix.</div>
+      </div>
+    </div>
+    <div class="col g-12 f1">
+      <div class="card" style="flex:1;padding:18px 20px">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--gc);margin-bottom:8px">Scenario C</div>
+        <p style="font-size:13px;line-height:1.55;color:var(--ink-2);margin:0">Quality scores drop sharply after position 80 in your 150 bp reads. The last 40 bases are mostly below Q15.</p>
+        <div class="fragment" style="margin-top:12px;padding:10px 14px;background:#f5f3ff;border-radius:6px;font-size:12px;color:var(--gc);font-weight:500">3-prime quality degradation. Use sliding-window trimming to cut the low-quality tails.</div>
+      </div>
+      <div class="card" style="flex:1;padding:18px 20px">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--gd);margin-bottom:8px">Scenario D</div>
+        <p style="font-size:13px;line-height:1.55;color:var(--ink-2);margin:0">After mapping reads to the human reference genome, 35% of your reads align. Your sample was from a human gut biopsy.</p>
+        <div class="fragment" style="margin-top:12px;padding:10px 14px;background:#fffbeb;border-radius:6px;font-size:12px;color:var(--gd);font-weight:500">Host contamination. Remove human reads before assembly to avoid wasting compute and creating chimeras.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 18px;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-sm);width:fit-content">
+    <span style="font-size:1.2em">&#x1F4AC;</span>
+    <span style="font-size:.85em;color:var(--ink-3);font-weight:500">Identify the problem and choose an action, then click to reveal</span>
+  </div>
+</section>
+
 <!-- ACT 2 INTRO -->
 <section data-slide-id="act2-intro" style="display:flex;justify-content:center;align-items:center;text-align:center;">
   <div style="opacity:.92">
@@ -698,6 +750,48 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
   </div>
 </section>
 
+<!-- MINI-ACTIVITY: Which assembly is better? -->
+<section data-slide-id="asm-activity">
+  <div class="tag tag-asm">Pair activity &mdash; 8 min</div>
+  <h2 class="stitle">Which assembly is better?</h2>
+  <p class="sub">Two students assembled the same ocean metagenome with different tools. There may not be one universally "best" answer. Decide what extra evidence you would want before choosing.</p>
+
+  <div class="row g-20" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="col g-12 f1">
+      <div class="card" style="flex:1;padding:20px;border-left:3px solid var(--ga)">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--ga);margin-bottom:10px">Assembly A</div>
+        <table style="width:100%;font-size:13px;line-height:1.8;color:var(--ink-2)">
+          <tr><td style="font-weight:500">Total contigs</td><td style="text-align:right;font-family:var(--mono)">82,400</td></tr>
+          <tr><td style="font-weight:500">N50</td><td style="text-align:right;font-family:var(--mono)">12,300 bp</td></tr>
+          <tr><td style="font-weight:500">Largest contig</td><td style="text-align:right;font-family:var(--mono)">185 kb</td></tr>
+          <tr><td style="font-weight:500">Total length</td><td style="text-align:right;font-family:var(--mono)">420 Mb</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="col g-12 f1">
+      <div class="card" style="flex:1;padding:20px;border-left:3px solid var(--gb)">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--gb);margin-bottom:10px">Assembly B</div>
+        <table style="width:100%;font-size:13px;line-height:1.8;color:var(--ink-2)">
+          <tr><td style="font-weight:500">Total contigs</td><td style="text-align:right;font-family:var(--mono)">31,000</td></tr>
+          <tr><td style="font-weight:500">N50</td><td style="text-align:right;font-family:var(--mono)">28,500 bp</td></tr>
+          <tr><td style="font-weight:500">Largest contig</td><td style="text-align:right;font-family:var(--mono)">310 kb</td></tr>
+          <tr><td style="font-weight:500">Total length</td><td style="text-align:right;font-family:var(--mono)">290 Mb</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col g-8" style="margin-top:12px">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 18px;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-sm);width:fit-content">
+      <span style="font-size:1.2em">&#x1F4AC;</span>
+      <span style="font-size:.85em;color:var(--ink-3);font-weight:500">5 min pair discussion + 3 min class discussion, then click to reveal</span>
+    </div>
+    <div class="fragment" style="padding:12px 18px;background:#eff6ff;border-radius:8px;font-size:12.5px;color:var(--ink-2);line-height:1.55;max-width:800px">
+      <strong style="color:var(--gb)">There is no clear winner.</strong> Assembly B has better contiguity (higher N50, fewer contigs), but Assembly A recovered 130 Mb more sequence, likely including rare organisms that B missed. The best assembly depends on your biological question: if you need complete genomes, B is better; if you want to capture community diversity, A might be more useful.
+    </div>
+  </div>
+</section>
+
 <!-- ═══════════════════ ACT 3 — BINNING ═══════════════════ -->
 
 <!-- ACT 3 INTRO -->
@@ -914,6 +1008,67 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
   <div class="takeaways" style="margin-top:8px;gap:12px">
     <div class="tw tw-a" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>CheckM2 is widely used</strong> for estimating MAG completeness and contamination via machine-learning models trained on genomic features.</div>
     <div class="tw tw-c" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>MIMAG tiers</strong> (high &ge;90/&le;5 + rRNA/tRNA; medium &ge;50/&lt;10) ensure reproducible quality reporting across studies.</div>
+  </div>
+</section>
+
+<!-- REFLECTION 3 -->
+<section data-slide-id="reflect3" style="display:flex;justify-content:center;align-items:center;text-align:center;background:linear-gradient(135deg,#f5f3ff 0%,#faf5ff 100%)">
+  <div style="max-width:740px">
+    <div style="display:inline-block;font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:3px;padding:3px 12px;border-radius:4px;background:#ede9fe;color:var(--gc);margin-bottom:16px">Reflection</div>
+    <h2 style="font-size:2.2em;font-weight:700;color:var(--ink);margin:0 0 20px;line-height:1.2">You have thousands of contigs from different organisms all mixed together. What property of a genome could help you sort them apart?</h2>
+    <p style="font-size:1em;color:var(--ink-3);margin:0 0 32px;line-height:1.6">You just learned about two signals. Can you think of any others? What are the limits?</p>
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 24px;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-sm)">
+      <span style="font-size:1.4em">&#x1F4AD;</span>
+      <span style="font-size:.95em;color:var(--ink-2);font-weight:500">Think for 30 seconds. One or two answers.</span>
+    </div>
+  </div>
+</section>
+
+<!-- MINI-ACTIVITY: Rate this MAG -->
+<section data-slide-id="bin-activity">
+  <div class="tag tag-bin">Pair activity &mdash; 8 min</div>
+  <h2 class="stitle">Rate this MAG</h2>
+  <p class="sub">Three bins came out of your pipeline. Which would you report, which would you discard, and which would you keep only for exploratory analysis?</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="col g-12 f1">
+      <div class="card" style="flex:1;padding:20px;border-left:3px solid var(--ga)">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--ga);margin-bottom:10px">Bin 1</div>
+        <table style="width:100%;font-size:13px;line-height:1.8;color:var(--ink-2)">
+          <tr><td style="font-weight:500">Completeness</td><td style="text-align:right;font-family:var(--mono)">96%</td></tr>
+          <tr><td style="font-weight:500">Contamination</td><td style="text-align:right;font-family:var(--mono)">12%</td></tr>
+          <tr><td style="font-weight:500">16S rRNA</td><td style="text-align:right;font-family:var(--mono)">yes</td></tr>
+        </table>
+        <div class="fragment" style="margin-top:10px;padding:8px 12px;background:#fef2f2;border-radius:6px;font-size:11.5px;color:#b91c1c;font-weight:500">Fails MIMAG medium: contamination > 10%. Likely contains contigs from two related species.</div>
+      </div>
+    </div>
+    <div class="col g-12 f1">
+      <div class="card" style="flex:1;padding:20px;border-left:3px solid var(--gb)">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--gb);margin-bottom:10px">Bin 2</div>
+        <table style="width:100%;font-size:13px;line-height:1.8;color:var(--ink-2)">
+          <tr><td style="font-weight:500">Completeness</td><td style="text-align:right;font-family:var(--mono)">55%</td></tr>
+          <tr><td style="font-weight:500">Contamination</td><td style="text-align:right;font-family:var(--mono)">2%</td></tr>
+          <tr><td style="font-weight:500">16S rRNA</td><td style="text-align:right;font-family:var(--mono)">no</td></tr>
+        </table>
+        <div class="fragment" style="margin-top:10px;padding:8px 12px;background:#ecfdf5;border-radius:6px;font-size:11.5px;color:var(--ga);font-weight:500">Passes MIMAG medium (>50%, <10%). Clean but incomplete. Safe for metabolic analysis of the genes present.</div>
+      </div>
+    </div>
+    <div class="col g-12 f1">
+      <div class="card" style="flex:1;padding:20px;border-left:3px solid var(--gc)">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--gc);margin-bottom:10px">Bin 3</div>
+        <table style="width:100%;font-size:13px;line-height:1.8;color:var(--ink-2)">
+          <tr><td style="font-weight:500">Completeness</td><td style="text-align:right;font-family:var(--mono)">92%</td></tr>
+          <tr><td style="font-weight:500">Contamination</td><td style="text-align:right;font-family:var(--mono)">4%</td></tr>
+          <tr><td style="font-weight:500">16S rRNA</td><td style="text-align:right;font-family:var(--mono)">yes</td></tr>
+        </table>
+        <div class="fragment" style="margin-top:10px;padding:8px 12px;background:#ecfdf5;border-radius:6px;font-size:11.5px;color:var(--ga);font-weight:500">Passes MIMAG high-quality (>90%, <5%, rRNA present). This is publication-ready.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 18px;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-sm);width:fit-content">
+    <span style="font-size:1.2em">&#x1F4AC;</span>
+    <span style="font-size:.85em;color:var(--ink-3);font-weight:500">5 min pair discussion + 3 min class discussion, then click to reveal</span>
   </div>
 </section>
 
