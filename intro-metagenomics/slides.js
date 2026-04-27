@@ -944,9 +944,9 @@ class TrimTech{
     // Pre-compute window means at every position
     const winMeans=[];
     for(let i=0;i<=nBases-winW;i++){let sum=0;for(let j=0;j<winW;j++)sum+=quals[i+j];winMeans.push(sum/winW)}
-    // find actual cut point
+    // find actual cut point (left-to-right: first window below Q20)
     let cutIdx=nBases;
-    for(let i=nBases-winW;i>=0;i--){if(winMeans[i]>=threshQ){cutIdx=i+winW;break}}
+    for(let i=0;i<=nBases-winW;i++){if(winMeans[i]<threshQ){cutIdx=i;break}}
     // window position based on progress
     const winIdx=Math.round(scanStart-(scanStart-scanEnd)*Math.min(p*1.3,1));
     const winX=px+winIdx*bw,winEndX=winX+winW*bw;
