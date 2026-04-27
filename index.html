@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GeoGenetics Teaching Slides</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',system-ui,sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:60px 24px}
+h1{font-size:2.2em;font-weight:800;letter-spacing:-.02em;margin-bottom:8px}
+.org{font-size:.95em;color:#64748b;margin-bottom:48px}
+.lectures{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;width:100%;max-width:900px}
+.card{background:#fff;border-radius:12px;padding:28px 24px;border:1px solid #e2e8f0;text-decoration:none;color:inherit;transition:box-shadow .2s,transform .15s}
+.card:hover{box-shadow:0 8px 24px rgba(0,0,0,.08);transform:translateY(-2px)}
+.card-tag{display:inline-block;font-size:.7em;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 10px;border-radius:20px;margin-bottom:12px}
+.card h2{font-size:1.15em;font-weight:700;margin-bottom:6px}
+.card p{font-size:.85em;color:#64748b;line-height:1.5}
+.tag-meta{background:#ecfdf5;color:#0d9488}
+footer{margin-top:60px;font-size:.8em;color:#94a3b8}
+footer a{color:#64748b}
+</style>
+</head>
+<body>
+<h1>GeoGenetics Teaching Slides</h1>
+<p class="org">Globe Institute, University of Copenhagen</p>
+<div class="lectures">
+  <a class="card" href="intro-metagenomics/">
+    <span class="card-tag tag-meta">Metagenomics</span>
+    <h2>Introduction to Metagenomics</h2>
+    <p>Preprocessing, assembly, and binning of metagenomic data. Interactive reveal.js slides covering the full shotgun metagenomics pipeline.</p>
+  </a>
+</div>
+<footer>
+  <a href="https://github.com/GeoGenetics-edu/teaching-slides">Source on GitHub</a>
+</footer>
+</body>
+</html>

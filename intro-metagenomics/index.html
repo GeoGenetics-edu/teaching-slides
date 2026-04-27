@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>From mixed samples to microbial genomes</title>
+<link rel="stylesheet" href="reveal.min.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:#0f172a;--ink-2:#334155;--ink-3:#64748b;--ink-4:#94a3b8;
+  --surface:#f8fafc;--card:#fff;--border:#e2e8f0;
+  --ga:#0d9488;--gb:#3b82f6;--gc:#8b5cf6;--gd:#d97706;--host:#94a3b8;
+  --ok:#16a34a;--warn:#ea580c;--bad:#dc2626;--adapter:#f59e0b;
+  --font:'DM Sans',system-ui,sans-serif;--mono:'DM Mono','Consolas',monospace;
+  --shadow-sm:0 1px 2px rgba(15,23,42,.04),0 1px 3px rgba(15,23,42,.06);
+  --shadow-md:0 4px 6px rgba(15,23,42,.04),0 2px 12px rgba(15,23,42,.06);
+}
+
+.reveal{font-family:var(--font);font-size:18px;color:var(--ink)}
+.reveal .slides{text-align:left}
+.reveal .slides>section{
+  padding:32px 52px 44px;
+  height:100%!important;box-sizing:border-box;
+  display:flex!important;flex-direction:column;
+}
+.reveal .slide-background{background:var(--surface)!important}
+.reveal .progress{height:2px}
+.reveal .progress span{background:linear-gradient(90deg,var(--ga),var(--gb),var(--gc))}
+.reveal .controls{color:var(--ink-4)}
+.reveal .slide-number{font-family:var(--mono);font-size:11px;color:var(--ink-4);background:transparent!important}
+
+/* Typography */
+.tag{display:inline-block;font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:3px;padding:3px 12px;border-radius:4px;margin-bottom:8px}
+.tag-prep{background:#ecfdf5;color:var(--ga)}
+.tag-asm{background:#eff6ff;color:var(--gb)}
+.tag-bin{background:#f5f3ff;color:var(--gc)}
+h1.title{font-size:2.6em;font-weight:800;letter-spacing:-.035em;line-height:1.08;margin:0 0 6px;color:var(--ink)}
+h2.stitle{font-size:1.8em;font-weight:700;letter-spacing:-.025em;line-height:1.15;margin:0 0 2px;color:var(--ink)}
+p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-width:600px;line-height:1.5}
+
+/* Layout */
+.row{display:flex;align-items:stretch}.col{display:flex;flex-direction:column}
+.g-8{gap:8px}.g-12{gap:12px}.g-16{gap:16px}.g-20{gap:20px}.g-24{gap:24px}
+.f1{flex:1}.f0{flex:none}
+
+/* Card */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-sm);overflow:hidden;transition:box-shadow .3s,transform .3s}
+.card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.card-header{padding:10px 16px 8px;font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--ink-4);border-bottom:1px solid var(--border)}
+.card-body{padding:14px}
+
+/* Pipeline */
+.pipeline-wrap{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;margin:auto 0}
+.pipeline-inner{position:relative}
+.pipeline-track{position:absolute;top:40px;left:40px;right:40px;height:2px;background:var(--border);z-index:0}
+.pipeline-track-fill{position:absolute;top:0;left:0;height:100%;width:0;background:linear-gradient(90deg,var(--ga),var(--gb),var(--gc));transition:width 1.2s cubic-bezier(.22,1,.36,1)}
+.pipeline-nodes{display:flex;justify-content:space-between;position:relative;z-index:1}
+.pipe-node{display:flex;flex-direction:column;align-items:center;width:180px;text-align:center;opacity:0;transform:translateY(16px);transition:all .5s cubic-bezier(.22,1,.36,1)}
+.pipe-node.visible{opacity:1;transform:translateY(0)}
+.pipe-dot{width:80px;height:80px;border-radius:22px;display:grid;place-items:center;background:var(--card);border:2px solid var(--border);box-shadow:var(--shadow-sm);margin-bottom:12px;transition:border-color .4s,box-shadow .4s,transform .3s}
+.pipe-dot:hover{transform:scale(1.08)}
+.pipe-node.active .pipe-dot{border-color:var(--ga);box-shadow:0 0 24px rgba(13,148,136,.18)}
+.pipe-node:nth-child(2).active .pipe-dot{border-color:var(--gb);box-shadow:0 0 24px rgba(59,130,246,.18)}
+.pipe-node:nth-child(3).active .pipe-dot{border-color:var(--gd);box-shadow:0 0 24px rgba(217,119,6,.18)}
+.pipe-node:nth-child(4).active .pipe-dot{border-color:var(--gc);box-shadow:0 0 24px rgba(139,92,246,.18)}
+.pipe-node:nth-child(5).active .pipe-dot{border-color:var(--ok);box-shadow:0 0 24px rgba(22,163,74,.18)}
+.pn-label{font-size:14.5px;font-weight:600;color:var(--ink);margin-bottom:3px}
+.pn-sub{font-size:11px;color:var(--ink-4);line-height:1.35}
+
+/* Takeaways */
+.takeaways{display:flex;gap:12px}
+.tw{flex:1;padding:10px 12px;border-radius:8px;font-size:10.5px;line-height:1.45;color:var(--ink-2);background:var(--card);border:1px solid var(--border);border-left:3px solid;box-shadow:var(--shadow-sm)}
+.tw strong{color:var(--ink);font-weight:600}
+.tw-a{border-left-color:var(--ga)}.tw-b{border-left-color:var(--gb)}.tw-c{border-left-color:var(--gc)}.tw-w{border-left-color:var(--warn)}
+
+.tech-note{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--ink-3);padding:4px 10px;background:#f1f5f9;border-radius:4px;margin-top:4px}
+
+/* Sidebar info card */
+.info-card{padding:14px 16px}
+.info-card-title{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:6px}
+.info-card-text{font-size:10.5px;color:var(--ink-2);line-height:1.55}
+.info-card-code{margin-top:6px;padding:5px 8px;border-radius:5px;background:#eef2f7;font-family:var(--mono);font-size:9px;color:var(--ink-2);line-height:1.6}
+
+/* QC step card */
+.qc-step{padding:10px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);transition:all .4s}
+.qc-step-head{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.qc-step-icon{width:22px;height:22px;border-radius:6px;display:grid;place-items:center}
+.qc-step-name{font-size:12px;font-weight:600;color:var(--ink)}
+.qc-step-desc{font-size:10px;color:var(--ink-3);line-height:1.4}
+
+/* Canvas wrapper */
+.canvas-wrap{flex:1;position:relative;min-height:0}
+.canvas-fill{position:absolute;top:0;left:0;width:100%;height:100%}
+
+/* Sidebar layout */
+.sidebar{justify-content:center}
+.sidebar-narrow{width:220px}
+.sidebar-wide{width:290px}
+.sidebar-xwide{width:300px}
+
+/* Organisms */
+.orgs{display:flex;flex-direction:column;gap:14px;padding:6px 0}
+.org{display:flex;align-items:center;gap:10px}
+.org-shape{flex-shrink:0;transition:transform .3s}
+.org-shape:hover{transform:scale(1.15)}
+.org-label{font-size:10.5px;color:var(--ink-3);font-weight:500}
+.org-label strong{color:var(--ink-2);font-weight:600}
+
+/* Callout */
+.callout{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;font-size:10px;line-height:1.5;font-weight:500}
+.callout-info{background:#eff6ff;color:var(--gb);border:1px solid #dbeafe}
+.callout-warn{background:#fef2f2;color:var(--bad);border:1px solid #fecaca}
+
+/* Legend */
+.legend{display:flex;gap:14px;padding:6px 14px;border-top:1px solid var(--border);font-size:9px;color:var(--ink-3)}
+.legend-item{display:flex;align-items:center;gap:4px}
+.legend-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0}
+
+/* Funnel */
+.funnel-container{display:flex;flex-direction:column;align-items:center}
+.funnel-step{display:flex;align-items:center;padding:12px 20px;background:var(--card);border:1.5px solid var(--border);text-align:center;transition:all .3s;position:relative}
+.funnel-step:hover{box-shadow:var(--shadow-md);z-index:2}
+.funnel-step:first-child{border-radius:12px 12px 0 0;width:240px}
+.funnel-step:nth-child(2){width:210px;border-top:none}
+.funnel-step:nth-child(3){width:180px;border-top:none;border-radius:0 0 12px 12px}
+.fs-icon{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;margin-right:10px;flex-shrink:0}
+.fs-label{font-size:11.5px;font-weight:600;color:var(--ink)}
+.fs-desc{font-size:8.5px;color:var(--ink-4);margin-top:1px}
+
+/* Problem reads */
+.prob-reads{display:flex;flex-direction:column;gap:10px}
+.prob-label{font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px}
+.prob-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.06)}
+
+/* Consequences */
+.consequences{display:flex;gap:6px}
+.consequence{padding:5px 10px;border-radius:6px;font-size:9.5px;font-weight:600;display:flex;align-items:center;gap:4px;background:#fef2f2;color:var(--bad);border:1px solid #fecaca}
+
+/* Flow arrow */
+.flow-arrow-svg line{stroke-dasharray:6 4;animation:dashFlow 1.5s linear infinite}
+@keyframes dashFlow{to{stroke-dashoffset:-20}}
+
+/* Tooltip */
+[data-tip]{position:relative;cursor:help}
+[data-tip]::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%) translateY(4px);padding:5px 10px;background:var(--ink);color:white;font-size:9.5px;font-weight:500;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:all .2s;z-index:10}
+[data-tip]:hover::after{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- SLIDE 1 -->
+<section data-slide-id="title" style="justify-content:center;align-items:center;text-align:center;padding:24px 40px 32px;">
+  <h1 class="title" style="font-size:3.6em;margin-bottom:18px;">From mixed samples<br>to microbial genomes</h1>
+  <p class="sub" style="max-width:800px;font-size:1.15em;margin:0 auto 36px;text-align:center;">Metagenomics: preprocessing, assembly, and binning</p>
+  <div style="font-size:15px;color:var(--ink-2);line-height:1.8;">
+    <div style="font-weight:600;">Antonio Fernandez-Guerra</div>
+    <div style="color:var(--ink-3);">University of Copenhagen, Globe Institute</div>
+  </div>
+</section>
+
+<!-- SLIDE 2: Learning Outcomes -->
+<section data-slide-id="learning-outcomes" style="padding:20px 36px 28px;">
+  <div class="tag" style="background:linear-gradient(90deg,#ecfdf5,#eff6ff,#f5f3ff);color:var(--ink-3);">THE JOURNEY</div>
+  <h2 class="stitle" style="font-size:2em;">What you will learn today</h2>
+  <p class="sub" style="font-size:.85em;">We start with millions of raw reads from a mixed microbial community and end with individual draft genomes.</p>
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;">
+    <div style="display:flex;gap:28px;max-width:1300px;width:100%;">
+      <div style="flex:1;background:#ecfdf5;border-radius:14px;padding:28px 24px;border-left:4px solid var(--ga);">
+        <div style="font-weight:700;color:var(--ga);font-size:14px;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">Act 1: Clean the data</div>
+        <div style="font-size:14px;color:var(--ink-2);line-height:1.65;">
+          Sequencers produce millions of short reads, but not all of them are usable. You will learn how to spot low-quality bases, adapter contamination, and other artifacts, and how trimming tools fix them before any analysis begins.
+        </div>
+      </div>
+      <div style="flex:1;background:#eff6ff;border-radius:14px;padding:28px 24px;border-left:4px solid var(--gb);">
+        <div style="font-weight:700;color:var(--gb);font-size:14px;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">Act 2: Assemble the puzzle</div>
+        <div style="font-size:14px;color:var(--ink-2);line-height:1.65;">
+          Short reads overlap, and assemblers exploit that to reconstruct longer contiguous sequences (contigs). You will learn how de Bruijn graphs turn overlaps into assemblies, what makes metagenome assembly hard, and how to judge whether an assembly is any good.
+        </div>
+      </div>
+      <div style="flex:1;background:#f5f3ff;border-radius:14px;padding:28px 24px;border-left:4px solid var(--gc);">
+        <div style="font-weight:700;color:var(--gc);font-size:14px;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">Act 3: Recover genomes</div>
+        <div style="font-size:14px;color:var(--ink-2);line-height:1.65;">
+          Contigs come out unlabelled. Binning groups them back into individual organisms using coverage patterns and DNA composition. You will learn how modern binners work, what separates a good bin from a bad one, and how to report quality using community standards.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ACT 1 INTRO -->
+<section data-slide-id="act1-intro" style="display:flex;justify-content:center;align-items:center;text-align:center;">
+  <div style="opacity:.92">
+    <div style="display:inline-block;width:56px;height:3px;background:var(--ga);border-radius:2px;margin-bottom:18px"></div>
+    <h2 style="font-size:2.8em;font-weight:800;color:var(--ga);margin:0 0 10px;letter-spacing:-.02em">Act 1</h2>
+    <p style="font-size:1.3em;font-weight:500;color:#475569;margin:0;letter-spacing:.01em">Preprocessing</p>
+    <p style="font-size:.85em;color:#94a3b8;margin:12px 0 0;font-style:italic">From raw reads to clean data</p>
+  </div>
+</section>
+
+<!-- SLIDE 3 -->
+<section data-slide-id="mixed-reads">
+  <div class="tag tag-prep">Preprocessing</div>
+  <h2 class="stitle">A mixed sample becomes mixed short reads</h2>
+  <p class="sub">What does the raw input to a metagenomics experiment actually look like?</p>
+
+  <div class="row g-24" style="flex:1;min-height:0;">
+    <div class="f0 col" style="width:190px;justify-content:center;">
+      <div class="card" style="display:flex;flex-direction:column;">
+        <div class="card-header">Microbial community</div>
+        <div class="card-body">
+          <div class="orgs">
+            <div class="org" data-tip="Rod-shaped bacterium, high abundance"><svg class="org-shape" width="44" height="16" viewBox="0 0 44 16"><rect width="44" height="16" rx="8" fill="var(--ga)"/><rect y="2" width="44" height="6" rx="3" fill="#fff" opacity=".15"/></svg><span class="org-label"><strong>Genome A</strong> abundant</span></div>
+            <div class="org" data-tip="Coccus-shaped bacterium"><svg class="org-shape" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="var(--gb)"/><circle cx="10" cy="9" r="5" fill="#fff" opacity=".12"/></svg><span class="org-label"><strong>Genome B</strong> moderate</span></div>
+            <div class="org" data-tip="Comma-shaped bacterium"><svg class="org-shape" width="28" height="22" viewBox="0 0 28 22"><path d="M4,18 Q2,6 14,4 Q26,2 24,14" stroke="var(--gc)" stroke-width="6" fill="none" stroke-linecap="round"/></svg><span class="org-label"><strong>Genome C</strong> moderate</span></div>
+            <div class="org" data-tip="Small rod bacterium, rare"><svg class="org-shape" width="32" height="12" viewBox="0 0 32 12"><rect width="32" height="12" rx="6" fill="var(--gd)"/><rect y="2" width="32" height="4" rx="2" fill="#fff" opacity=".15"/></svg><span class="org-label"><strong>Genome D</strong> rare</span></div>
+            <div class="org" data-tip="Host cells, will be removed in QC"><svg class="org-shape" width="36" height="28" viewBox="0 0 36 28"><ellipse cx="18" cy="14" rx="17" ry="13" fill="none" stroke="var(--host)" stroke-width="2" stroke-dasharray="4 3"/><circle cx="18" cy="14" r="5" fill="var(--host)" opacity=".2"/></svg><span class="org-label"><strong>Host</strong> contaminant</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col f0" style="justify-content:center;align-items:center;width:70px;">
+      <div style="text-align:center;margin-bottom:4px"><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink-4)">DNA<br>extraction</div><div style="font-size:8px;color:var(--ink-4);margin-top:2px">+ sequencing</div></div>
+      <svg class="flow-arrow-svg" width="50" height="20" viewBox="0 0 50 20"><defs><marker id="arw1" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto"><path d="M0,0 L6,2 L0,4" fill="var(--ink-3)"/></marker></defs><line x1="4" y1="10" x2="40" y2="10" stroke="var(--ink-3)" stroke-width="1.5" marker-end="url(#arw1)"/></svg>
+    </div>
+
+    <div class="f1 col g-8" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><span>Mixed reads (FASTQ)</span><button onclick="regenerateReads()" style="font-size:8px;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2px 8px;cursor:pointer;color:var(--ink-3);font-family:var(--font);font-weight:600">RESHUFFLE</button></div>
+        <div class="canvas-wrap"><canvas id="reads-canvas" class="canvas-fill" style="cursor:crosshair"></canvas></div>
+        <div class="legend"><span class="legend-item"><span class="legend-dot" style="background:var(--ga)"></span>Genome A</span><span class="legend-item"><span class="legend-dot" style="background:var(--gb)"></span>Genome B</span><span class="legend-item"><span class="legend-dot" style="background:var(--gc)"></span>Genome C</span><span class="legend-item"><span class="legend-dot" style="background:var(--gd)"></span>Genome D</span><span class="legend-item"><span class="legend-dot" style="background:var(--host);border:1px dashed var(--ink-4)"></span>Host</span></div>
+      </div>
+      <div class="callout callout-info"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M7 6v4M7 4.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Colors are for teaching only. In real data we do not know read origins before analysis.</div>
+    </div>
+  </div>
+
+  <div class="takeaways" style="margin-top:8px;gap:16px">
+    <div class="tw tw-a" style="padding:14px 16px;font-size:13px;line-height:1.55;display:flex;gap:12px;align-items:flex-start"><svg width="26" height="26" viewBox="0 0 22 22" fill="none" style="flex-shrink:0;margin-top:1px"><rect x="1" y="3" width="20" height="3" rx="1.5" fill="var(--ga)" opacity=".7"/><rect x="1" y="9" width="15" height="3" rx="1.5" fill="var(--gb)" opacity=".7"/><rect x="1" y="15" width="17" height="3" rx="1.5" fill="var(--gc)" opacity=".5"/></svg><div><strong>Mixed fragments.</strong> Reads are short pieces from many genomes, shuffled together in one FASTQ file with no labels attached.</div></div>
+    <div class="tw tw-b" style="padding:14px 16px;font-size:13px;line-height:1.55;display:flex;gap:12px;align-items:flex-start"><svg width="26" height="26" viewBox="0 0 22 22" fill="none" style="flex-shrink:0;margin-top:1px"><rect x="2" y="4" width="18" height="5" rx="2.5" fill="var(--gb)" opacity=".7"/><rect x="6" y="13" width="10" height="5" rx="2.5" fill="var(--gb)" opacity=".35"/></svg><div><strong>Abundance matters.</strong> Dominant organisms contribute exponentially more reads than rare ones, skewing the dataset.</div></div>
+    <div class="tw tw-w" style="padding:14px 16px;font-size:13px;line-height:1.55;display:flex;gap:12px;align-items:flex-start"><svg width="26" height="26" viewBox="0 0 22 22" fill="none" style="flex-shrink:0;margin-top:1px"><ellipse cx="11" cy="11" rx="8" ry="6" fill="none" stroke="var(--host)" stroke-width="1.5" stroke-dasharray="3 2"/><line x1="6" y1="6" x2="16" y2="16" stroke="var(--bad)" stroke-width="1.3" stroke-linecap="round"/></svg><div><strong>Contamination lurks.</strong> Host DNA and technical adapter sequences hide among the microbial reads.</div></div>
+  </div>
+  <span class="tech-note" style="margin-top:4px">Phred Q30 = 99.9% accuracy, or 1 error per 1,000 bases</span>
+</section>
+
+<!-- SLIDE 3: Anatomy of a read — progressive reveal -->
+<section data-slide-id="read-anatomy">
+  <div class="tag tag-prep">Preprocessing</div>
+  <h2 class="stitle">Anatomy of a sequencing read</h2>
+  <p class="sub">What a raw read actually contains, not just your DNA of interest.</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-10 sidebar sidebar-wide">
+      <div class="card info-card" id="ra-card-0" style="border-left:3px solid var(--ga)">
+        <div class="info-card-title">1. Library construction</div>
+        <div class="info-card-text">DNA is fragmented, then <strong>adapters</strong>, <strong>indices</strong> and <strong>sequencing primers</strong> are ligated to both ends. Most of the construct is <em>not</em> your sample DNA.</div>
+      </div>
+      <div class="card info-card" id="ra-card-1" style="opacity:.4;border-left:3px solid var(--gb)">
+        <div class="info-card-title">2. Paired-end sequencing</div>
+        <div class="info-card-text">The sequencer reads from primer 1 (R1, forward) and primer 2 (R2, reverse). Two reads per fragment, reading inward toward each other.</div>
+      </div>
+      <div class="card info-card" id="ra-card-2" style="opacity:.4;border-left:3px solid var(--bad)">
+        <div class="info-card-title">3. Short insert problem</div>
+        <div class="info-card-text">If the DNA fragment is shorter than the read length, the sequencer reads <em>past</em> the insert and into the opposite adapter. These bases are artificial.</div>
+      </div>
+      <div class="card info-card" id="ra-card-3" style="opacity:.4;border-left:3px solid var(--ok)">
+        <div class="info-card-title">4. Long insert = clean read</div>
+        <div class="info-card-text">When the insert is longer than the read length, the read contains only biological sequence. No adapter read-through, but quality trimming may still be needed.</div>
+      </div>
+    </div>
+
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header" id="ra-header">Library construct: use &rarr; to build up</div>
+        <div class="canvas-wrap"><canvas id="read-anatomy-canvas" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <span class="fragment" data-fragment-index="0" style="display:none"></span>
+  <span class="fragment" data-fragment-index="1" style="display:none"></span>
+  <span class="fragment" data-fragment-index="2" style="display:none"></span>
+
+  <div class="takeaways" style="margin-top:8px;gap:12px">
+    <div class="tw tw-a" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>Adapters are artificial.</strong> They&rsquo;re added during library prep; they are not part of your sample&rsquo;s genome.</div>
+    <div class="tw tw-b" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>Quality drops at the 3&prime; end.</strong> Signal decays as the sequencing run progresses, so errors accumulate toward the end of each read.</div>
+    <div class="tw tw-w" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>Short inserts = adapter read-through.</strong> When the DNA fragment is shorter than the read length, the sequencer reads into the adapter on the other side.</div>
+  </div>
+</section>
+
+<!-- SLIDE 4 -->
+<section data-slide-id="qc-pipeline">
+  <div class="tag tag-prep">Preprocessing</div>
+  <h2 class="stitle">Why quality control matters</h2>
+  <p class="sub">Every error left in the reads becomes a compounding problem downstream.</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-8 sidebar sidebar-narrow">
+      <div class="qc-step" id="qc-step-0" style="opacity:.5">
+        <div class="qc-step-head"><div class="qc-step-icon" style="background:#fef2f2"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 8L5 3L8 6L10 2" stroke="var(--bad)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="qc-step-name">Raw input</span></div>
+        <div class="qc-step-desc">Mixed reads with quality issues, adapters, and host contamination</div>
+      </div>
+      <div class="qc-step" id="qc-step-1" style="opacity:.5">
+        <div class="qc-step-head"><div class="qc-step-icon" style="background:#fff7ed"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8M6 4L2 8" stroke="var(--warn)" stroke-width="1.3" stroke-linecap="round"/></svg></div><span class="qc-step-name">Trim and clip</span></div>
+        <div class="qc-step-desc">Remove low-quality tails and adapter sequences (fastp / cutadapt)</div>
+      </div>
+      <div class="qc-step" id="qc-step-2" style="opacity:.5">
+        <div class="qc-step-head"><div class="qc-step-icon" style="background:#fef9c3"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2" y="4" width="3" height="4" rx="1" fill="var(--adapter)" opacity=".6"/><line x1="7" y1="3" x2="7" y2="9" stroke="var(--bad)" stroke-width="1" stroke-dasharray="1.5 1"/><rect x="8" y="5" width="2" height="2" rx=".5" fill="var(--bad)" opacity=".4"/></svg></div><span class="qc-step-name">Length filter</span></div>
+        <div class="qc-step-desc">Discard reads shorter than threshold after trimming (e.g. &lt;50 bp)</div>
+      </div>
+      <div class="qc-step" id="qc-step-3" style="opacity:.5">
+        <div class="qc-step-head"><div class="qc-step-icon" style="background:#f1f5f9"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><ellipse cx="6" cy="6" rx="4" ry="3" fill="none" stroke="var(--host)" stroke-width="1"/><line x1="3" y1="3" x2="9" y2="9" stroke="var(--bad)" stroke-width="1" stroke-linecap="round"/></svg></div><span class="qc-step-name">Remove host</span></div>
+        <div class="qc-step-desc">Map to host reference genome, discard aligned reads (Bowtie2)</div>
+      </div>
+      <div class="qc-step" id="qc-step-4" style="opacity:.5">
+        <div class="qc-step-head"><div class="qc-step-icon" style="background:#ecfdf5"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4" fill="none" stroke="var(--ok)" stroke-width="1.2"/><path d="M4 6.5L5.5 8L8.5 4.5" fill="none" stroke="var(--ok)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="qc-step-name">Clean reads</span></div>
+        <div class="qc-step-desc">Only quality-checked microbial reads remain, ready for assembly</div>
+      </div>
+    </div>
+
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><span id="qc-canvas-label">Read quality landscape</span><span id="qc-counter" style="font-family:var(--mono);font-size:9px;color:var(--ink-4)"></span></div>
+        <div class="canvas-wrap"><canvas id="qc-canvas" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <span class="fragment" data-fragment-index="0" style="display:none"></span>
+  <span class="fragment" data-fragment-index="1" style="display:none"></span>
+  <span class="fragment" data-fragment-index="2" style="display:none"></span>
+
+  <div class="takeaways" style="margin-top:8px;gap:16px">
+    <div class="tw tw-a" style="padding:14px 16px;font-size:13px;line-height:1.55;display:flex;gap:12px;align-items:flex-start"><svg width="26" height="26" viewBox="0 0 22 22" fill="none" style="flex-shrink:0;margin-top:1px"><path d="M3 11h8M14 8l4 3-4 3" stroke="var(--ga)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><div><strong>Stepwise cleaning.</strong> Trim low-quality tails, remove adapters, filter short reads, then subtract host. Order matters.</div></div>
+    <div class="tw tw-b" style="padding:14px 16px;font-size:13px;line-height:1.55;display:flex;gap:12px;align-items:flex-start"><svg width="26" height="26" viewBox="0 0 22 22" fill="none" style="flex-shrink:0;margin-top:1px"><rect x="2" y="5" width="8" height="3" rx="1.5" fill="var(--gb)" opacity=".7"/><rect x="10" y="5" width="5" height="3" rx="1.5" fill="var(--adapter)" opacity=".7"/><line x1="10" y1="4" x2="10" y2="9" stroke="var(--bad)" stroke-width="1" stroke-dasharray="1.5 1"/></svg><div><strong>Every read counts.</strong> One contaminated read in a bin can break a contig or introduce a false gene call. QC protects everything downstream.</div></div>
+    <div class="tw tw-w" style="padding:14px 16px;font-size:13px;line-height:1.55;display:flex;gap:12px;align-items:flex-start"><svg width="26" height="26" viewBox="0 0 22 22" fill="none" style="flex-shrink:0;margin-top:1px"><circle cx="11" cy="11" r="8" fill="none" stroke="var(--warn)" stroke-width="1.3"/><path d="M11 6v6M11 15v.5" stroke="var(--warn)" stroke-width="1.8" stroke-linecap="round"/></svg><div><strong>Host DNA dominates.</strong> In human-associated samples, &gt;90% of reads can come from the host. Removing them is critical for assembly.</div></div>
+  </div>
+</section>
+
+<!-- SLIDE 5 -->
+<section data-slide-id="per-base-quality">
+  <div class="tag tag-prep">Preprocessing</div>
+  <h2 class="stitle">Per-base sequence quality</h2>
+  <p class="sub">The first plot to check in any FastQC / MultiQC report.</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;">
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header" style="color:var(--ok)">Good library</div>
+        <div class="canvas-wrap"><canvas id="qplot-good" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header" style="color:var(--bad)">Poor library</div>
+        <div class="canvas-wrap"><canvas id="qplot-poor" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaways" style="margin-top:8px;gap:16px">
+    <div class="tw tw-a" style="padding:14px 16px;font-size:13px;line-height:1.55;display:flex;gap:12px;align-items:flex-start"><svg width="26" height="26" viewBox="0 0 22 22" fill="none" style="flex-shrink:0;margin-top:1px"><path d="M3 16L7 8L11 10L15 4L19 6" stroke="var(--ga)" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><div><strong>Quality degrades along the read.</strong> Signal-to-noise decreases during sequencing, causing a characteristic drop in Phred scores toward the 3&prime; end.</div></div>
+    <div class="tw tw-b" style="padding:14px 16px;font-size:13px;line-height:1.55;display:flex;gap:12px;align-items:flex-start"><svg width="26" height="26" viewBox="0 0 22 22" fill="none" style="flex-shrink:0;margin-top:1px"><rect x="2" y="6" width="4" height="10" rx="1.5" fill="var(--ok)" opacity=".5"/><rect x="9" y="4" width="4" height="14" rx="1.5" fill="var(--adapter)" opacity=".5"/><rect x="16" y="8" width="4" height="8" rx="1.5" fill="var(--bad)" opacity=".5"/></svg><div><strong>Box plots summarise thousands of reads.</strong> Median, IQR, and whiskers at each position compress millions of quality values into a readable summary.</div></div>
+    <div class="tw tw-w" style="padding:14px 16px;font-size:13px;line-height:1.55;display:flex;gap:12px;align-items:flex-start"><svg width="26" height="26" viewBox="0 0 22 22" fill="none" style="flex-shrink:0;margin-top:1px"><circle cx="11" cy="11" r="8" fill="none" stroke="var(--warn)" stroke-width="1.3"/><path d="M11 6v6M11 15v.5" stroke="var(--warn)" stroke-width="1.8" stroke-linecap="round"/></svg><div><strong>Position 1 bias is normal.</strong> Random hexamer priming causes slight composition bias in the first few bases. This is expected and not cause for alarm.</div></div>
+  </div>
+</section>
+
+<!-- SLIDE 6 -->
+<section data-slide-id="diagnostic-plots">
+  <div class="tag tag-prep">Preprocessing</div>
+  <h2 class="stitle">Diagnostic QC plots</h2>
+  <p class="sub">Beyond per-base quality: three more essential checks.</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;">
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header">Adapter content</div>
+        <div class="canvas-wrap"><canvas id="diag-adapter" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header">GC distribution</div>
+        <div class="canvas-wrap"><canvas id="diag-gc" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header">Overrepresented sequences</div>
+        <div class="canvas-wrap"><canvas id="diag-overrep" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaways" style="margin-top:8px;gap:16px">
+    <div class="tw tw-a" style="padding:14px 16px;font-size:13px;line-height:1.55;display:flex;gap:12px;align-items:flex-start"><svg width="26" height="26" viewBox="0 0 22 22" fill="none" style="flex-shrink:0;margin-top:1px"><path d="M3 17L8 12L12 15L19 5" stroke="var(--adapter)" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><div><strong>Adapter content should be near zero.</strong> If the adapter curve rises early, many inserts were shorter than the read length. Trimming is essential.</div></div>
+    <div class="tw tw-b" style="padding:14px 16px;font-size:13px;line-height:1.55;display:flex;gap:12px;align-items:flex-start"><svg width="26" height="26" viewBox="0 0 22 22" fill="none" style="flex-shrink:0;margin-top:1px"><path d="M3 18Q7 4 11 12Q15 4 19 18" stroke="var(--gb)" stroke-width="1.5" fill="none"/></svg><div><strong>GC in metagenomes</strong> is naturally complex. A multimodal distribution reflects multiple organisms, not necessarily a problem.</div></div>
+    <div class="tw tw-w" style="padding:14px 16px;font-size:13px;line-height:1.55;display:flex;gap:12px;align-items:flex-start"><svg width="26" height="26" viewBox="0 0 22 22" fill="none" style="flex-shrink:0;margin-top:1px"><circle cx="11" cy="11" r="8" fill="none" stroke="var(--warn)" stroke-width="1.3"/><path d="M11 6v6M11 15v.5" stroke="var(--warn)" stroke-width="1.8" stroke-linecap="round"/></svg><div><strong>Inspect, don't blindly remove.</strong> Overrepresented sequences could be technical artifacts or real biological signal.</div></div>
+  </div>
+</section>
+
+<!-- SLIDE 7: How trimming works -->
+<section data-slide-id="trim-demo">
+  <div class="tag tag-prep">Preprocessing</div>
+  <h2 class="stitle">How trimming works</h2>
+  <p class="sub">Three complementary techniques to find and remove non-biological or low-quality sequence.</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-8 sidebar sidebar-xwide">
+      <div class="qc-step" id="trim-step-0" style="padding:12px 14px;opacity:.75">
+        <div class="qc-step-head" style="margin-bottom:6px"><div class="qc-step-icon" style="background:#eff6ff"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="3" width="10" height="2.5" rx="1" fill="var(--gb)" opacity=".7"/><rect x="1" y="6.5" width="10" height="2.5" rx="1" fill="var(--gc)" opacity=".7"/><rect x="5" y="3" width="3" height="6" rx=".5" fill="none" stroke="var(--ok)" stroke-width=".8" stroke-dasharray="1.5 1"/></svg></div><span class="qc-step-name">PE overlap detection</span></div>
+        <div class="info-card-text" style="line-height:1.5">If insert &lt; 2 &times; read length, R1 and R2 overlap. If the insert is shorter than a single read, sequencing continues into the adapter&mdash;those adapter bases must be trimmed.</div>
+        <div class="info-card-code" style="margin-top:5px">5'&#x2500;<span style="color:#2563eb">biological</span>&#x2500;<span style="color:#b45309">adapter</span>&#x2500;3'<br>3'&#x2500;<span style="color:#b45309">adapter</span>&#x2500;<span style="color:#7c3aed">biological</span>&#x2500;5'<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#x2514;&#x2500;&#x2500;<span style="color:#0d9488">overlap</span>&#x2500;&#x2500;&#x2518;</div>
+      </div>
+      <div class="qc-step" id="trim-step-1" style="padding:12px 14px;opacity:.75">
+        <div class="qc-step-head" style="margin-bottom:6px"><div class="qc-step-icon" style="background:#fff7ed"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="4.5" width="10" height="3" rx="1" fill="var(--gb)" opacity=".5"/><rect x="7" y="4.5" width="4" height="3" rx="1" fill="var(--adapter)" opacity=".7"/></svg></div><span class="qc-step-name">Sequence matching</span></div>
+        <div class="info-card-text" style="line-height:1.5">Slide a known adapter sequence along the read and check for alignment. Seed-and-extend: find short exact matches, then extend with mismatches allowed.</div>
+        <div class="info-card-code" style="margin-top:5px">Illumina universal:<br><span style="color:#b45309;font-weight:500">AGATCGGAAGAGC...</span></div>
+      </div>
+      <div class="qc-step" id="trim-step-2" style="padding:12px 14px;opacity:.75">
+        <div class="qc-step-head" style="margin-bottom:6px"><div class="qc-step-icon" style="background:#fef2f2"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="5" width="3" height="3" rx=".5" fill="none" stroke="var(--bad)" stroke-width=".8"/><path d="M5 6.5h6" stroke="var(--bad)" stroke-width=".8" stroke-dasharray="1.5 1" stroke-linecap="round"/></svg></div><span class="qc-step-name">Sliding window</span></div>
+        <div class="info-card-text" style="line-height:1.5">A window of <em>w</em> bases scans from the 3&prime; end. When the window mean drops below a quality threshold, everything downstream is cut.</div>
+        <div class="info-card-code" style="margin-top:5px">Typical: <span style="color:#b91c1c;font-weight:500">w = 4</span>, threshold <span style="color:#b91c1c;font-weight:500">Q &ge; 20</span><br>Q = &minus;10 log<sub>10</sub>(P<sub>error</sub>)</div>
+      </div>
+      <div id="trim-status-box" style="padding:8px 10px;border-radius:8px;background:#f1f5f9;font-size:10px;color:var(--ink-3);text-align:center;line-height:1.4">Use &rarr; to step through methods</div>
+    </div>
+
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><span id="trim-label">Raw reads with quality issues</span><span id="trim-counter" style="font-family:var(--mono);font-size:9px;color:var(--ink-4)"></span></div>
+        <div class="canvas-wrap"><canvas id="trim-canvas" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <span class="fragment" data-fragment-index="0" style="display:none"></span>
+  <span class="fragment" data-fragment-index="1" style="display:none"></span>
+  <span class="fragment" data-fragment-index="2" style="display:none"></span>
+
+  <div class="takeaways" style="margin-top:8px;gap:12px">
+    <div class="tw tw-a" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>Shorter but reliable.</strong> Trimmed reads assemble better. One error base can split a de Bruijn graph node.</div>
+    <div class="tw tw-b" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>Adapters create false k-mers.</strong> Even a few adapter bases produce artificial edges in the assembly graph.</div>
+    <div class="tw tw-w" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>Don't over-trim.</strong> Aggressive quality cutoffs (Q30+) can discard &gt;30% of data with little assembly benefit.</div>
+    <div class="tw tw-a" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>All three methods complement each other.</strong> PE overlap handles short inserts; pattern matching catches single-end adapters; quality trimming removes degraded tails.</div>
+  </div>
+  <span class="tech-note" style="margin-top:4px">Tools like fastp combine all three techniques in a single pass</span>
+</section>
+
+<!-- ACT 2 INTRO -->
+<section data-slide-id="act2-intro" style="display:flex;justify-content:center;align-items:center;text-align:center;">
+  <div style="opacity:.92">
+    <div style="display:inline-block;width:56px;height:3px;background:var(--gb);border-radius:2px;margin-bottom:18px"></div>
+    <h2 style="font-size:2.8em;font-weight:800;color:var(--gb);margin:0 0 10px;letter-spacing:-.02em">Act 2</h2>
+    <p style="font-size:1.3em;font-weight:500;color:#475569;margin:0;letter-spacing:.01em">Assembly</p>
+    <p style="font-size:.85em;color:#94a3b8;margin:12px 0 0;font-style:italic">From clean reads to contigs</p>
+  </div>
+</section>
+
+<!-- SLIDE 8: Why assemble -->
+<section data-slide-id="why-assemble">
+  <div class="tag tag-asm">Assembly</div>
+  <h2 class="stitle">Why assemble?</h2>
+  <p class="sub">Short reads alone cannot answer most biological questions. Assembly reconstructs longer sequences.</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-10 sidebar sidebar-wide">
+      <div class="card info-card" id="wa-card-0" style="border-left:3px solid var(--gb)">
+        <div class="info-card-title">The problem with short reads</div>
+        <div class="info-card-text">A 150 bp read is too short to identify a gene (~1,000 bp), let alone a genome (~3 Mbp). We need to stitch reads back into longer contiguous sequences (<strong>contigs</strong>).</div>
+      </div>
+      <div class="card info-card" id="wa-card-1" style="opacity:.4;border-left:3px solid var(--gc)">
+        <div class="info-card-title">Overlap &rarr; extend &rarr; consensus</div>
+        <div class="info-card-text">Assembly exploits the fact that reads from the same region <strong>overlap</strong>. By chaining overlaps, we reconstruct sequences far longer than any single read.</div>
+      </div>
+      <div class="card info-card" id="wa-card-2" style="opacity:.4;border-left:3px solid var(--ok)">
+        <div class="info-card-title">What contigs give us</div>
+        <div class="info-card-text">Full gene sequences for annotation, longer markers for taxonomy, coverage depth for abundance, and the raw material for <strong>binning</strong> into draft genomes.</div>
+      </div>
+    </div>
+
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header" id="wa-header">Short reads: use &rarr; to see assembly</div>
+        <div class="canvas-wrap"><canvas id="wa-canvas" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <span class="fragment" data-fragment-index="0" style="display:none"></span>
+  <span class="fragment" data-fragment-index="1" style="display:none"></span>
+
+  <div class="takeaways" style="margin-top:8px;gap:12px">
+    <div class="tw tw-a" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>Reads are fragments.</strong> Sequencing shatters genomes into millions of pieces. Assembly puts the puzzle back together.</div>
+    <div class="tw tw-b" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>Longer = more informative.</strong> A 50 kb contig carries gene context, operon structure, and synteny that a 150 bp read cannot.</div>
+    <div class="tw tw-c" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>Contigs, not reads, feed binning.</strong> Draft genomes (MAGs) are built from contigs grouped by composition and coverage.</div>
+  </div>
+</section>
+
+<!-- SLIDE 9: De Bruijn graph assembly -->
+<section data-slide-id="debruijn">
+  <div class="tag tag-asm">Assembly</div>
+  <h2 class="stitle">De Bruijn graph assembly</h2>
+  <p class="sub">The algorithm behind MEGAHIT, SPAdes, and metaSPAdes.</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-10 sidebar sidebar-xwide">
+      <div class="qc-step" id="dbg-step-0" style="padding:10px 12px;opacity:.75">
+        <div class="qc-step-head" style="margin-bottom:4px"><div class="qc-step-icon" style="background:#eff6ff"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="4" width="10" height="4" rx="1.5" fill="var(--gb)" opacity=".6"/><line x1="3" y1="4" x2="3" y2="8" stroke="#fff" stroke-width=".6"/><line x1="5" y1="4" x2="5" y2="8" stroke="#fff" stroke-width=".6"/><line x1="7" y1="4" x2="7" y2="8" stroke="#fff" stroke-width=".6"/></svg></div><span class="qc-step-name">1. Extract k-mers &rarr; edges</span></div>
+        <div class="info-card-text" style="line-height:1.4;font-size:11px">Slide a window of <em>k</em> bases across the read. Each k-mer becomes a <strong>graph edge</strong> connecting its prefix and suffix (<em>k&minus;1</em>)-mers as nodes.</div>
+      </div>
+      <div class="qc-step" id="dbg-step-1" style="padding:10px 12px;opacity:.75">
+        <div class="qc-step-head" style="margin-bottom:4px"><div class="qc-step-icon" style="background:#f0fdfa"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="3" cy="6" r="2" fill="var(--ok)" opacity=".5"/><circle cx="9" cy="6" r="2" fill="var(--ok)" opacity=".5"/><path d="M5 6h2" stroke="var(--ok)" stroke-width="1"/></svg></div><span class="qc-step-name">2. Build the graph</span></div>
+        <div class="info-card-text" style="line-height:1.4;font-size:11px">Nodes are (<em>k&minus;1</em>)-mers. Consecutive k-mers share a node: the suffix of one is the prefix of the next.</div>
+      </div>
+      <div class="qc-step" id="dbg-step-2" style="padding:10px 12px;opacity:.75">
+        <div class="qc-step-head" style="margin-bottom:4px"><div class="qc-step-icon" style="background:#ecfdf5"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 8L5 4L8 7L11 3" stroke="var(--ok)" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="qc-step-name">3. Eulerian path</span></div>
+        <div class="info-card-text" style="line-height:1.4;font-size:11px">Follow an Eulerian path through the graph. Each traversed edge (k-mer) adds one base to the contig.</div>
+      </div>
+      <div id="dbg-status-box" style="padding:6px 8px;border-radius:8px;background:#f1f5f9;font-size:10px;color:var(--ink-3);text-align:center;line-height:1.4">Use &rarr; to step through</div>
+    </div>
+
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><span id="dbg-label">DNA sequence</span><span id="dbg-counter" style="font-family:var(--mono);font-size:9px;color:var(--ink-4)"></span></div>
+        <div class="canvas-wrap"><canvas id="dbg-canvas" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <span class="fragment" data-fragment-index="0" style="display:none"></span>
+  <span class="fragment" data-fragment-index="1" style="display:none"></span>
+  <span class="fragment" data-fragment-index="2" style="display:none"></span>
+  <span class="fragment" data-fragment-index="3" style="display:none"></span>
+  <span class="fragment" data-fragment-index="4" style="display:none"></span>
+  <span class="fragment" data-fragment-index="5" style="display:none"></span>
+  <span class="fragment" data-fragment-index="6" style="display:none"></span>
+  <span class="fragment" data-fragment-index="7" style="display:none"></span>
+  <span class="fragment" data-fragment-index="8" style="display:none"></span>
+  <span class="fragment" data-fragment-index="9" style="display:none"></span>
+  <span class="fragment" data-fragment-index="10" style="display:none"></span>
+  <span class="fragment" data-fragment-index="11" style="display:none"></span>
+  <span class="fragment" data-fragment-index="12" style="display:none"></span>
+  <span class="fragment" data-fragment-index="13" style="display:none"></span>
+  <span class="fragment" data-fragment-index="14" style="display:none"></span>
+  <span class="fragment" data-fragment-index="15" style="display:none"></span>
+  <span class="fragment" data-fragment-index="16" style="display:none"></span>
+  <span class="fragment" data-fragment-index="17" style="display:none"></span>
+  <span class="fragment" data-fragment-index="18" style="display:none"></span>
+  <span class="fragment" data-fragment-index="19" style="display:none"></span>
+
+  <div class="takeaways" style="margin-top:8px;gap:12px">
+    <div class="tw tw-a" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>k-mers, not reads.</strong> De Bruijn assemblers work on fixed-length substrings, making them memory-efficient for large datasets.</div>
+    <div class="tw tw-b" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>Branches = ambiguity.</strong> Repeats and strain variants create forks in the graph, forcing the assembler to break contigs.</div>
+    <div class="tw tw-c" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>k matters.</strong> Small k &rarr; more connections but more tangles. Large k &rarr; cleaner graph but gaps in low-coverage regions. Tools like MEGAHIT use multiple k values.</div>
+  </div>
+  <span class="tech-note" style="margin-top:4px">metaSPAdes / MEGAHIT: purpose-built metagenome assemblers</span>
+</section>
+
+<!-- SLIDE 10: Metagenome assembly challenges -->
+<section data-slide-id="asm-challenges">
+  <div class="tag tag-asm">Assembly</div>
+  <h2 class="stitle">Why metagenome assembly is harder</h2>
+  <p class="sub">Single-genome assemblers assume uniform coverage from one organism. Metagenomes break every assumption.</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-10 sidebar sidebar-wide">
+      <div class="card info-card" id="ac-card-0" style="border-left:3px solid var(--warn)">
+        <div class="info-card-title">1. Uneven coverage</div>
+        <div class="info-card-text">Dominant species at 1000&times;, rare at 2&times;. Low-coverage species fragment or vanish entirely.</div>
+      </div>
+      <div class="card info-card" id="ac-card-1" style="opacity:.4;border-left:3px solid var(--gb)">
+        <div class="info-card-title">2. Inter-species repeats</div>
+        <div class="info-card-text">Conserved genes (16S, housekeeping) create cross-links in the graph, forcing contig breaks.</div>
+      </div>
+      <div class="card info-card" id="ac-card-2" style="opacity:.4;border-left:3px solid var(--gc)">
+        <div class="info-card-title">3. Strain collapsing</div>
+        <div class="info-card-text">&gt;95% ANI means most k-mers are identical, so strains merge into one consensus. Recoverable via read mapping (DESMAN, InStrain).</div>
+      </div>
+      <div class="card info-card" id="ac-card-3" style="opacity:.4;border-left:3px solid var(--bad)">
+        <div class="info-card-title">4. Chimeric contigs</div>
+        <div class="info-card-text">Wrong branch at a fork &rarr; contig mixes two genomes. Poisons binning and annotation.</div>
+      </div>
+    </div>
+
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header" id="ac-header">Coverage disparity: use &rarr; to step through</div>
+        <div class="canvas-wrap"><canvas id="ac-canvas" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <span class="fragment" data-fragment-index="0" style="display:none"></span>
+  <span class="fragment" data-fragment-index="1" style="display:none"></span>
+  <span class="fragment" data-fragment-index="2" style="display:none"></span>
+  <span class="fragment" data-fragment-index="3" style="display:none"></span>
+  <span class="fragment" data-fragment-index="4" style="display:none"></span>
+
+  <div class="takeaways" style="margin-top:8px;gap:12px">
+    <div class="tw tw-a" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>Deeper is not always better.</strong> High coverage of dominant species can drown out signal from rare organisms.</div>
+    <div class="tw tw-b" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>Strain resolution is the frontier.</strong> Most assemblers collapse strains into a single consensus, losing real biological diversity.</div>
+    <div class="tw tw-w" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>Chimeras are silent errors.</strong> They look like valid contigs but carry mixed signals that propagate through binning and annotation.</div>
+  </div>
+</section>
+
+<!-- ═══ Slide 11: MEGAHIT — Succinct de Bruijn Graphs ═══ -->
+<section data-slide-id="megahit">
+  <div class="tag tag-asm">Assembly</div>
+  <h2 class="stitle">MEGAHIT: assembly at scale</h2>
+  <p class="sub">How do you build a de Bruijn graph from billions of reads without running out of memory?</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-10 sidebar sidebar-wide">
+      <div class="card info-card" id="mh-card-0" style="border-left:3px solid var(--bad)">
+        <div class="info-card-title">1. The memory problem</div>
+        <div class="info-card-text">Standard dBG stores every k-mer in a hash table, requiring hundreds of GB for metagenomes.</div>
+      </div>
+      <div class="card info-card" id="mh-card-1" style="opacity:.4;border-left:3px solid var(--ga)">
+        <div class="info-card-title">2. Encode: the SdBG trick</div>
+        <div class="info-card-text">Sort edges, keep only the last character (W) + a boundary bit (F). ~3 bits per edge.</div>
+      </div>
+      <div class="card info-card" id="mh-card-2" style="opacity:.4;border-left:3px solid var(--gb)">
+        <div class="info-card-title">3. Decode: graph recovery</div>
+        <div class="info-card-text">Compressed arrays and bitvectors encode the graph far more compactly. No hash table needed.</div>
+      </div>
+      <div class="card info-card" id="mh-card-3" style="opacity:.4;border-left:3px solid var(--warn)">
+        <div class="info-card-title">4. Multi-k strategy</div>
+        <div class="info-card-text">Iterate from small k (sensitivity) to large k (specificity), merging at each round.</div>
+      </div>
+    </div>
+
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header" id="mh-header">Memory problem: use &rarr; to step through</div>
+        <div class="canvas-wrap"><canvas id="mh-canvas" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <span class="fragment" data-fragment-index="0" style="display:none"></span>
+  <span class="fragment" data-fragment-index="1" style="display:none"></span>
+  <span class="fragment" data-fragment-index="2" style="display:none"></span>
+  <span class="fragment" data-fragment-index="3" style="display:none"></span>
+  <span class="fragment" data-fragment-index="4" style="display:none"></span>
+  <span class="fragment" data-fragment-index="5" style="display:none"></span>
+  <span class="fragment" data-fragment-index="6" style="display:none"></span>
+  <span class="fragment" data-fragment-index="7" style="display:none"></span>
+  <span class="fragment" data-fragment-index="8" style="display:none"></span>
+  <span class="fragment" data-fragment-index="9" style="display:none"></span>
+  <span class="fragment" data-fragment-index="10" style="display:none"></span>
+  <span class="fragment" data-fragment-index="11" style="display:none"></span>
+  <span class="fragment" data-fragment-index="12" style="display:none"></span>
+
+  <div class="takeaways" style="margin-top:8px;gap:12px">
+    <div class="tw tw-a" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>Memory is the bottleneck.</strong> Standard dBG can&rsquo;t handle complex metagenomes on commodity hardware.</div>
+    <div class="tw tw-b" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>Succinct = same info, less space.</strong> W + F arrays encode the full graph in ~3 bits per edge.</div>
+    <div class="tw tw-w" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>Multi-k rescues rare species.</strong> Small k captures low-coverage organisms that a single large k would miss.</div>
+  </div>
+</section>
+
+<!-- ═══ Slide 12: Assembly Metrics ═══ -->
+<section data-slide-id="asm-metrics">
+  <div class="tag tag-asm">Assembly</div>
+  <h2 class="stitle">Evaluating your assembly</h2>
+  <p class="sub">How do you know if your assembly is good? Key statistics and what they mean.</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-10 sidebar sidebar-wide">
+      <div class="card info-card" id="am-card-0" style="border-left:3px solid var(--ga)">
+        <div class="info-card-title">1. N50 explained</div>
+        <div class="info-card-text">The contig length at which 50% of the total assembly is covered by contigs of that length or longer.</div>
+      </div>
+      <div class="card info-card" id="am-card-1" style="opacity:.4;border-left:3px solid var(--gb)">
+        <div class="info-card-title">2. Key statistics</div>
+        <div class="info-card-text">N50, L50, total length, # contigs, largest contig, GC content.</div>
+      </div>
+      <div class="card info-card" id="am-card-2" style="opacity:.4;border-left:3px solid var(--warn)">
+        <div class="info-card-title">3. Comparing assemblies</div>
+        <div class="info-card-text">No single metric tells the whole story; always check multiple indicators.</div>
+      </div>
+    </div>
+
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header" id="am-header">N50 explained: use &rarr; to step through</div>
+        <div class="canvas-wrap"><canvas id="am-canvas" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <span class="fragment" data-fragment-index="0" style="display:none"></span>
+  <span class="fragment" data-fragment-index="1" style="display:none"></span>
+
+  <div class="takeaways" style="margin-top:8px;gap:12px">
+    <div class="tw tw-a" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>N50 measures contiguity,</strong> not correctness. A chimeric assembly can have a misleadingly high N50.</div>
+    <div class="tw tw-b" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>Compare, don&rsquo;t judge in isolation.</strong> Always evaluate metrics relative to the expected genome sizes in your sample.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ ACT 3 — BINNING ═══════════════════ -->
+
+<!-- ACT 3 INTRO -->
+<section data-slide-id="act3-intro" style="display:flex;justify-content:center;align-items:center;text-align:center;">
+  <div style="opacity:.92">
+    <div style="display:inline-block;width:56px;height:3px;background:var(--gc);border-radius:2px;margin-bottom:18px"></div>
+    <h2 style="font-size:2.8em;font-weight:800;color:var(--gc);margin:0 0 10px;letter-spacing:-.02em">Act 3</h2>
+    <p style="font-size:1.3em;font-weight:500;color:#475569;margin:0;letter-spacing:.01em">Binning</p>
+    <p style="font-size:.85em;color:#94a3b8;margin:12px 0 0;font-style:italic">From contigs to draft genomes</p>
+  </div>
+</section>
+
+<section data-slide-id="why-bin">
+  <div class="tag tag-bin">Binning</div>
+  <h2 class="stitle">From contigs to genomes</h2>
+  <p class="sub">Assembly gives us thousands of contigs. Binning groups them into draft genomes (MAGs).</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-10 sidebar sidebar-wide">
+      <div class="card info-card" id="wb-card-0" style="border-left:3px solid var(--gc)">
+        <div class="info-card-title">1. The problem</div>
+        <div class="info-card-text">Assembly mixes contigs from many organisms into one pile. Which contig belongs where?</div>
+      </div>
+      <div class="card info-card" id="wb-card-1" style="opacity:.4;border-left:3px solid var(--ga)">
+        <div class="info-card-title">2. Binning</div>
+        <div class="info-card-text">Group contigs by organism using biological signals. Each group becomes a draft genome.</div>
+      </div>
+      <div class="card info-card" id="wb-card-2" style="opacity:.4;border-left:3px solid var(--gb)">
+        <div class="info-card-title">3. MAGs</div>
+        <div class="info-card-text"><strong>Metagenome-Assembled Genomes</strong>: unlocking metabolism, phylogeny, and novel taxa discovery.</div>
+      </div>
+    </div>
+
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header" id="wb-header">Mixed contigs: use &rarr; to step through</div>
+        <div class="canvas-wrap"><canvas id="wb-canvas" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <span class="fragment" data-fragment-index="0" style="display:none"></span>
+  <span class="fragment" data-fragment-index="1" style="display:none"></span>
+  <span class="fragment" data-fragment-index="2" style="display:none"></span>
+
+  <div class="takeaways" style="margin-top:8px;gap:12px">
+    <div class="tw tw-a" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>Contigs &ne; genomes.</strong> Assembly reconstructs sequences; binning groups them into biological units.</div>
+    <div class="tw tw-c" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>MAGs open the door</strong> to studying uncultured organisms&rsquo; metabolism, ecology, and evolution.</div>
+  </div>
+</section>
+
+<section data-slide-id="two-signals">
+  <div class="tag tag-bin">Binning</div>
+  <h2 class="stitle">Two signals for binning</h2>
+  <p class="sub">How do we know which contigs belong together? Two complementary biological signals.</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-10 sidebar sidebar-wide">
+      <div class="card info-card" id="ts-card-0" style="border-left:3px solid var(--ga)">
+        <div class="info-card-title">1. Coverage depth</div>
+        <div class="info-card-text">How many reads map to a contig? More reads = higher coverage = the organism is more abundant.</div>
+      </div>
+      <div class="card info-card" id="ts-card-1" style="opacity:.4;border-left:3px solid var(--gb)">
+        <div class="info-card-title">2. Coverage covariance</div>
+        <div class="info-card-text">Same organism &rarr; same abundance pattern across samples. Contigs that co-vary belong together.</div>
+      </div>
+      <div class="card info-card" id="ts-card-2" style="opacity:.4;border-left:3px solid var(--gd)">
+        <div class="info-card-title">3. Tetranucleotide frequency</div>
+        <div class="info-card-text">Count every 4-letter DNA word in a contig. Each genome has a characteristic frequency pattern, like a fingerprint.</div>
+      </div>
+      <div class="card info-card" id="ts-card-3" style="opacity:.4;border-left:3px solid var(--gc)">
+        <div class="info-card-title">4. Combined power</div>
+        <div class="info-card-text">Neither signal is perfect alone. Together they resolve ambiguous cases. This is the basis of all modern binners.</div>
+      </div>
+    </div>
+
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header" id="ts-header">What is coverage depth?</div>
+        <div class="canvas-wrap"><canvas id="ts-canvas" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <span class="fragment" data-fragment-index="0" style="display:none"></span>
+  <span class="fragment" data-fragment-index="1" style="display:none"></span>
+  <span class="fragment" data-fragment-index="2" style="display:none"></span>
+  <span class="fragment" data-fragment-index="3" style="display:none"></span>
+
+  <div class="takeaways" style="margin-top:8px;gap:12px">
+    <div class="tw tw-a" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>Coverage = abundance signal.</strong> More reads mapping = more abundant organism in that sample.</div>
+    <div class="tw tw-b" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>TNF = composition signal.</strong> Each genome has a unique 4-mer frequency fingerprint, independent of abundance.</div>
+  </div>
+</section>
+
+<section data-slide-id="metabat2">
+  <div class="tag tag-bin">Binning</div>
+  <h2 class="stitle">How a binner works</h2>
+  <p class="sub">MetaBAT 2, a widely-used binner that combines both signals to cluster contigs into bins.</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-10 sidebar sidebar-wide">
+      <div class="card info-card" id="mb-card-0" style="border-left:3px solid var(--ga)">
+        <div class="info-card-title">1. Measure signals</div>
+        <div class="info-card-text">For each contig, compute its coverage profile and tetranucleotide frequencies.</div>
+      </div>
+      <div class="card info-card" id="mb-card-1" style="opacity:.4;border-left:3px solid var(--gb)">
+        <div class="info-card-title">2. Compute distances</div>
+        <div class="info-card-text">How similar are two contigs? Combine coverage and TNF into one distance score.</div>
+      </div>
+      <div class="card info-card" id="mb-card-2" style="opacity:.4;border-left:3px solid var(--gd)">
+        <div class="info-card-title">3. Cluster</div>
+        <div class="info-card-text">Group nearby contigs together. Each cluster becomes a bin (draft genome).</div>
+      </div>
+      <div class="card info-card" id="mb-card-3" style="opacity:.4;border-left:3px solid var(--gc)">
+        <div class="info-card-title">4. Output MAGs</div>
+        <div class="info-card-text">Each bin is a candidate MAG. Short or ambiguous contigs may remain unbinned.</div>
+      </div>
+    </div>
+
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header" id="mb-header">Step 1: measure signals. Use &rarr; to step through</div>
+        <div class="canvas-wrap"><canvas id="mb-canvas" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <span class="fragment" data-fragment-index="0" style="display:none"></span>
+  <span class="fragment" data-fragment-index="1" style="display:none"></span>
+  <span class="fragment" data-fragment-index="2" style="display:none"></span>
+
+  <div class="takeaways" style="margin-top:8px;gap:12px">
+    <div class="tw tw-a" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>MetaBAT 2 is the workhorse</strong>: fast, parameter-free, and widely used as a baseline binner.</div>
+    <div class="tw tw-c" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>More samples = better binning.</strong> Each additional sample adds another dimension for separating organisms.</div>
+  </div>
+</section>
+
+<section data-slide-id="next-gen-binners">
+  <div class="tag tag-bin">Binning</div>
+  <h2 class="stitle">Beyond hand-crafted distances</h2>
+  <p class="sub">Newer binners use deep learning to discover what makes contigs similar, instead of defining it by hand.</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-10 sidebar sidebar-wide">
+      <div class="card info-card" id="ng-card-0" style="border-left:3px solid var(--gd)">
+        <div class="info-card-title">1. Classic approach</div>
+        <div class="info-card-text">Human-designed distance formulas. Works well but limited by what we think to measure.</div>
+      </div>
+      <div class="card info-card" id="ng-card-1" style="opacity:.4;border-left:3px solid var(--gc)">
+        <div class="info-card-title">2. Learned representations</div>
+        <div class="info-card-text">Neural networks learn to map contigs into a space where similar genomes cluster naturally.</div>
+      </div>
+      <div class="card info-card" id="ng-card-2" style="opacity:.4;border-left:3px solid var(--gb)">
+        <div class="info-card-title">3. The landscape</div>
+        <div class="info-card-text">From CONCOCT (2014) to COMEBin (2024). A young, fast-moving field with each generation improving.</div>
+      </div>
+    </div>
+
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header" id="ng-header">Classic binning: use &rarr; to step through</div>
+        <div class="canvas-wrap"><canvas id="ng-canvas" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <span class="fragment" data-fragment-index="0" style="display:none"></span>
+  <span class="fragment" data-fragment-index="1" style="display:none"></span>
+
+  <div class="takeaways" style="margin-top:8px;gap:12px">
+    <div class="tw tw-c" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>Deep learning learns what to measure,</strong> instead of relying on pre-defined distance formulas.</div>
+    <div class="tw tw-b" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>The field is moving fast.</strong> Newer methods consistently improve, especially for complex or low-abundance organisms.</div>
+  </div>
+</section>
+
+<section data-slide-id="quality-mimag">
+  <div class="tag tag-bin">Binning</div>
+  <h2 class="stitle">Quality assessment &amp; MIMAG</h2>
+  <p class="sub">Not all bins are good. How do we know if a MAG is reliable?</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-10 sidebar sidebar-wide">
+      <div class="card info-card" id="qm-card-0" style="border-left:3px solid var(--ga)">
+        <div class="info-card-title">1. Marker genes</div>
+        <div class="info-card-text">Every genome has ~100 genes expected exactly once. CheckM2 uses ML models trained on marker-gene profiles to estimate quality.</div>
+      </div>
+      <div class="card info-card" id="qm-card-1" style="opacity:.4;border-left:3px solid var(--gb)">
+        <div class="info-card-title">2. Completeness</div>
+        <div class="info-card-text">How many markers are present? Missing markers = missing parts of the genome.</div>
+      </div>
+      <div class="card info-card" id="qm-card-2" style="opacity:.4;border-left:3px solid var(--bad)">
+        <div class="info-card-title">3. Contamination</div>
+        <div class="info-card-text">Duplicated markers = DNA from another organism sneaked in. Must be low.</div>
+      </div>
+      <div class="card info-card" id="qm-card-3" style="opacity:.4;border-left:3px solid var(--gc)">
+        <div class="info-card-title">4. MIMAG tiers</div>
+        <div class="info-card-text">Community standards: high (&ge;90%/&le;5% plus 23S, 16S, 5S rRNA &amp; &ge;18 tRNA), medium (&ge;50%/&lt;10%), low, or discard.</div>
+      </div>
+    </div>
+
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header" id="qm-header">Marker genes: use &rarr; to step through</div>
+        <div class="canvas-wrap"><canvas id="qm-canvas" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <span class="fragment" data-fragment-index="0" style="display:none"></span>
+  <span class="fragment" data-fragment-index="1" style="display:none"></span>
+  <span class="fragment" data-fragment-index="2" style="display:none"></span>
+
+  <div class="takeaways" style="margin-top:8px;gap:12px">
+    <div class="tw tw-a" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>CheckM2 is widely used</strong> for estimating MAG completeness and contamination via machine-learning models trained on marker-gene profiles.</div>
+    <div class="tw tw-c" style="padding:12px 16px;font-size:12.5px;line-height:1.5"><strong>MIMAG tiers</strong> (high &ge;90/&le;5 + rRNA/tRNA; medium &ge;50/&lt;10) ensure reproducible quality reporting across studies.</div>
+  </div>
+</section>
+
+<!-- CLOSING SLIDE -->
+<section data-slide-id="closing" style="justify-content:center;align-items:center;text-align:center;padding:24px 40px 32px;">
+  <h2 class="stitle" style="text-align:center;margin-bottom:28px;font-size:2.2em;">Summary</h2>
+  <div style="max-width:820px;display:flex;flex-direction:column;gap:18px;margin-bottom:40px;">
+    <div class="tw tw-a" style="padding:18px 22px;font-size:15px;line-height:1.6;text-align:left;">
+      <strong>Preprocessing.</strong> Quality control, adapter trimming, and host removal protect every downstream step. Errors left in reads compound through assembly and binning.
+    </div>
+    <div class="tw tw-b" style="padding:18px 22px;font-size:15px;line-height:1.6;text-align:left;">
+      <strong>Assembly.</strong> De Bruijn graph assemblers like MEGAHIT reconstruct contigs from k-mers. Metagenomes add challenges: uneven coverage, inter-species repeats, and strain collapsing.
+    </div>
+    <div class="tw tw-c" style="padding:18px 22px;font-size:15px;line-height:1.6;text-align:left;">
+      <strong>Binning.</strong> Coverage covariance and tetranucleotide frequency group contigs into MAGs. MIMAG standards ensure reproducible quality assessment.
+    </div>
+  </div>
+  <div style="margin-bottom:22px;font-size:1.9em;font-weight:700;color:var(--ink);">Questions?</div>
+  <div style="font-size:14px;color:var(--ink-3);">antonio.fernandez-guerra@sund.ku.dk</div>
+</section>
+
+</div></div>
+
+<script src="reveal.min.js"></script>
+<script src="slides.js"></script>
+</body></html>
