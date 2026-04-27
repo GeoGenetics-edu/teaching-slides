@@ -393,16 +393,21 @@ function drawGCPlot(id){
   c.beginPath();
   for(let i=0;i<=100;i++){
     const x=P.l+i/100*pw;
-    const v=gauss(i,35,8)*.9+gauss(i,52,6)*.6+gauss(i,68,9)*.45;
+    const v=gauss(i,38,6)*.7+gauss(i,50,7)*.95+gauss(i,63,5)*.4;
     const y=P.t+ph-v*ph*.55;
     i===0?c.moveTo(x,y):c.lineTo(x,y);
   }
   c.strokeStyle=COLORS.gb;c.lineWidth=2;c.stroke();
   // Fill
   c.lineTo(P.l+pw,P.t+ph);c.lineTo(P.l,P.t+ph);c.closePath();c.fillStyle='rgba(59,130,246,.08)';c.fill();
-  // Peak labels
+  // Peak labels — position at actual peak tops
   c.fillStyle=COLORS.gb;c.font='9px "DM Sans"';c.textAlign='center';
-  c.fillText('peak 1',P.l+35/100*pw,P.t+12);c.fillText('peak 2',P.l+52/100*pw,P.t+24);c.fillText('peak 3',P.l+68/100*pw,P.t+16);
+  const peaks=[{gc:38,label:'peak 1'},{gc:50,label:'peak 2'},{gc:63,label:'peak 3'}];
+  for(const pk of peaks){
+    const v=gauss(pk.gc,38,6)*.7+gauss(pk.gc,50,7)*.95+gauss(pk.gc,63,5)*.4;
+    const py=P.t+ph-v*ph*.55;
+    c.fillText(pk.label,P.l+pk.gc/100*pw,py-6);
+  }
 }
 function drawOverrepPlot(id){
   const cv=initCanvas(id);if(!cv)return;const{ctx:c,w,h}=cv;
@@ -992,31 +997,31 @@ class TrimTech{
     }
     if(step===1&&this.phase===0){
       this.phase=1;this.highlightStep(0);
-      this.setLabel('PE overlap — aligning R1 and R2','#3b82f6');this.setCounter('Step 1/3');
+      this.setLabel('PE overlap: aligning R1 and R2','#3b82f6');this.setCounter('Step 1/3');
       this.setStatus('PE overlap demo');
-      this.anim(2500,p=>this.drawPEOverlap(p),()=>{this.setLabel('PE overlap — adapters identified','#16a34a')});
+      this.anim(2500,p=>this.drawPEOverlap(p),()=>{this.setLabel('PE overlap: adapters identified','#16a34a')});
       return true;
     }
     if(step===2&&this.phase===1){
       this.phase=2;this.highlightStep(1);
-      this.setLabel('Sequence matching — scanning for known adapters','#d97706');this.setCounter('Step 2/3');
+      this.setLabel('Sequence matching: scanning for known adapters','#d97706');this.setCounter('Step 2/3');
       this.setStatus('Pattern matching demo');
-      this.anim(2500,p=>this.drawPatternMatch(p),()=>{this.setLabel('Sequence matching — adapter clipped','#16a34a')});
+      this.anim(2500,p=>this.drawPatternMatch(p),()=>{this.setLabel('Sequence matching: adapter clipped','#16a34a')});
       return true;
     }
     if(step===3&&this.phase===2){
       this.phase=3;this.highlightStep(2);
-      this.setLabel('Quality window — scanning from 3\' end','#dc2626');this.setCounter('Step 3/3');
+      this.setLabel('Quality window: scanning from 3\' end','#dc2626');this.setCounter('Step 3/3');
       this.setStatus('Sliding window demo');
-      this.anim(2500,p=>this.drawSlidingWindow(p),()=>{this.setLabel('Quality window — low-quality tail removed','#16a34a')});
+      this.anim(2500,p=>this.drawSlidingWindow(p),()=>{this.setLabel('Quality window: low-quality tail removed','#16a34a')});
       return true;
     }
     return false;
   }
   goBack(step){
     if(step===0){this.phase=0;this.highlightStep(-1);this.setLabel('Raw reads with quality issues');this.setCounter('');this.setStatus('Use \u2192 to step through methods');this.drawPhase0()}
-    else if(step===1){this.phase=1;this.highlightStep(0);this.setLabel('PE overlap — adapters identified','#16a34a');this.setCounter('Step 1/3');this.setStatus('PE overlap demo');this.drawPEOverlap(1)}
-    else if(step===2){this.phase=2;this.highlightStep(1);this.setLabel('Sequence matching — adapter clipped','#16a34a');this.setCounter('Step 2/3');this.setStatus('Pattern matching demo');this.drawPatternMatch(1)}
+    else if(step===1){this.phase=1;this.highlightStep(0);this.setLabel('PE overlap: adapters identified','#16a34a');this.setCounter('Step 1/3');this.setStatus('PE overlap demo');this.drawPEOverlap(1)}
+    else if(step===2){this.phase=2;this.highlightStep(1);this.setLabel('Sequence matching: adapter clipped','#16a34a');this.setCounter('Step 2/3');this.setStatus('Pattern matching demo');this.drawPatternMatch(1)}
   }
 }
 

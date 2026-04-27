@@ -249,7 +249,7 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
 
   <div class="takeaways" style="margin-top:8px;gap:16px">
     <div class="tw tw-a" style="padding:14px 16px;font-size:13px;line-height:1.55;display:flex;gap:12px;align-items:flex-start"><svg width="26" height="26" viewBox="0 0 22 22" fill="none" style="flex-shrink:0;margin-top:1px"><rect x="1" y="3" width="20" height="3" rx="1.5" fill="var(--ga)" opacity=".7"/><rect x="1" y="9" width="15" height="3" rx="1.5" fill="var(--gb)" opacity=".7"/><rect x="1" y="15" width="17" height="3" rx="1.5" fill="var(--gc)" opacity=".5"/></svg><div><strong>Mixed fragments.</strong> Reads are short pieces from many genomes, shuffled together in one FASTQ file with no labels attached.</div></div>
-    <div class="tw tw-b" style="padding:14px 16px;font-size:13px;line-height:1.55;display:flex;gap:12px;align-items:flex-start"><svg width="26" height="26" viewBox="0 0 22 22" fill="none" style="flex-shrink:0;margin-top:1px"><rect x="2" y="4" width="18" height="5" rx="2.5" fill="var(--gb)" opacity=".7"/><rect x="6" y="13" width="10" height="5" rx="2.5" fill="var(--gb)" opacity=".35"/></svg><div><strong>Abundance matters.</strong> Dominant organisms contribute disproportionately — often orders of magnitude — more reads than rare ones, skewing the dataset.</div></div>
+    <div class="tw tw-b" style="padding:14px 16px;font-size:13px;line-height:1.55;display:flex;gap:12px;align-items:flex-start"><svg width="26" height="26" viewBox="0 0 22 22" fill="none" style="flex-shrink:0;margin-top:1px"><rect x="2" y="4" width="18" height="5" rx="2.5" fill="var(--gb)" opacity=".7"/><rect x="6" y="13" width="10" height="5" rx="2.5" fill="var(--gb)" opacity=".35"/></svg><div><strong>Abundance matters.</strong> Dominant organisms contribute disproportionately, often orders of magnitude, more reads than rare ones, skewing the dataset.</div></div>
     <div class="tw tw-w" style="padding:14px 16px;font-size:13px;line-height:1.55;display:flex;gap:12px;align-items:flex-start"><svg width="26" height="26" viewBox="0 0 22 22" fill="none" style="flex-shrink:0;margin-top:1px"><ellipse cx="11" cy="11" rx="8" ry="6" fill="none" stroke="var(--host)" stroke-width="1.5" stroke-dasharray="3 2"/><line x1="6" y1="6" x2="16" y2="16" stroke="var(--bad)" stroke-width="1.3" stroke-linecap="round"/></svg><div><strong>Contamination lurks.</strong> Host DNA and technical adapter sequences hide among the microbial reads.</div></div>
   </div>
   <span class="tech-note" style="margin-top:4px">Phred Q30 = 99.9% accuracy, or 1 error per 1,000 bases</span>
@@ -294,7 +294,7 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
   <span class="fragment" data-fragment-index="2" style="display:none"></span>
 
   <div class="takeaways" style="margin-top:8px">
-    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> A sequencing read contains both biological insert and technical sequence — understanding the library construct is essential for proper trimming.</div>
+    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> A sequencing read contains both biological insert and technical sequence. Understanding the library construct is essential for proper trimming.</div>
   </div>
 </section>
 
@@ -367,7 +367,7 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
   </div>
 
   <div class="takeaways" style="margin-top:8px">
-    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Phred quality drops toward the 3&prime; end — per-base box plots let you decide where to trim.</div>
+    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Phred quality drops toward the 3&prime; end. Per-base box plots let you decide where to trim.</div>
   </div>
 </section>
 
@@ -377,7 +377,7 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
   <h2 class="stitle">Diagnostic QC plots</h2>
   <p class="sub">Beyond per-base quality: three more essential checks.</p>
 
-  <div class="row g-16" style="flex:1;min-height:0;">
+  <div class="row g-16" style="flex:1;min-height:0;max-height:380px;align-self:center;">
     <div class="f1 col" style="min-height:0;">
       <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
         <div class="card-header">Adapter content</div>
@@ -399,7 +399,7 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
   </div>
 
   <div class="takeaways" style="margin-top:8px">
-    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> FastQC flags guide your trimming decisions — but not every flag means a problem in metagenomes.</div>
+    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> FastQC flags guide your trimming decisions, but not every flag means a problem in metagenomes.</div>
   </div>
 </section>
 
@@ -442,7 +442,7 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
   <span class="fragment" data-fragment-index="2" style="display:none"></span>
 
   <div class="takeaways" style="margin-top:8px">
-    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> fastp combines quality trimming, adapter removal, and PE overlap correction in a single pass — clean reads assemble better.</div>
+    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> fastp combines quality trimming, adapter removal, and PE overlap correction in a single pass. Clean reads assemble better.</div>
   </div>
   <span class="tech-note" style="margin-top:4px">Tools like fastp combine all three techniques in a single pass</span>
 </section>
