@@ -87,41 +87,36 @@ function drawTaxCanvas(){
   ctx.clearRect(0,0,800,440);
 
   // Draw a simplified phylogenetic tree with marker genes highlighted
-  const treeX=120,treeY=60,treeW=560,treeH=320;
+  const treeX=120,treeY=40,treeW=560,treeH=280;
   const R=rng(77);
 
   // Tree trunk
   ctx.strokeStyle=COLORS.ink4;ctx.lineWidth=2;ctx.lineCap='round';
   ctx.beginPath();ctx.moveTo(treeX,treeY+treeH/2);ctx.lineTo(treeX+100,treeY+treeH/2);ctx.stroke();
 
-  // Branch structure: 6 tips
+  // Branch structure: 5 tips (3 MAGs + 2 references)
   const tips=[
-    {x:treeX+treeW-80,y:treeY+30,label:'MAG A',col:COLORS.gd,has16s:true},
-    {x:treeX+treeW-80,y:treeY+95,label:'MAG B',col:COLORS.gb,has16s:false},
+    {x:treeX+treeW-80,y:treeY+20,label:'MAG A',col:COLORS.gd,has16s:true},
+    {x:treeX+treeW-80,y:treeY+90,label:'MAG B',col:COLORS.gb,has16s:false},
     {x:treeX+treeW-80,y:treeY+160,label:'Ref 1',col:COLORS.ink4,has16s:true},
-    {x:treeX+treeW-80,y:treeY+225,label:'MAG C',col:COLORS.gc,has16s:false},
-    {x:treeX+treeW-80,y:treeY+280,label:'Ref 2',col:COLORS.ink4,has16s:true},
-    {x:treeX+treeW-80,y:treeY+330,label:'Ref 3',col:COLORS.ink4,has16s:true}
+    {x:treeX+treeW-80,y:treeY+210,label:'MAG C',col:COLORS.gc,has16s:false},
+    {x:treeX+treeW-80,y:treeY+270,label:'Ref 2',col:COLORS.ink4,has16s:true}
   ];
 
   // Internal nodes
   const n1x=treeX+100,n1y=treeY+treeH/2;
-  const n2x=treeX+200,n2y=treeY+95;
-  const n3x=treeX+200,n3y=treeY+270;
+  const n2x=treeX+200,n2y=treeY+55;
+  const n3x=treeX+200,n3y=treeY+210;
   const n4x=treeX+310,n4y=treeY+55;
-  const n5x=treeX+310,n5y=treeY+140;
-  const n6x=treeX+310,n6y=treeY+250;
-  const n7x=treeX+310,n7y=treeY+305;
+  const n5x=treeX+310,n5y=treeY+160;
 
   // Draw branches
   ctx.strokeStyle=COLORS.border;ctx.lineWidth=2;
   const lines=[
     [n1x,n1y,n2x,n2y],[n1x,n1y,n3x,n3y],
-    [n2x,n2y,n4x,n4y],[n2x,n2y,n5x,n5y],
-    [n3x,n3y,n6x,n6y],[n3x,n3y,n7x,n7y],
-    [n4x,n4y,tips[0].x,tips[0].y],[n4x,n4y,tips[1].x,tips[1].y],
-    [n5x,n5y,tips[2].x,tips[2].y],[n5x,n5y,tips[3].x,tips[3].y],
-    [n6x,n6y,tips[4].x,tips[4].y],[n7x,n7y,tips[5].x,tips[5].y]
+    [n2x,n2y,tips[0].x,tips[0].y],[n2x,n2y,tips[1].x,tips[1].y],
+    [n4x,n4y,tips[2].x,tips[2].y],
+    [n3x,n3y,tips[3].x,tips[3].y],[n3x,n3y,tips[4].x,tips[4].y]
   ];
   for(const[x1,y1,x2,y2] of lines){
     ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
@@ -150,9 +145,9 @@ function drawTaxCanvas(){
 
   // Marker gene dots along branches for MAGs
   const markerPositions=[
-    {x:n4x+30,y:tips[0].y-6},{x:n4x+60,y:tips[0].y+3},{x:n4x+90,y:tips[0].y-4},
-    {x:n4x+30,y:tips[1].y+4},{x:n4x+60,y:tips[1].y-3},{x:n4x+90,y:tips[1].y+2},
-    {x:n6x+50,y:tips[3].y-4},{x:n6x+80,y:tips[3].y+3}
+    {x:n2x+40,y:tips[0].y-5},{x:n2x+80,y:tips[0].y+3},{x:n2x+120,y:tips[0].y-3},
+    {x:n2x+40,y:tips[1].y+4},{x:n2x+80,y:tips[1].y-3},{x:n2x+120,y:tips[1].y+2},
+    {x:n3x+40,y:tips[3].y-4},{x:n3x+80,y:tips[3].y+3}
   ];
   for(const m of markerPositions){
     ctx.beginPath();ctx.arc(m.x,m.y,3,0,Math.PI*2);
@@ -982,6 +977,721 @@ function drawSynthCanvas(){
 
 
 /* ═══════════════════════════════════════════════════════════
+   10. SBS-CANVAS — How Illumina sequencing works (3 steps)
+   ═══════════════════════════════════════════════════════════ */
+
+let sbsStep=0;
+
+function drawSbsCanvas(step){
+  sbsStep=step;
+  const ctx=_c('sbs-canvas');if(!ctx)return;
+  ctx.clearRect(0,0,800,440);
+
+  if(step===0) drawSbs0(ctx);
+  else if(step===1) drawSbs1(ctx);
+  else drawSbs2(ctx);
+}
+
+/* ── Shared DNA/SBS drawing helpers ── */
+function _dnaStrand(ctx,x,y,w,bases,color,dir){
+  // Draw a single DNA strand as connected backbone + base letters
+  const bw=w/bases.length;
+  const baseCols={A:COLORS.ok,T:'#dc2626',G:COLORS.gd,C:COLORS.gb};
+  // Backbone
+  ctx.strokeStyle=color;ctx.lineWidth=2;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+w,y);ctx.stroke();
+  // Bases as colored ticks with letters
+  for(let i=0;i<bases.length;i++){
+    const bx=x+i*bw+bw/2;
+    const bc=baseCols[bases[i]]||COLORS.ink4;
+    const by2=dir>0?y+10:y-10;
+    ctx.strokeStyle=bc+'aa';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(bx,y);ctx.lineTo(bx,by2);ctx.stroke();
+    ctx.beginPath();ctx.arc(bx,by2,4,0,Math.PI*2);
+    ctx.fillStyle=bc;ctx.fill();
+    _monoLabel(ctx,bases[i],bx,by2,5,'#fff','center');
+  }
+}
+
+function _flowSurface(ctx,x,y,w,h){
+  // Glass flow cell surface with gradient
+  const g=ctx.createLinearGradient(x,y,x,y+h);
+  g.addColorStop(0,'#e2e8f0');g.addColorStop(0.3,'#f1f5f9');g.addColorStop(1,'#cbd5e1');
+  ctx.fillStyle=g;
+  ctx.beginPath();ctx.roundRect(x,y,w,h,3);ctx.fill();
+  ctx.strokeStyle='#94a3b8';ctx.lineWidth=1;ctx.stroke();
+}
+
+function _oligo(ctx,x,yBase,len,color){
+  // Draw a short surface oligo (vertical wiggly line)
+  ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(x,yBase);
+  for(let i=1;i<=len;i++){
+    ctx.lineTo(x+(i%2?2:-2),yBase-i*3);
+  }
+  ctx.stroke();
+  // Small anchor dot at surface
+  ctx.beginPath();ctx.arc(x,yBase,2,0,Math.PI*2);
+  ctx.fillStyle=color;ctx.fill();
+}
+
+function drawSbs0(ctx){
+  _label(ctx,'Library preparation and cluster generation',400,18,14,COLORS.ink,'center','700');
+
+  /* ── Panel 1: Fragment + adapters ── */
+  const p1y=38;
+  _label(ctx,'1',42,p1y+12,11,'#fff','center','700');
+  ctx.beginPath();ctx.arc(42,p1y+12,9,0,Math.PI*2);ctx.fillStyle=COLORS.gd;ctx.fill();
+  _label(ctx,'Fragment genomic DNA and ligate adapters',80,p1y+12,11,COLORS.gd,'left','600');
+
+  // Genomic DNA (double helix simplified)
+  const seq='ATGCTAGCATGC';
+  const comp='TACGATCGTACG';
+  _dnaStrand(ctx,55,p1y+34,200,seq.split(''),COLORS.gb,1);
+  _dnaStrand(ctx,55,p1y+56,200,comp.split(''),COLORS.gb,-1);
+  // Adapters on ends
+  _roundRect(ctx,27,p1y+30,30,30,4,COLORS.gd+'22',COLORS.gd,1.5);
+  _label(ctx,'P5',42,p1y+45,8,COLORS.gd,'center','700');
+  _roundRect(ctx,253,p1y+30,30,30,4,COLORS.gc+'22',COLORS.gc,1.5);
+  _label(ctx,'P7',268,p1y+45,8,COLORS.gc,'center','700');
+
+  _arrow(ctx,295,p1y+45,330,p1y+45,COLORS.ink4,1.5);
+
+  /* ── Panel 2: Bind to flow cell ── */
+  _label(ctx,'2',345,p1y+12,11,'#fff','center','700');
+  ctx.beginPath();ctx.arc(345,p1y+12,9,0,Math.PI*2);ctx.fillStyle=COLORS.gd;ctx.fill();
+  _label(ctx,'Bind to flow cell surface',365,p1y+12,11,COLORS.gd,'left','600');
+
+  // Flow cell surface with oligo lawn
+  _flowSurface(ctx,335,p1y+55,200,10);
+  const oligoCols=[COLORS.gd+'aa',COLORS.gc+'aa'];
+  for(let i=0;i<14;i++){
+    _oligo(ctx,345+i*14,p1y+55,4,oligoCols[i%2]);
+  }
+  // Bound fragment dangling from one oligo
+  const bfx=385;
+  ctx.strokeStyle=COLORS.gb;ctx.lineWidth=2;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(bfx,p1y+40);ctx.lineTo(bfx+80,p1y+40);ctx.stroke();
+  // P5 connects to surface
+  ctx.strokeStyle=COLORS.gd;ctx.lineWidth=1.5;ctx.setLineDash([2,2]);
+  ctx.beginPath();ctx.moveTo(bfx,p1y+40);ctx.lineTo(bfx-4,p1y+55);ctx.stroke();
+  ctx.setLineDash([]);
+  _label(ctx,'P5 hybridizes\nto surface oligo',bfx-8,p1y+32,7,COLORS.ink3,'right','500');
+
+  _arrow(ctx,545,p1y+45,575,p1y+45,COLORS.ink4,1.5);
+
+  /* ── Panel 3: Denature + wash ── */
+  _label(ctx,'3',590,p1y+12,11,'#fff','center','700');
+  ctx.beginPath();ctx.arc(590,p1y+12,9,0,Math.PI*2);ctx.fillStyle=COLORS.gd;ctx.fill();
+  _label(ctx,'Denature: keep one strand',615,p1y+12,11,COLORS.gd,'left','600');
+
+  _flowSurface(ctx,585,p1y+55,180,10);
+  for(let i=0;i<12;i++){
+    _oligo(ctx,595+i*14,p1y+55,4,oligoCols[i%2]);
+  }
+  // Single strand tethered
+  ctx.strokeStyle=COLORS.gb;ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(635,p1y+40);ctx.lineTo(720,p1y+40);ctx.stroke();
+  // Free end dangles up
+  ctx.strokeStyle=COLORS.gb+'88';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(720,p1y+40);ctx.quadraticCurveTo(730,p1y+28,720,p1y+22);ctx.stroke();
+
+  /* ── Panel 4: Bridge amplification ── */
+  const p2y=p1y+80;
+  _label(ctx,'4',42,p2y+8,11,'#fff','center','700');
+  ctx.beginPath();ctx.arc(42,p2y+8,9,0,Math.PI*2);ctx.fillStyle=COLORS.gd;ctx.fill();
+  _label(ctx,'Bridge amplification',62,p2y+8,11,COLORS.gd,'left','600');
+
+  const bridgeSteps=[
+    {x:65,label:'Single strand'},
+    {x:220,label:'Bridge forms'},
+    {x:375,label:'Polymerase extends'},
+    {x:530,label:'Denature → 2 strands'},
+    {x:685,label:'Repeat → cluster'}
+  ];
+
+  const surfY=p2y+80;
+  for(let i=0;i<5;i++){
+    const bx=bridgeSteps[i].x;
+    // Surface
+    _flowSurface(ctx,bx-50,surfY,100,8);
+    // Oligos
+    for(let j=0;j<4;j++){
+      _oligo(ctx,bx-35+j*24,surfY,3,COLORS.ink4+'66');
+    }
+
+    if(i===0){
+      // Single strand attached at left end, free at right
+      ctx.strokeStyle=COLORS.gb;ctx.lineWidth=2.5;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(bx-22,surfY);ctx.lineTo(bx-22,surfY-25);
+      ctx.lineTo(bx+25,surfY-25);ctx.stroke();
+      // Wavy free end
+      ctx.strokeStyle=COLORS.gb+'88';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(bx+25,surfY-25);
+      ctx.quadraticCurveTo(bx+35,surfY-18,bx+30,surfY-12);ctx.stroke();
+    } else if(i===1){
+      // Bridge: both ends attached, arc in middle
+      ctx.strokeStyle=COLORS.gb;ctx.lineWidth=2.5;
+      ctx.beginPath();ctx.moveTo(bx-25,surfY);
+      ctx.quadraticCurveTo(bx-25,surfY-40,bx,surfY-42);
+      ctx.quadraticCurveTo(bx+25,surfY-40,bx+25,surfY);ctx.stroke();
+      // Dashed complement being synthesized
+      ctx.strokeStyle=COLORS.bad+'88';ctx.lineWidth=1.5;ctx.setLineDash([3,2]);
+      ctx.beginPath();ctx.moveTo(bx-22,surfY-2);
+      ctx.quadraticCurveTo(bx-22,surfY-35,bx,surfY-37);
+      ctx.quadraticCurveTo(bx+22,surfY-35,bx+22,surfY-2);ctx.stroke();
+      ctx.setLineDash([]);
+    } else if(i===2){
+      // Polymerase extending: bridge with complement growing
+      ctx.strokeStyle=COLORS.gb;ctx.lineWidth=2.5;
+      ctx.beginPath();ctx.moveTo(bx-25,surfY);
+      ctx.quadraticCurveTo(bx-25,surfY-40,bx,surfY-42);
+      ctx.quadraticCurveTo(bx+25,surfY-40,bx+25,surfY);ctx.stroke();
+      // Full complement
+      ctx.strokeStyle=COLORS.bad;ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(bx-22,surfY-2);
+      ctx.quadraticCurveTo(bx-22,surfY-35,bx,surfY-37);
+      ctx.quadraticCurveTo(bx+22,surfY-35,bx+22,surfY-2);ctx.stroke();
+      // Polymerase dot
+      ctx.beginPath();ctx.arc(bx+15,surfY-20,5,0,Math.PI*2);
+      ctx.fillStyle=COLORS.ok;ctx.fill();
+      _label(ctx,'pol',bx+15,surfY-20,5,'#fff','center','700');
+    } else if(i===3){
+      // Two separate strands after denaturation
+      ctx.strokeStyle=COLORS.gb;ctx.lineWidth=2.5;
+      ctx.beginPath();ctx.moveTo(bx-25,surfY);ctx.lineTo(bx-25,surfY-30);
+      ctx.lineTo(bx-8,surfY-30);ctx.stroke();
+      ctx.strokeStyle=COLORS.bad;ctx.lineWidth=2.5;
+      ctx.beginPath();ctx.moveTo(bx+25,surfY);ctx.lineTo(bx+25,surfY-30);
+      ctx.lineTo(bx+8,surfY-30);ctx.stroke();
+    } else {
+      // Cluster: many strands radiating from surface
+      const Rc=rng(77);
+      for(let j=0;j<16;j++){
+        const ang=-Math.PI/2+Rc()*Math.PI-Math.PI/2;
+        const len=15+Rc()*20;
+        const col=j%2===0?COLORS.gb:COLORS.bad;
+        ctx.strokeStyle=col+(Rc()>0.3?'88':'cc');ctx.lineWidth=1.2;
+        ctx.beginPath();ctx.moveTo(bx+Rc()*30-15,surfY);
+        ctx.lineTo(bx+Rc()*30-15+Math.cos(ang)*len,surfY+Math.sin(ang)*len);ctx.stroke();
+      }
+      // Glow circle
+      const cg=ctx.createRadialGradient(bx,surfY-10,2,bx,surfY-10,22);
+      cg.addColorStop(0,COLORS.gb+'33');cg.addColorStop(1,COLORS.gb+'00');
+      ctx.fillStyle=cg;ctx.beginPath();ctx.arc(bx,surfY-10,22,0,Math.PI*2);ctx.fill();
+    }
+
+    _label(ctx,bridgeSteps[i].label,bx,surfY+18,8,COLORS.ink3,'center','500');
+    if(i<4)_arrow(ctx,bx+52,surfY-15,bridgeSteps[i+1].x-52,surfY-15,COLORS.ink4+'88',1);
+  }
+
+  /* ── Panel 5: Flow cell with clusters ── */
+  const p3y=surfY+35;
+  _label(ctx,'5',42,p3y+8,11,'#fff','center','700');
+  ctx.beginPath();ctx.arc(42,p3y+8,9,0,Math.PI*2);ctx.fillStyle=COLORS.gd;ctx.fill();
+  _label(ctx,'Result: millions of clonal clusters, each from one original fragment',62,p3y+8,11,COLORS.gd,'left','600');
+
+  // Flow cell rectangle
+  _roundRect(ctx,55,p3y+22,690,105,8,'#0f172a11',COLORS.border,1);
+  // Lane dividers
+  for(let i=1;i<4;i++){
+    ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.5;ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.moveTo(55+i*172.5,p3y+22);ctx.lineTo(55+i*172.5,p3y+127);ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  _label(ctx,'Lane 1',55+86,p3y+132,7,COLORS.ink4,'center','500');
+  _label(ctx,'Lane 2',55+259,p3y+132,7,COLORS.ink4,'center','500');
+  _label(ctx,'Lane 3',55+432,p3y+132,7,COLORS.ink4,'center','500');
+  _label(ctx,'Lane 4',55+604,p3y+132,7,COLORS.ink4,'center','500');
+
+  // Clusters as colored dots
+  const Rf=rng(42);
+  const clColors=[COLORS.gb,COLORS.gc,COLORS.gd,COLORS.ga,'#dc2626','#8b5cf6'];
+  for(let i=0;i<200;i++){
+    const cx=65+Rf()*670,cy=p3y+28+Rf()*92;
+    const r=1.5+Rf()*2.5;
+    const col=clColors[Math.floor(Rf()*clColors.length)];
+    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);
+    ctx.fillStyle=col+'66';ctx.fill();
+  }
+  _label(ctx,'Each cluster ≈ 1,000 identical copies of one fragment',400,p3y+150,10,COLORS.ink3,'center','500');
+}
+
+function drawSbs1(ctx){
+  _label(ctx,'Sequencing by synthesis: one base per cycle',400,18,14,COLORS.ink,'center','700');
+
+  const bases=['A','T','G','C'];
+  const baseCols=[COLORS.ok,'#dc2626',COLORS.gd,COLORS.gb];
+
+  /* ── Main diagram: zoom into one cluster, one cycle ── */
+  const zoomY=36;
+  _label(ctx,'Zoomed view: one cycle on one cluster',170,zoomY,11,COLORS.gb,'left','600');
+
+  // Template strand (top, 5'→3')
+  const tx=50,ty=zoomY+28,tw=440;
+  const tSeq='ATGCTAGCATGCTA'.split('');
+  _dnaStrand(ctx,tx,ty,tw,tSeq,COLORS.ink4+'88',1);
+  _label(ctx,"3'",tx-12,ty,9,COLORS.ink4,'right','600');
+  _label(ctx,"5'",tx+tw+12,ty,9,COLORS.ink4,'left','600');
+  _label(ctx,'Template',tx+tw/2,ty-12,9,COLORS.ink4,'center','500');
+
+  // Growing complementary strand (bottom, read so far)
+  const compBases='TACGATCG'.split('');
+  const cw=tw*(compBases.length/tSeq.length);
+  _dnaStrand(ctx,tx,ty+24,cw,compBases,COLORS.gb,-1);
+  _label(ctx,"5'",tx-12,ty+24,9,COLORS.gb,'right','600');
+  _label(ctx,'New strand (read)',tx+cw/2,ty+42,9,COLORS.gb,'center','500');
+
+  // Incoming nucleotide at position 9 (next to add)
+  const nextX=tx+cw+tw/tSeq.length*0.5;
+  const nextBase='A';// complement of T
+  const nextCol=baseCols[0];
+
+  // Fluorescent nucleotide floating in
+  for(let i=0;i<4;i++){
+    const fx=nextX+12+i*28,fy=ty+18;
+    const isMatch=i===0;
+    ctx.globalAlpha=isMatch?1:0.3;
+    ctx.beginPath();ctx.arc(fx,fy,8,0,Math.PI*2);
+    ctx.fillStyle=baseCols[i]+'33';ctx.fill();
+    ctx.strokeStyle=baseCols[i];ctx.lineWidth=isMatch?2:1;ctx.stroke();
+    _monoLabel(ctx,bases[i],fx,fy,7,baseCols[i],'center');
+    if(isMatch){
+      // Glow effect
+      const g=ctx.createRadialGradient(fx,fy,3,fx,fy,14);
+      g.addColorStop(0,nextCol+'44');g.addColorStop(1,nextCol+'00');
+      ctx.fillStyle=g;ctx.beginPath();ctx.arc(fx,fy,14,0,Math.PI*2);ctx.fill();
+      // Arrow pointing down to template
+      _arrow(ctx,fx,fy-14,fx,fy-22,nextCol,1.5);
+      _label(ctx,'incorporates!',fx,fy+16,7,nextCol,'center','600');
+    }
+    ctx.globalAlpha=1;
+  }
+  // Blocker + fluorophore labels
+  _label(ctx,'Each nucleotide carries:',nextX+120,ty+3,8,COLORS.ink3,'left','500');
+  _label(ctx,'• reversible 3\' blocker (stops after 1 base)',nextX+120,ty+14,8,COLORS.ink3,'left','400');
+  _label(ctx,'• fluorescent tag (unique color per base)',nextX+120,ty+25,8,COLORS.ink3,'left','400');
+
+  /* ── 4-step cycle diagram ── */
+  const cyY=ty+58;
+  _label(ctx,'The SBS cycle (repeated 150-300 times):',170,cyY,11,COLORS.gd,'left','700');
+
+  const cycleSteps=[
+    {icon:'💧',title:'Flood with nucleotides',desc:'All 4 modified dNTPs\nadded simultaneously',col:COLORS.gb,x:100},
+    {icon:'🔗',title:'One incorporates',desc:'Complementary base\nbinds; blocker stops\nfurther extension',col:COLORS.ok,x:280},
+    {icon:'📸',title:'Image the clusters',desc:'Laser excites fluorophore;\ncamera captures color\nof every cluster',col:COLORS.gd,x:460},
+    {icon:'✂',title:'Cleave & wash',desc:'Remove blocker +\nfluorophore; ready for\nnext cycle',col:COLORS.gc,x:640}
+  ];
+
+  for(let i=0;i<4;i++){
+    const s=cycleSteps[i];
+    // Step number circle
+    ctx.beginPath();ctx.arc(s.x-52,cyY+28,10,0,Math.PI*2);
+    ctx.fillStyle=s.col+'22';ctx.fill();ctx.strokeStyle=s.col;ctx.lineWidth=1.5;ctx.stroke();
+    _label(ctx,(i+1)+'',s.x-52,cyY+28,10,s.col,'center','700');
+    // Title
+    _label(ctx,s.title,s.x+8,cyY+22,10,s.col,'center','700');
+    // Description
+    const lines=s.desc.split('\n');
+    for(let l=0;l<lines.length;l++){
+      _label(ctx,lines[l],s.x+8,cyY+38+l*13,8,COLORS.ink3,'center','400');
+    }
+    if(i<3)_arrow(ctx,s.x+72,cyY+28,cycleSteps[i+1].x-72,cyY+28,COLORS.ink4+'88',1);
+  }
+  // Cycle loop
+  ctx.strokeStyle=COLORS.gd+'66';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
+  ctx.beginPath();ctx.moveTo(710,cyY+40);ctx.lineTo(740,cyY+40);
+  ctx.lineTo(740,cyY+75);ctx.lineTo(30,cyY+75);ctx.lineTo(30,cyY+28);ctx.lineTo(48,cyY+28);ctx.stroke();
+  ctx.setLineDash([]);
+  _label(ctx,'repeat',385,cyY+82,8,COLORS.gd,'center','600');
+
+  /* ── Bottom: growing read + imaging ── */
+  const rdY=cyY+95;
+  _label(ctx,'Building a read, one base per cycle:',170,rdY,10,COLORS.gb,'left','600');
+
+  const readSeq='ATGCTAGCATGCTAGCATGCTAGCATGCTA'.split('');
+  const cellW=20,cellH=20;
+  for(let i=0;i<30;i++){
+    const x=55+i*cellW,y=rdY+14;
+    const bIdx=bases.indexOf(readSeq[i]);
+    const col=bIdx>=0?baseCols[bIdx]:COLORS.ink4;
+    const alpha=i<22?1:0.3;
+    ctx.globalAlpha=alpha;
+    _roundRect(ctx,x,y,cellW-1,cellH,2,col,null);
+    _monoLabel(ctx,readSeq[i],x+cellW/2,y+cellH/2,8,'#fff','center');
+    ctx.globalAlpha=1;
+    if(i<5||(i===14)||i===29)_monoLabel(ctx,(i+1)+'',x+cellW/2,y+cellH+8,6,COLORS.ink4,'center');
+  }
+  _label(ctx,'cycle',55+cellW/2,rdY+cellH+22,6,COLORS.ink4,'center','500');
+  _label(ctx,'...',55+22*cellW+5,rdY+24,12,COLORS.ink4,'left','400');
+
+  // Cluster imaging
+  const imY=rdY+48;
+  _label(ctx,'What the camera captures each cycle:',170,imY,10,COLORS.gb,'left','600');
+
+  const R=rng(88);
+  for(let cyc=0;cyc<5;cyc++){
+    const ix=55+cyc*145,iy=imY+14;
+    _roundRect(ctx,ix,iy,130,72,5,'#0f172a',COLORS.ink3+'88',1);
+    _label(ctx,'Cycle '+(cyc+1),ix+65,iy-5,8,COLORS.ink3,'center','500');
+    for(let d=0;d<30;d++){
+      const dx=ix+8+R()*114,dy=iy+6+R()*60;
+      const bi=Math.floor(R()*4);
+      ctx.beginPath();ctx.arc(dx,dy,2.5,0,Math.PI*2);
+      // Add glow for fluorescence effect
+      const g=ctx.createRadialGradient(dx,dy,0,dx,dy,4);
+      g.addColorStop(0,baseCols[bi]);g.addColorStop(1,baseCols[bi]+'00');
+      ctx.fillStyle=g;ctx.fill();
+      ctx.beginPath();ctx.arc(dx,dy,1.5,0,Math.PI*2);
+      ctx.fillStyle=baseCols[bi];ctx.fill();
+    }
+  }
+  _label(ctx,'Each dot = one cluster fluorescing one color → one base call',400,imY+100,9,COLORS.ink3,'center','500');
+}
+
+function drawSbs2(ctx){
+  _label(ctx,'Paired-end sequencing and output files',400,18,14,COLORS.ink,'center','700');
+
+  /* ── Top: Fragment on flow cell with R1 and R2 ── */
+  const fy=40;
+  _label(ctx,'Library fragment on flow cell',120,fy,11,COLORS.gb,'left','600');
+
+  const fx=65,fw=670,fh=20;
+
+  // Flow cell surface hint
+  _flowSurface(ctx,fx-10,fy+fh+26,fw+20,8);
+
+  // P5 adapter
+  _roundRect(ctx,fx,fy+12,50,fh,4,COLORS.gd+'dd',COLORS.gd,1.5);
+  _label(ctx,'P5',fx+25,fy+12+fh/2,9,'#fff','center','700');
+  // Insert
+  const g=ctx.createLinearGradient(fx+50,0,fx+fw-50,0);
+  g.addColorStop(0,'#dbeafe');g.addColorStop(0.5,'#eff6ff');g.addColorStop(1,'#dbeafe');
+  ctx.fillStyle=g;ctx.beginPath();ctx.rect(fx+50,fy+12,fw-100,fh);ctx.fill();
+  ctx.strokeStyle=COLORS.gb;ctx.lineWidth=1;ctx.stroke();
+  _label(ctx,'Insert DNA (~300-500 bp)',fx+fw/2,fy+12+fh/2,10,COLORS.gb,'center','600');
+  // P7 adapter
+  _roundRect(ctx,fx+fw-50,fy+12,50,fh,4,COLORS.gc+'dd',COLORS.gc,1.5);
+  _label(ctx,'P7',fx+fw-25,fy+12+fh/2,9,'#fff','center','700');
+
+  // R1 and R2 arrows with sequencing direction
+  const ry=fy+fh+40;
+  // R1
+  const r1Start=fx+52,r1End=r1Start+220;
+  _arrow(ctx,r1Start,ry,r1End,ry,COLORS.gb,2.5);
+  _label(ctx,'Read 1 (R1)',r1Start+110,ry-12,11,COLORS.gb,'center','700');
+  _label(ctx,'150 bp, sequenced first',r1Start+110,ry+14,8,COLORS.ink3,'center','500');
+  // Primer site
+  ctx.strokeStyle=COLORS.gd+'88';ctx.lineWidth=1;ctx.setLineDash([2,2]);
+  ctx.beginPath();ctx.moveTo(r1Start,ry-6);ctx.lineTo(r1Start,fy+12+fh);ctx.stroke();
+  ctx.setLineDash([]);
+
+  // R2
+  const r2End=fx+fw-52,r2Start=r2End-220;
+  _arrow(ctx,r2End,ry,r2Start,ry,COLORS.gc,2.5);
+  _label(ctx,'Read 2 (R2)',r2Start+110,ry-12,11,COLORS.gc,'center','700');
+  _label(ctx,'150 bp, opposite direction',r2Start+110,ry+14,8,COLORS.ink3,'center','500');
+  ctx.strokeStyle=COLORS.gc+'88';ctx.lineWidth=1;ctx.setLineDash([2,2]);
+  ctx.beginPath();ctx.moveTo(r2End,ry-6);ctx.lineTo(r2End,fy+12+fh);ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Insert size bracket
+  const bry=ry+28;
+  ctx.strokeStyle=COLORS.ink4;ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(fx+52,bry);ctx.lineTo(fx+52,bry+6);ctx.lineTo(fx+fw-52,bry+6);ctx.lineTo(fx+fw-52,bry);ctx.stroke();
+  _label(ctx,'Insert size (known from library prep)',fx+fw/2,bry+16,9,COLORS.ink4,'center','500');
+
+  /* ── Middle: How paired-end works mechanistically ── */
+  const my=bry+34;
+  _label(ctx,'How it works:',80,my,11,COLORS.gd,'left','700');
+
+  const peSteps=[
+    {x:100,title:'1. Sequence R1',desc:'Read from P5 primer\ninto the insert',col:COLORS.gb},
+    {x:280,title:'2. Block + wash',desc:'Remove R1 primer;\ncluster stays intact',col:COLORS.ink3},
+    {x:460,title:'3. Index read (opt.)',desc:'Read barcode for\nsample demultiplexing',col:COLORS.gd},
+    {x:640,title:'4. Sequence R2',desc:'Read from P7 primer\ninto the insert\n(opposite direction)',col:COLORS.gc}
+  ];
+
+  for(let i=0;i<4;i++){
+    const s=peSteps[i];
+    _roundRect(ctx,s.x-60,my+16,120,62,6,s.col+'0a',s.col+'44',1);
+    _label(ctx,s.title,s.x,my+28,9,s.col,'center','700');
+    const lines=s.desc.split('\n');
+    for(let l=0;l<lines.length;l++){
+      _label(ctx,lines[l],s.x,my+42+l*12,8,COLORS.ink3,'center','400');
+    }
+    if(i<3)_arrow(ctx,s.x+62,my+47,peSteps[i+1].x-62,my+47,COLORS.ink4+'88',1);
+  }
+
+  /* ── Bottom left: Why R2 quality is lower ── */
+  const wy=my+90;
+  _label(ctx,'Why R2 quality is always lower:',150,wy,11,COLORS.bad,'left','700');
+
+  const reasons=[
+    {num:'1',text:'Reagent depletion:\nclusters have already\nbeen through R1 cycling',col:COLORS.ok,x:120},
+    {num:'2',text:'Phasing accumulates:\nstrands fall out of sync\nover 300+ total cycles',col:COLORS.warn,x:310},
+    {num:'3',text:'Cluster decay:\nsome copies are lost;\nsignal-to-noise drops',col:COLORS.bad,x:500}
+  ];
+
+  for(const r of reasons){
+    ctx.beginPath();ctx.arc(r.x-52,wy+24,9,0,Math.PI*2);
+    ctx.fillStyle=r.col+'22';ctx.fill();ctx.strokeStyle=r.col;ctx.lineWidth=1.5;ctx.stroke();
+    _label(ctx,r.num,r.x-52,wy+24,9,r.col,'center','700');
+    const lines=r.text.split('\n');
+    for(let l=0;l<lines.length;l++){
+      _label(ctx,lines[l],r.x+8,wy+18+l*13,8,COLORS.ink2,'center','400');
+    }
+  }
+
+  /* ── Bottom right: Adapter read-through ── */
+  _label(ctx,'Short-insert artifact:',655,wy,10,COLORS.gd,'center','700');
+
+  // Mini short fragment
+  const ax=610,ay=wy+16;
+  _roundRect(ctx,ax,ay,16,14,3,COLORS.gd+'cc',COLORS.gd,1);
+  _label(ctx,'P5',ax+8,ay+7,5,'#fff','center','700');
+  _roundRect(ctx,ax+16,ay,58,14,0,'#dbeafe',COLORS.gb,1);
+  _label(ctx,'short',ax+45,ay+7,6,COLORS.gb,'center','500');
+  _roundRect(ctx,ax+74,ay,16,14,3,COLORS.gc+'cc',COLORS.gc,1);
+  _label(ctx,'P7',ax+82,ay+7,5,'#fff','center','700');
+
+  // R1 arrow overshooting into P7
+  _arrow(ctx,ax+18,ay+20,ax+95,ay+20,COLORS.bad,1.5);
+  _label(ctx,'R1 reads into adapter!',ax+45,ay+32,7,COLORS.bad,'center','600');
+  _roundRect(ctx,ax-5,ay+40,100,22,5,'#ecfdf5',COLORS.ok,1);
+  _label(ctx,'→ Trim with fastp',ax+45,ay+51,7,COLORS.ok,'center','600');
+
+  /* ── Output files ── */
+  _label(ctx,'Output:',655,wy+80,10,COLORS.ink2,'center','700');
+  const files=[
+    {name:'sample_R1.fastq.gz',col:COLORS.gb},
+    {name:'sample_R2.fastq.gz',col:COLORS.gc}
+  ];
+  for(let i=0;i<2;i++){
+    const fy2=wy+92+i*18;
+    _roundRect(ctx,610,fy2,92,15,3,files[i].col+'11',files[i].col+'66',1);
+    _monoLabel(ctx,files[i].name,656,fy2+7.5,6,files[i].col,'center');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   11. ILLU-CANVAS — Illumina per-base quality (R1 vs R2)
+   ═══════════════════════════════════════════════════════════ */
+
+function drawIlluCanvas(){
+  const ctx=_c('illu-canvas');if(!ctx)return;
+  ctx.clearRect(0,0,800,440);
+
+  const R=rng(99);
+  const px=60,py=30,pw=700,ph=340;
+
+  // Axes
+  ctx.strokeStyle=COLORS.border;ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px,py+ph);ctx.lineTo(px+pw,py+ph);ctx.stroke();
+
+  // Y axis labels (Phred quality)
+  _label(ctx,'Phred Q',px-30,py+ph/2,10,COLORS.ink3,'center','600');
+  const qTicks=[0,10,20,30,40];
+  for(const q of qTicks){
+    const y=py+ph-q*(ph/42);
+    ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.5;
+    ctx.beginPath();ctx.moveTo(px-4,y);ctx.lineTo(px+pw,y);ctx.stroke();
+    _monoLabel(ctx,'Q'+q,px-10,y,8,COLORS.ink4,'right');
+  }
+
+  // Q20 threshold line
+  const q20y=py+ph-20*(ph/42);
+  ctx.strokeStyle=COLORS.warn+'88';ctx.lineWidth=1.5;ctx.setLineDash([6,4]);
+  ctx.beginPath();ctx.moveTo(px,q20y);ctx.lineTo(px+pw,q20y);ctx.stroke();
+  ctx.setLineDash([]);
+  _label(ctx,'Q20 threshold',px+pw-60,q20y-8,9,COLORS.warn,'center','600');
+
+  // X axis (position in read)
+  const nPos=150;
+  const bw=pw/nPos;
+  for(let i=0;i<=nPos;i+=25){
+    const x=px+i*bw;
+    _monoLabel(ctx,i+'',x,py+ph+14,8,COLORS.ink4,'center');
+  }
+  _label(ctx,'Position in read (bp)',px+pw/2,py+ph+30,10,COLORS.ink3,'center','600');
+
+  // Generate quality distributions — R1 (good, gentle decline) and R2 (worse, steeper decline)
+  function drawQualityTrack(label,col,baseQ,decayStart,decayRate,yJitter){
+    ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();
+    const medianPts=[];
+    for(let i=0;i<nPos;i++){
+      const decay=i>decayStart?(i-decayStart)*decayRate:0;
+      const median=Math.max(2,baseQ-decay+R()*yJitter-yJitter/2);
+      const q25=Math.max(1,median-3-R()*2);
+      const q75=Math.min(41,median+3+R()*2);
+      const x=px+i*bw+bw/2;
+      const yMed=py+ph-median*(ph/42);
+      const yQ25=py+ph-q25*(ph/42);
+      const yQ75=py+ph-q75*(ph/42);
+      medianPts.push({x,yMed,yQ25,yQ75});
+
+      // IQR box
+      ctx.globalAlpha=0.12;
+      ctx.fillStyle=col;ctx.fillRect(x-bw/2+0.5,yQ75,bw-1,yQ25-yQ75);
+      ctx.globalAlpha=1;
+    }
+
+    // Median line
+    ctx.beginPath();ctx.moveTo(medianPts[0].x,medianPts[0].yMed);
+    for(let i=1;i<medianPts.length;i++){ctx.lineTo(medianPts[i].x,medianPts[i].yMed)}
+    ctx.strokeStyle=col;ctx.lineWidth=2;ctx.stroke();
+
+    // Label
+    const lx=px+pw-40,ly=medianPts[nPos-1].yMed;
+    _label(ctx,label,lx,ly-10,11,col,'center','700');
+  }
+
+  drawQualityTrack('R1',COLORS.gb,36,40,0.10,3);
+  drawQualityTrack('R2',COLORS.bad,34,20,0.18,4);
+
+  // Adapter region indicator
+  const adapterStart=120;
+  ctx.fillStyle=COLORS.gd+'15';
+  ctx.fillRect(px+adapterStart*bw,py,pw-adapterStart*bw,ph);
+  ctx.strokeStyle=COLORS.gd;ctx.lineWidth=1;ctx.setLineDash([4,3]);
+  ctx.beginPath();ctx.moveTo(px+adapterStart*bw,py);ctx.lineTo(px+adapterStart*bw,py+ph);ctx.stroke();
+  ctx.setLineDash([]);
+  _label(ctx,'Adapter read-through zone',px+(adapterStart+nPos)/2*bw*0.5+px*0.5+200,py+14,10,COLORS.gd,'center','600');
+  _label(ctx,'(short inserts)',px+(adapterStart+nPos)/2*bw*0.5+px*0.5+200,py+28,9,COLORS.ink4,'center','500');
+
+  // Legend
+  _roundRect(ctx,px+140,py+ph-50,420,40,8,'#fff',COLORS.border,1);
+  ctx.fillStyle=COLORS.gb;ctx.fillRect(px+160,py+ph-40,20,3);
+  _label(ctx,'R1 (forward)',px+195,py+ph-38,10,COLORS.gb,'left','600');
+  ctx.fillStyle=COLORS.bad;ctx.fillRect(px+310,py+ph-40,20,3);
+  _label(ctx,'R2 (reverse, noisier)',px+345,py+ph-38,10,COLORS.bad,'left','600');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   11. HMMER-CANVAS — Multiple alignment → profile HMM → query
+   ═══════════════════════════════════════════════════════════ */
+
+function drawHmmerCanvas(){
+  const ctx=_c('hmmer-canvas');if(!ctx)return;
+  ctx.clearRect(0,0,800,440);
+
+  const mx=30,my=20;
+
+  // --- Part 1: Multiple alignment (top) ---
+  _label(ctx,'1. Multiple alignment of family members',mx+200,my+10,12,COLORS.gc,'left','700');
+
+  const seqs=[
+    {name:'Prot A',seq:['M','K','T','-','-','V','V','I','G','A','G','F','L','A','S','S']},
+    {name:'Prot B',seq:['M','K','T','A','A','V','V','V','G','A','G','F','L','A','S','S']},
+    {name:'Prot C',seq:['M','R','T','-','-','V','I','I','G','A','G','F','L','A','S','S']},
+    {name:'Prot D',seq:['M','K','S','-','-','V','V','I','G','A','G','Y','L','A','S','T']}
+  ];
+  const nCols=seqs[0].seq.length;
+  const cellW=34,cellH=22,seqX=mx+70,seqY=my+25;
+
+  // Conservation score per column
+  const conservation=[];
+  for(let c=0;c<nCols;c++){
+    const aas=seqs.map(s=>s.seq[c]).filter(a=>a!=='-');
+    const unique=new Set(aas);
+    conservation.push(unique.size===1?1:unique.size===2?0.7:0.3);
+  }
+
+  for(let r=0;r<seqs.length;r++){
+    _monoLabel(ctx,seqs[r].name,mx+40,seqY+r*cellH+cellH/2,9,COLORS.ink3,'right');
+    for(let c=0;c<nCols;c++){
+      const x=seqX+c*cellW,y=seqY+r*cellH;
+      const aa=seqs[r].seq[c];
+      const isGap=aa==='-';
+      const cons=conservation[c];
+
+      // Cell background
+      const bg=isGap?'#f1f5f9':cons>=1?COLORS.gc+'33':cons>=0.7?COLORS.gc+'18':'#f8fafc';
+      ctx.fillStyle=bg;ctx.fillRect(x,y,cellW-1,cellH-1);
+      ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.5;ctx.strokeRect(x,y,cellW-1,cellH-1);
+
+      // Amino acid
+      const col=isGap?COLORS.ink4:cons>=1?COLORS.gc:cons>=0.7?COLORS.gb:COLORS.ink3;
+      _monoLabel(ctx,aa,x+cellW/2,y+cellH/2,11,col,'center');
+    }
+  }
+
+  // Conservation bar below alignment
+  const barY=seqY+seqs.length*cellH+6;
+  for(let c=0;c<nCols;c++){
+    const x=seqX+c*cellW,h=conservation[c]*18;
+    const col=conservation[c]>=1?COLORS.gc:conservation[c]>=0.7?COLORS.gb:'#cbd5e1';
+    ctx.fillStyle=col+'88';ctx.fillRect(x,barY+18-h,cellW-1,h);
+  }
+  _label(ctx,'Conservation',mx+40,barY+9,8,COLORS.ink4,'right','500');
+
+  // Arrow down
+  const arrowX=seqX+nCols*cellW/2,arrowY=barY+30;
+  _arrow(ctx,arrowX,arrowY,arrowX,arrowY+30,COLORS.gc,2);
+  _label(ctx,'Build model',arrowX+35,arrowY+15,10,COLORS.gc,'left','600');
+
+  // --- Part 2: Profile HMM model ---
+  const hmmY=arrowY+40;
+  _label(ctx,'2. Profile HMM (position-specific probabilities)',mx+200,hmmY,12,COLORS.gc,'left','700');
+
+  const modelY=hmmY+16;
+  // Show model states as rounded boxes with probability info
+  for(let c=0;c<nCols;c++){
+    const x=seqX+c*cellW,y=modelY;
+    const cons=conservation[c];
+    const isInsert=seqs[0].seq[c]==='-'&&seqs[1].seq[c]!=='-'; // insert columns
+
+    // Model state box
+    const bg=cons>=1?COLORS.gc+'44':cons>=0.7?COLORS.gb+'33':'#f1f5f9';
+    _roundRect(ctx,x,y,cellW-1,cellH+8,4,bg,cons>=0.7?COLORS.gc+'88':COLORS.border,1);
+
+    // Most likely amino acid
+    const aas=seqs.map(s=>s.seq[c]).filter(a=>a!=='-');
+    const counts={};aas.forEach(a=>{counts[a]=(counts[a]||0)+1});
+    const best=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+    if(best){
+      _monoLabel(ctx,best[0],x+cellW/2,y+10,12,cons>=1?COLORS.gc:COLORS.ink2,'center');
+      const prob=Math.round(best[1]/aas.length*100);
+      _monoLabel(ctx,prob+'%',x+cellW/2,y+24,7,COLORS.ink4,'center');
+    }
+  }
+
+  // Arrow down to query
+  const arrowY2=modelY+cellH+20;
+  _arrow(ctx,arrowX,arrowY2,arrowX,arrowY2+30,COLORS.gb,2);
+  _label(ctx,'Score query',arrowX+35,arrowY2+15,10,COLORS.gb,'left','600');
+
+  // --- Part 3: Query matching ---
+  const queryY=arrowY2+40;
+  _label(ctx,'3. Query protein scored against model',mx+200,queryY,12,COLORS.gb,'left','700');
+
+  const query=['M','K','R','L','I','V','A','A','F','L','A','G','F','L','A','S'];
+  const qY=queryY+16;
+  for(let c=0;c<nCols;c++){
+    const x=seqX+c*cellW;
+    const aa=query[c]||'?';
+    const cons=conservation[c];
+
+    // Check if query matches consensus
+    const aas=seqs.map(s=>s.seq[c]).filter(a=>a!=='-');
+    const isMatch=aas.includes(aa);
+
+    const bg=isMatch?(cons>=1?'#dcfce7':'#ecfdf5'):'#fef2f2';
+    const col=isMatch?COLORS.ok:COLORS.bad;
+    ctx.fillStyle=bg;ctx.fillRect(x,qY,cellW-1,cellH-1);
+    ctx.strokeStyle=col+'66';ctx.lineWidth=1;ctx.strokeRect(x,qY,cellW-1,cellH-1);
+    _monoLabel(ctx,aa,x+cellW/2,qY+cellH/2,11,col,'center');
+  }
+
+  _label(ctx,'Query',mx+40,qY+cellH/2,9,COLORS.gb,'right','600');
+
+  // Result box
+  _roundRect(ctx,seqX+nCols*cellW+15,qY-8,175,36,8,'#dcfce7',COLORS.ok,1.5);
+  _label(ctx,'E-value: 2.3e-45',seqX+nCols*cellW+102,qY+2,11,COLORS.ok,'center','700');
+  _label(ctx,'Strong family match!',seqX+nCols*cellW+102,qY+18,9,COLORS.ok,'center','500');
+}
+
+/* ═══════════════════════════════════════════════════════════
    REVEAL INITIALIZATION
    ═══════════════════════════════════════════════════════════ */
 
@@ -996,6 +1706,20 @@ Reveal.initialize({
     77:()=>{if(typeof toggleNav==='function')toggleNav()}
   }
 }).then(()=>{
+
+  /* ── Illumina SBS sidebar card + header highlight ── */
+  const sbsHeaders=['Step 1: Library prep & clustering','Step 2: Sequencing by synthesis','Step 3: Paired-end reads & output'];
+
+  function sbsHighlight(step){
+    for(let i=0;i<3;i++){
+      const el=document.getElementById('sbs-card-'+i);if(!el)continue;
+      el.style.opacity=i<=step?'1':'.4';
+      el.style.transform=i===step?'scale(1.02)':'scale(1)';
+      el.style.boxShadow=i===step?'0 4px 6px rgba(15,23,42,.04),0 2px 12px rgba(15,23,42,.06)':'0 1px 2px rgba(15,23,42,.04),0 1px 3px rgba(15,23,42,.06)';
+    }
+    const hdr=document.getElementById('sbs-header');
+    if(hdr)hdr.textContent=sbsHeaders[step]||sbsHeaders[0];
+  }
 
   /* ── GTDB-Tk sidebar card + header highlight ── */
   const tkHeaders=['Step 1: Find marker genes','Step 2: Place on reference tree','Step 3: Assign lineage'];
@@ -1015,10 +1739,13 @@ Reveal.initialize({
   function go(){
     const i=Reveal.getState().indexh;
 
+    if(i===SID('illumina-sbs')){setTimeout(()=>{drawSbsCanvas(0);sbsHighlight(0)},300)}
+    if(i===SID('illumina-quality')){setTimeout(()=>drawIlluCanvas(),300)}
     if(i===SID('why-not-16s')){setTimeout(()=>drawTaxCanvas(),300)}
     if(i===SID('gtdb')){setTimeout(()=>drawGtdbCanvas(),300)}
     if(i===SID('gtdb-tk')){setTimeout(()=>{drawTkCanvas(0);tkHighlight(0)},300)}
     if(i===SID('gene-prediction')){setTimeout(()=>drawGpCanvas(),300)}
+    if(i===SID('hmmer-concept')){setTimeout(()=>drawHmmerCanvas(),300)}
     if(i===SID('kegg')){setTimeout(()=>drawKeggCanvas(),300)}
     if(i===SID('pfam')){setTimeout(()=>drawPfamCanvas(),300)}
     if(i===SID('cazymes')){setTimeout(()=>drawCazyCanvas(),300)}
@@ -1036,6 +1763,10 @@ Reveal.initialize({
       const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
       drawTkCanvas(idx+1);tkHighlight(idx+1);
     }
+    if(si===SID('illumina-sbs')){
+      const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
+      drawSbsCanvas(idx+1);sbsHighlight(idx+1);
+    }
   });
 
   Reveal.on('fragmenthidden',e=>{
@@ -1043,6 +1774,10 @@ Reveal.initialize({
     if(si===SID('gtdb-tk')){
       const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
       drawTkCanvas(idx);tkHighlight(idx);
+    }
+    if(si===SID('illumina-sbs')){
+      const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
+      drawSbsCanvas(idx);sbsHighlight(idx);
     }
   });
 

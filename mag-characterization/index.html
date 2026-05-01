@@ -236,6 +236,79 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
   </div>
 </section>
 
+<!-- ═══════════════════ SLIDE 3a: HOW ILLUMINA WORKS ═══════════════════ -->
+<section data-slide-id="illumina-sbs">
+  <div class="tag tag-recap">Bridge</div>
+  <h2 class="stitle">How Illumina sequencing works</h2>
+  <p class="sub">Sequencing by synthesis: one fluorescent nucleotide per cycle, millions of clusters in parallel.</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-10 sidebar sidebar-wide">
+      <div class="card info-card" id="sbs-card-0" style="border-left:3px solid var(--gd)">
+        <div class="info-card-title">1. Library &amp; clustering</div>
+        <div class="info-card-text">DNA is fragmented, adapters ligated, and fragments amplified into clonal clusters on the flow cell surface via bridge amplification.</div>
+      </div>
+      <div class="card info-card" id="sbs-card-1" style="opacity:.4;border-left:3px solid var(--gb)">
+        <div class="info-card-title">2. Sequencing by synthesis</div>
+        <div class="info-card-text">Each cycle: add fluorescent reversible terminators, image all clusters, cleave the blocker, repeat. One base per cycle per cluster.</div>
+      </div>
+      <div class="card info-card" id="sbs-card-2" style="opacity:.4;border-left:3px solid var(--ga)">
+        <div class="info-card-title">3. Paired-end reads</div>
+        <div class="info-card-text">After R1 completes, the template flips and R2 is sequenced from the other end. The insert size connects the pair.</div>
+      </div>
+    </div>
+
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header" id="sbs-header">Step 1: use &rarr; to step through</div>
+        <div class="canvas-wrap"><canvas id="sbs-canvas" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <span class="fragment" data-fragment-index="0" style="display:none"></span>
+  <span class="fragment" data-fragment-index="1" style="display:none"></span>
+
+  <div class="takeaways" style="margin-top:8px">
+    <div class="tw tw-d" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Illumina reads millions of short fragments in parallel, one base per cycle, using fluorescence imaging.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 3b: ILLUMINA QUALITY ═══════════════════ -->
+<section data-slide-id="illumina-quality">
+  <div class="tag tag-recap">Bridge</div>
+  <h2 class="stitle">Why do Illumina reads lose quality?</h2>
+  <p class="sub">Three sources of error that affect downstream annotation.</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-10 sidebar sidebar-wide">
+      <div class="card info-card" style="border-left:3px solid var(--bad)">
+        <div class="info-card-title">3&prime; quality drop</div>
+        <div class="info-card-text">Later sequencing cycles accumulate phasing and signal decay. Quality drops toward the 3&prime; end of every read.</div>
+      </div>
+      <div class="card info-card" style="border-left:3px solid var(--warn)">
+        <div class="info-card-title">R2 is worse than R1</div>
+        <div class="info-card-text">R2 is sequenced after R1 and additional chemistry steps. By the time R2 starts, clusters are noisier.</div>
+      </div>
+      <div class="card info-card" style="border-left:3px solid var(--gd)">
+        <div class="info-card-title">Adapter read-through</div>
+        <div class="info-card-text">When the insert is shorter than the read length, the sequencer reads into the adapter. These artificial bases must be trimmed.</div>
+      </div>
+    </div>
+
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header">Per-base quality across sequencing cycles</div>
+        <div class="canvas-wrap"><canvas id="illu-canvas" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaways" style="margin-top:8px">
+    <div class="tw tw-w" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Quality issues at the read level propagate into gene prediction and annotation downstream.</div>
+  </div>
+</section>
+
 <!-- ═══════════════════ SLIDE 4: MAG QUALITY ═══════════════════ -->
 <section data-slide-id="mag-quality">
   <div class="tag tag-recap">Bridge</div>
@@ -686,38 +759,37 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
 <section data-slide-id="hmmer-concept">
   <div class="tag tag-gene">Annotation logic</div>
   <h2 class="stitle">Some tools search against family models</h2>
-  <p class="sub">Two strategies for finding homologs, each with different strengths.</p>
+  <p class="sub">Pairwise search matches sequences. Profile HMMs match families.</p>
 
-  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:18px;">
-    <div class="row g-16">
-      <div class="card f1" style="padding:20px 22px;border-left:3px solid var(--gb)">
-        <div style="font-size:13px;font-weight:700;color:var(--gb);margin-bottom:10px">Pairwise search (BLAST-like)</div>
-        <div style="font-size:12px;color:var(--ink-2);line-height:1.6;margin-bottom:10px">Compare your protein against every individual protein in the database. Works well when the query has a close homolog.</div>
-        <div class="info-card-code" style="font-size:10px">
-          Query: &nbsp;&nbsp;MKTLIVASFL...<br>
-          Hit 1:&nbsp;&nbsp;MKTLIVA<span style="color:var(--bad)">T</span>FL... &nbsp;98% id<br>
-          Hit 2:&nbsp;&nbsp;MK<span style="color:var(--bad)">S</span>LIVA<span style="color:var(--bad)">S</span>FL... &nbsp;92% id
-        </div>
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-10 sidebar sidebar-wide">
+      <div class="card info-card" style="border-left:3px solid var(--gb)">
+        <div class="info-card-title">Pairwise (BLAST-like)</div>
+        <div class="info-card-text">Compare your protein to each known sequence individually. Fast, good for close homologs. Misses remote relatives.</div>
       </div>
-      <div class="card f1" style="padding:20px 22px;border-left:3px solid var(--gc)">
-        <div style="font-size:13px;font-weight:700;color:var(--gc);margin-bottom:10px">Profile-HMM search (HMMER)</div>
-        <div style="font-size:12px;color:var(--ink-2);line-height:1.6;margin-bottom:10px">Compare your protein against a statistical model of a protein family. Detects remote homologs that pairwise search misses.</div>
-        <div class="info-card-code" style="font-size:10px">
-          Model: &nbsp;M[KR]xLIVA[ST]FL...<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(position-specific probabilities)<br>
-          Query: &nbsp;MKRLIVAAFL... &rarr; match!
-        </div>
+      <div class="card info-card" style="border-left:3px solid var(--gc)">
+        <div class="info-card-title">Profile HMM (HMMER)</div>
+        <div class="info-card-text">Compare your protein to a statistical model of a whole family. Each position has probabilities for every amino acid. Detects remote homologs.</div>
+      </div>
+      <div class="card info-card" style="border-left:3px solid var(--gd)">
+        <div class="info-card-title">Where it appears</div>
+        <div class="info-card-text">Pfam, dbCAN, GTDB-Tk markers, biosynthetic domain detection all use profile-HMM-based searches.</div>
       </div>
     </div>
 
-    <div class="callout callout-info" style="font-size:11px">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M7 6v4M7 4.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      Profile HMMs are used in: Pfam, dbCAN, biosynthetic domain detection, and GTDB-Tk marker identification
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header">From alignment to profile HMM to query matching</div>
+        <div class="canvas-wrap"><canvas id="hmmer-canvas" class="canvas-fill"></canvas></div>
+      </div>
     </div>
+  </div>
 
-    <div style="display:flex;align-items:center;gap:10px;padding:14px 24px;background:linear-gradient(135deg,#eff6ff 0%,#f0f9ff 100%);border:1px solid #bfdbfe;border-radius:10px">
-      <span style="font-size:1.4em">&#x1F4AD;</span>
-      <span style="font-size:.95em;color:var(--ink-2);font-weight:500"><strong>Reflection:</strong> A gene is annotated as "hypothetical protein." Does that mean it has no function?</span>
+  <div style="display:flex;gap:12px;margin-top:8px">
+    <div class="tw tw-b" style="flex:1;padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Profile HMMs capture the variation pattern of a whole family, not just one sequence.</div>
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;background:linear-gradient(135deg,#eff6ff 0%,#f0f9ff 100%);border:1px solid #bfdbfe;border-radius:8px;flex:1">
+      <span style="font-size:1.2em">&#x1F4AD;</span>
+      <span style="font-size:12px;color:var(--ink-2);font-weight:500"><strong>Reflection:</strong> A gene is annotated as "hypothetical protein." Does that mean it has no function?</span>
     </div>
   </div>
 </section>
@@ -1182,6 +1254,58 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
       <strong style="color:var(--ga)">MAG X:</strong> Report. High quality, coherent signal, species-level taxonomy.
       <strong style="color:var(--gb)">MAG Y:</strong> Exploratory. Clean but incomplete. Pathway gaps may be real or due to missing contigs. The edge BGC needs caution.
       <strong style="color:var(--gc)">MAG Z:</strong> Do not report. Very high contamination. Conflicting metabolisms are almost certainly from mixed organisms.
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ REFERENCES ═══════════════════ -->
+<section data-slide-id="references">
+  <div class="tag tag-interp">References</div>
+  <h2 class="stitle">Key references</h2>
+  <p class="sub">Tools, databases, and standards used in this lecture.</p>
+
+  <div style="flex:1;display:flex;align-items:center;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%">
+      <div class="card" style="padding:14px 18px;border-left:3px solid var(--gd)">
+        <div style="font-size:11px;font-weight:700;color:var(--gd);margin-bottom:4px">GTDB</div>
+        <div style="font-size:10px;color:var(--ink-2);line-height:1.6">Parks et al. (2022) <em>Nucleic Acids Res</em> 50:D199&ndash;D207. doi:10.1093/nar/gkab776</div>
+      </div>
+      <div class="card" style="padding:14px 18px;border-left:3px solid var(--gd)">
+        <div style="font-size:11px;font-weight:700;color:var(--gd);margin-bottom:4px">GTDB-Tk</div>
+        <div style="font-size:10px;color:var(--ink-2);line-height:1.6">Chaumeil et al. (2022) <em>Bioinformatics</em> 38:5315&ndash;5316. doi:10.1093/bioinformatics/btac672</div>
+      </div>
+      <div class="card" style="padding:14px 18px;border-left:3px solid var(--gb)">
+        <div style="font-size:11px;font-weight:700;color:var(--gb);margin-bottom:4px">Prodigal</div>
+        <div style="font-size:10px;color:var(--ink-2);line-height:1.6">Hyatt et al. (2010) <em>BMC Bioinformatics</em> 11:119. doi:10.1186/1471-2105-11-119</div>
+      </div>
+      <div class="card" style="padding:14px 18px;border-left:3px solid var(--gc)">
+        <div style="font-size:11px;font-weight:700;color:var(--gc);margin-bottom:4px">HMMER</div>
+        <div style="font-size:10px;color:var(--ink-2);line-height:1.6">Eddy (2011) <em>PLoS Comput Biol</em> 7:e1002195. doi:10.1371/journal.pcbi.1002195</div>
+      </div>
+      <div class="card" style="padding:14px 18px;border-left:3px solid var(--ga)">
+        <div style="font-size:11px;font-weight:700;color:var(--ga);margin-bottom:4px">KEGG</div>
+        <div style="font-size:10px;color:var(--ink-2);line-height:1.6">Kanehisa et al. (2023) <em>Nucleic Acids Res</em> 51:D483&ndash;D489. doi:10.1093/nar/gkac963</div>
+      </div>
+      <div class="card" style="padding:14px 18px;border-left:3px solid var(--ga)">
+        <div style="font-size:11px;font-weight:700;color:var(--ga);margin-bottom:4px">Pfam / InterPro</div>
+        <div style="font-size:10px;color:var(--ink-2);line-height:1.6">Mistry et al. (2021) <em>Nucleic Acids Res</em> 49:D99&ndash;D106. doi:10.1093/nar/gkaa913</div>
+      </div>
+      <div class="card" style="padding:14px 18px;border-left:3px solid var(--ga)">
+        <div style="font-size:11px;font-weight:700;color:var(--ga);margin-bottom:4px">CAZy / dbCAN</div>
+        <div style="font-size:10px;color:var(--ink-2);line-height:1.6">Zheng et al. (2023) <em>Nucleic Acids Res</em> 51:W115&ndash;W122. doi:10.1093/nar/gkad328</div>
+      </div>
+      <div class="card" style="padding:14px 18px;border-left:3px solid var(--ga)">
+        <div style="font-size:11px;font-weight:700;color:var(--ga);margin-bottom:4px">antiSMASH</div>
+        <div style="font-size:10px;color:var(--ink-2);line-height:1.6">Blin et al. (2023) <em>Nucleic Acids Res</em> 51:W46&ndash;W50. doi:10.1093/nar/gkad344</div>
+      </div>
+      <div class="card" style="padding:14px 18px;border-left:3px solid var(--gc)">
+        <div style="font-size:11px;font-weight:700;color:var(--gc);margin-bottom:4px">CheckM2</div>
+        <div style="font-size:10px;color:var(--ink-2);line-height:1.6">Chklovski et al. (2023) <em>Nat Methods</em> 20:354&ndash;361. doi:10.1038/s41592-023-01940-w</div>
+      </div>
+      <div class="card" style="padding:14px 18px;border-left:3px solid var(--gc)">
+        <div style="font-size:11px;font-weight:700;color:var(--gc);margin-bottom:4px">MIMAG standards</div>
+        <div style="font-size:10px;color:var(--ink-2);line-height:1.6">Bowers et al. (2017) <em>Nat Biotechnol</em> 35:725&ndash;731. doi:10.1038/nbt.3893</div>
+      </div>
     </div>
   </div>
 </section>
