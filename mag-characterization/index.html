@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>From microbial genomes to microbial traits</title>
+<link rel="stylesheet" href="reveal.min.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:#0f172a;--ink-2:#334155;--ink-3:#64748b;--ink-4:#94a3b8;
+  --surface:#f8fafc;--card:#fff;--border:#e2e8f0;
+  --ga:#0d9488;--gb:#3b82f6;--gc:#8b5cf6;--gd:#d97706;--host:#94a3b8;
+  --ok:#16a34a;--warn:#ea580c;--bad:#dc2626;--adapter:#f59e0b;
+  --font:'DM Sans',system-ui,sans-serif;--mono:'DM Mono','Consolas',monospace;
+  --shadow-sm:0 1px 2px rgba(15,23,42,.04),0 1px 3px rgba(15,23,42,.06);
+  --shadow-md:0 4px 6px rgba(15,23,42,.04),0 2px 12px rgba(15,23,42,.06);
+}
+
+.reveal{font-family:var(--font);font-size:18px;color:var(--ink)}
+.reveal .slides{text-align:left}
+.reveal .slides>section{
+  padding:32px 52px 44px;
+  height:100%!important;box-sizing:border-box;
+  display:flex!important;flex-direction:column;
+}
+.reveal .slide-background{background:var(--surface)!important}
+.reveal .progress{height:2px}
+.reveal .progress span{background:linear-gradient(90deg,var(--gd),var(--gb),var(--ga))}
+.reveal .controls{color:var(--ink-4)}
+.reveal .slide-number{font-family:var(--mono);font-size:11px;color:var(--ink-4);background:transparent!important}
+
+/* Typography */
+.tag{display:inline-block;font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:3px;padding:3px 12px;border-radius:4px;margin-bottom:8px}
+.tag-tax{background:#fffbeb;color:var(--gd)}
+.tag-gene{background:#eff6ff;color:var(--gb)}
+.tag-func{background:#ecfdf5;color:var(--ga)}
+.tag-recap{background:#f1f5f9;color:var(--ink-3)}
+.tag-interp{background:#f5f3ff;color:var(--gc)}
+h1.title{font-size:2.6em;font-weight:800;letter-spacing:-.035em;line-height:1.08;margin:0 0 6px;color:var(--ink)}
+h2.stitle{font-size:1.8em;font-weight:700;letter-spacing:-.025em;line-height:1.15;margin:0 0 2px;color:var(--ink)}
+p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-width:600px;line-height:1.5}
+
+/* Layout */
+.row{display:flex;align-items:stretch}.col{display:flex;flex-direction:column}
+.g-8{gap:8px}.g-12{gap:12px}.g-16{gap:16px}.g-20{gap:20px}.g-24{gap:24px}
+.f1{flex:1}.f0{flex:none}
+
+/* Card */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-sm);overflow:hidden;transition:box-shadow .3s,transform .3s}
+.card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+:fullscreen .card:hover,:fullscreen .pipe-dot:hover{transform:none;box-shadow:var(--shadow-sm)}
+:fullscreen [data-tip]:hover::after{opacity:0}
+.card-header{padding:10px 16px 8px;font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--ink-4);border-bottom:1px solid var(--border)}
+.card-body{padding:14px}
+
+/* Pipeline */
+.pipeline-wrap{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;margin:auto 0}
+.pipeline-inner{position:relative}
+.pipeline-track{position:absolute;top:40px;left:40px;right:40px;height:2px;background:var(--border);z-index:0}
+.pipeline-track-fill{position:absolute;top:0;left:0;height:100%;width:0;background:linear-gradient(90deg,var(--ga),var(--gb),var(--gc),var(--gd));transition:width 1.2s cubic-bezier(.22,1,.36,1)}
+.pipeline-nodes{display:flex;justify-content:space-between;position:relative;z-index:1}
+.pipe-node{display:flex;flex-direction:column;align-items:center;width:160px;text-align:center;opacity:1;transform:translateY(0);transition:all .5s cubic-bezier(.22,1,.36,1)}
+.pipe-dot{width:80px;height:80px;border-radius:22px;display:grid;place-items:center;background:var(--card);border:2px solid var(--border);box-shadow:var(--shadow-sm);margin-bottom:12px;transition:border-color .4s,box-shadow .4s,transform .3s}
+.pipe-dot:hover{transform:scale(1.08)}
+.pn-label{font-size:14.5px;font-weight:600;color:var(--ink);margin-bottom:3px}
+.pn-sub{font-size:11px;color:var(--ink-4);line-height:1.35}
+
+/* Takeaways */
+.takeaways{display:flex;gap:12px}
+.tw{flex:1;padding:10px 12px;border-radius:8px;font-size:10.5px;line-height:1.45;color:var(--ink-2);background:var(--card);border:1px solid var(--border);border-left:3px solid;box-shadow:var(--shadow-sm)}
+.tw strong{color:var(--ink);font-weight:600}
+.tw-a{border-left-color:var(--ga)}.tw-b{border-left-color:var(--gb)}.tw-c{border-left-color:var(--gc)}.tw-w{border-left-color:var(--warn)}.tw-d{border-left-color:var(--gd)}
+
+.tech-note{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--ink-3);padding:4px 10px;background:#f1f5f9;border-radius:4px;margin-top:4px}
+
+/* Sidebar info card */
+.info-card{padding:14px 16px}
+.info-card-title{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:6px}
+.info-card-text{font-size:10.5px;color:var(--ink-2);line-height:1.55}
+.info-card-code{margin-top:6px;padding:5px 8px;border-radius:5px;background:#eef2f7;font-family:var(--mono);font-size:9px;color:var(--ink-2);line-height:1.6}
+
+/* Canvas wrapper */
+.canvas-wrap{flex:1;position:relative;min-height:0}
+.canvas-fill{position:absolute;top:0;left:0;width:100%;height:100%}
+
+/* Sidebar layout */
+.sidebar{justify-content:center}
+.sidebar-narrow{width:220px}
+.sidebar-wide{width:290px}
+
+/* Callout */
+.callout{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;font-size:10px;line-height:1.5;font-weight:500}
+.callout-info{background:#eff6ff;color:var(--gb);border:1px solid #dbeafe}
+.callout-warn{background:#fef2f2;color:var(--bad);border:1px solid #fecaca}
+
+/* Legend */
+.legend{display:flex;gap:14px;padding:6px 14px;border-top:1px solid var(--border);font-size:9px;color:var(--ink-3)}
+.legend-item{display:flex;align-items:center;gap:4px}
+.legend-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0}
+
+/* Tooltip */
+[data-tip]{position:relative;cursor:help}
+[data-tip]::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%) translateY(4px);padding:5px 10px;background:var(--ink);color:white;font-size:9.5px;font-weight:500;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:all .2s;z-index:10}
+[data-tip]:hover::after{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Flow arrow */
+.flow-arrow-svg line{stroke-dasharray:6 4;animation:dashFlow 1.5s linear infinite}
+@keyframes dashFlow{to{stroke-dashoffset:-20}}
+
+/* Error chain */
+.chain-step{padding:6px 12px;border-radius:8px;font-size:10px;font-weight:600;background:var(--card);border:1px solid var(--border);white-space:nowrap;box-shadow:var(--shadow-sm)}
+.chain-arrow{color:var(--ink-4);font-size:14px;display:flex;align-items:center}
+</style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ═══════════════════ SLIDE 1: TITLE ═══════════════════ -->
+<section data-slide-id="title" style="justify-content:center;align-items:center;text-align:center;padding:24px 40px 32px;">
+  <h1 class="title" style="font-size:3.6em;margin-bottom:18px;">From microbial genomes<br>to microbial traits</h1>
+  <p class="sub" style="max-width:800px;font-size:1.15em;margin:0 auto 28px;text-align:center;">Characterizing MAGs: taxonomy, functions, and interpretation</p>
+  <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin:0 auto 32px;">
+    <span style="width:10px;height:10px;border-radius:50%;background:var(--gd);opacity:.7"></span>
+    <span style="width:28px;height:2px;background:var(--border);border-radius:1px"></span>
+    <span style="width:10px;height:10px;border-radius:50%;background:var(--gb);opacity:.7"></span>
+    <span style="width:28px;height:2px;background:var(--border);border-radius:1px"></span>
+    <span style="width:10px;height:10px;border-radius:50%;background:var(--ga);opacity:.7"></span>
+  </div>
+  <div style="font-size:15px;color:var(--ink-2);line-height:1.8;">
+    <div style="font-weight:600;">Antonio Fernandez-Guerra</div>
+    <div style="color:var(--ink-3);">NBIB25004U Metagenomics, University of Copenhagen</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 2: RECAP ═══════════════════ -->
+<section data-slide-id="recap">
+  <div class="tag tag-recap">Recap</div>
+  <h2 class="stitle">Last week: from reads to MAGs</h2>
+  <p class="sub">The pipeline so far, and where we go next.</p>
+
+  <div class="pipeline-wrap">
+    <div class="pipeline-inner">
+      <div class="pipeline-track"><div class="pipeline-track-fill" style="width:100%"></div></div>
+      <div class="pipeline-nodes">
+        <div class="pipe-node">
+          <div class="pipe-dot" style="border-color:var(--ink-4)">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="4" y="8" width="24" height="4" rx="2" fill="var(--ink-4)" opacity=".5"/><rect x="4" y="14" width="18" height="4" rx="2" fill="var(--ink-4)" opacity=".35"/><rect x="4" y="20" width="21" height="4" rx="2" fill="var(--ink-4)" opacity=".25"/></svg>
+          </div>
+          <span class="pn-label">Raw reads</span>
+          <span class="pn-sub">FASTQ input</span>
+        </div>
+        <div class="pipe-node">
+          <div class="pipe-dot" style="border-color:var(--ink-4)">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="10" fill="none" stroke="var(--ink-4)" stroke-width="1.5"/><path d="M12 16.5L15 19.5L20.5 13" fill="none" stroke="var(--ink-4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="pn-label">QC</span>
+          <span class="pn-sub">Trim, filter, dehost</span>
+        </div>
+        <div class="pipe-node">
+          <div class="pipe-dot" style="border-color:var(--ink-4)">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="4" y="10" width="24" height="5" rx="2.5" fill="var(--ink-4)" opacity=".5"/><rect x="8" y="17" width="16" height="5" rx="2.5" fill="var(--ink-4)" opacity=".35"/></svg>
+          </div>
+          <span class="pn-label">Assembly</span>
+          <span class="pn-sub">Reads to contigs</span>
+        </div>
+        <div class="pipe-node">
+          <div class="pipe-dot" style="border-color:var(--ink-4)">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="10" cy="14" r="5" fill="var(--ink-4)" opacity=".3"/><circle cx="22" cy="14" r="5" fill="var(--ink-4)" opacity=".3"/><circle cx="16" cy="22" r="5" fill="var(--ink-4)" opacity=".3"/></svg>
+          </div>
+          <span class="pn-label">Binning</span>
+          <span class="pn-sub">Contigs to bins</span>
+        </div>
+        <div class="pipe-node">
+          <div class="pipe-dot" style="border-color:var(--ink-4)">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="6" y="8" width="20" height="16" rx="4" fill="var(--ink-4)" opacity=".25"/><path d="M12 16.5L15 19.5L20.5 13" fill="none" stroke="var(--ink-4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="pn-label">MAG quality</span>
+          <span class="pn-sub">CheckM2, MIMAG</span>
+        </div>
+        <div class="pipe-node">
+          <div class="pipe-dot" style="border-color:var(--gd);box-shadow:0 0 24px rgba(217,119,6,.18)">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M8 12h16M8 17h12M8 22h14" stroke="var(--gd)" stroke-width="2" stroke-linecap="round"/><circle cx="24" cy="22" r="4" fill="var(--gd)" opacity=".3"/></svg>
+          </div>
+          <span class="pn-label" style="color:var(--gd)">Now: characterize</span>
+          <span class="pn-sub" style="color:var(--gd)">Taxonomy + function</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaways" style="margin-top:8px">
+    <div class="tw tw-d" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> We carry forward everything: read errors, fragmented assemblies, incomplete bins, and contamination all affect what we can say about a MAG.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 3: ERROR BRIDGE ═══════════════════ -->
+<section data-slide-id="error-bridge">
+  <div class="tag tag-recap">Bridge</div>
+  <h2 class="stitle">Small errors can become biological claims</h2>
+  <p class="sub">Errors propagate through the pipeline. Each step inherits the limitations of the previous one.</p>
+
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:28px;">
+    <div>
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--bad);margin-bottom:10px">Error chain 1: quality to annotation</div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span class="chain-step" style="border-color:#fecaca;color:var(--bad)">Low-quality base</span>
+        <span class="chain-arrow">&rarr;</span>
+        <span class="chain-step" style="border-color:#fed7aa;color:var(--warn)">False k-mer</span>
+        <span class="chain-arrow">&rarr;</span>
+        <span class="chain-step" style="border-color:#fed7aa;color:var(--warn)">Graph branch</span>
+        <span class="chain-arrow">&rarr;</span>
+        <span class="chain-step" style="border-color:#fde68a;color:var(--gd)">Fragmented contig</span>
+        <span class="chain-arrow">&rarr;</span>
+        <span class="chain-step" style="border-color:#dbeafe;color:var(--gb)">Broken gene</span>
+        <span class="chain-arrow">&rarr;</span>
+        <span class="chain-step" style="border-color:#e9d5ff;color:var(--gc)">Missing annotation</span>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--bad);margin-bottom:10px">Error chain 2: contamination to false function</div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span class="chain-step" style="border-color:#fecaca;color:var(--bad)">Contaminant read</span>
+        <span class="chain-arrow">&rarr;</span>
+        <span class="chain-step" style="border-color:#fed7aa;color:var(--warn)">Wrong bin</span>
+        <span class="chain-arrow">&rarr;</span>
+        <span class="chain-step" style="border-color:#e9d5ff;color:var(--gc)">False function</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaways" style="margin-top:8px">
+    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Every downstream annotation inherits the limitations of reads, assembly, and binning.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 4: MAG QUALITY ═══════════════════ -->
+<section data-slide-id="mag-quality">
+  <div class="tag tag-recap">Bridge</div>
+  <h2 class="stitle">MAG quality controls interpretation</h2>
+  <p class="sub">The quality of a MAG determines how much you can trust its annotations.</p>
+
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;">
+    <div class="row g-16">
+      <div class="card f1" style="border-left:4px solid var(--ok);padding:20px 22px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="width:28px;height:28px;border-radius:8px;background:#dcfce7;display:grid;place-items:center">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7.5L5.5 10L11 4" stroke="var(--ok)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span style="font-size:14px;font-weight:700;color:var(--ok)">High quality</span>
+        </div>
+        <div style="font-size:12px;color:var(--ink-2);line-height:1.6">Most genes present, low contamination, strong annotations. Confident biological interpretation.</div>
+      </div>
+      <div class="card f1" style="border-left:4px solid var(--warn);padding:20px 22px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="width:28px;height:28px;border-radius:8px;background:#fff7ed;display:grid;place-items:center">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 3v5M7 10v1" stroke="var(--warn)" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <span style="font-size:14px;font-weight:700;color:var(--warn)">Incomplete</span>
+        </div>
+        <div style="font-size:12px;color:var(--ink-2);line-height:1.6">Missing genes, pathways, markers. Absence of annotation does not equal absence of biology.</div>
+      </div>
+      <div class="card f1" style="border-left:4px solid var(--bad);padding:20px 22px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="width:28px;height:28px;border-radius:8px;background:#fef2f2;display:grid;place-items:center">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M4 4l6 6M10 4l-6 6" stroke="var(--bad)" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <span style="font-size:14px;font-weight:700;color:var(--bad)">Contaminated</span>
+        </div>
+        <div style="font-size:12px;color:var(--ink-2);line-height:1.6">False genes from other organisms. Mixed taxonomy signals, conflicting functions.</div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-top:12px;padding:14px 24px;background:linear-gradient(135deg,#fffbeb 0%,#fefce8 100%);border:1px solid #fde68a;border-radius:10px">
+      <span style="font-size:1.4em">&#x1F4AD;</span>
+      <span style="font-size:.95em;color:var(--ink-2);font-weight:500"><strong>Reflection:</strong> A MAG is 85% complete. What does that mean for every annotation you run on it?</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 5: ACT 1 INTRO ═══════════════════ -->
+<section data-slide-id="act1-intro" style="display:flex;justify-content:center;align-items:center;text-align:center;">
+  <div style="opacity:.92">
+    <div style="display:inline-block;width:56px;height:3px;background:var(--gd);border-radius:2px;margin-bottom:18px"></div>
+    <h2 style="font-size:2.8em;font-weight:800;color:var(--gd);margin:0 0 10px;letter-spacing:-.02em">Act 1</h2>
+    <p style="font-size:1.3em;font-weight:500;color:#475569;margin:0;letter-spacing:.01em">Taxonomy</p>
+    <p style="font-size:.85em;color:#94a3b8;margin:12px 0 0;font-style:italic">Who is this MAG related to?</p>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 6: WHY NOT 16S ═══════════════════ -->
+<section data-slide-id="why-not-16s">
+  <div class="tag tag-tax">Taxonomy</div>
+  <h2 class="stitle">MAG taxonomy is genome-based</h2>
+  <p class="sub">Not every MAG has a 16S gene, but every MAG has many conserved marker genes.</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-10 sidebar sidebar-wide">
+      <div class="card info-card" style="border-left:3px solid var(--gd)">
+        <div class="info-card-title">MAG A: has 16S</div>
+        <div class="info-card-text">Full-length 16S rRNA gene assembled. Can be placed on a 16S tree, but single-gene placement has limited resolution.</div>
+      </div>
+      <div class="card info-card" style="border-left:3px solid var(--gb)">
+        <div class="info-card-title">MAG B: no 16S, but markers</div>
+        <div class="info-card-text">16S gene is missing or fragmented. However, 118 of 120 universal marker genes are present. Genome-based taxonomy still works.</div>
+      </div>
+      <div class="card info-card" style="border-left:3px solid var(--gc)">
+        <div class="info-card-title">MAG C: fragmented 16S</div>
+        <div class="info-card-text">Partial 16S on a contig edge. Too short for reliable phylogeny. Marker gene approach is the only option.</div>
+      </div>
+    </div>
+
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header">Genome-based vs single-gene taxonomy</div>
+        <div class="canvas-wrap"><canvas id="tax-canvas" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaways" style="margin-top:8px">
+    <div class="tw tw-d" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Genome-based taxonomy uses many conserved marker genes, allowing classification even when the 16S gene is missing.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 7: GTDB ═══════════════════ -->
+<section data-slide-id="gtdb">
+  <div class="tag tag-tax">Taxonomy</div>
+  <h2 class="stitle">GTDB: a genome-based taxonomy</h2>
+  <p class="sub">A standardized framework that classifies organisms using genome phylogeny, not just phenotype.</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-10 sidebar sidebar-wide">
+      <div class="card info-card" style="border-left:3px solid var(--gd)">
+        <div class="info-card-title">Framework</div>
+        <div class="info-card-text">GTDB places every genome on a phylogenetic tree built from 120 (bacteria) or 53 (archaea) concatenated marker proteins. Ranks are defined by relative evolutionary divergence.</div>
+      </div>
+      <div class="card info-card" style="border-left:3px solid var(--gb)">
+        <div class="info-card-title">Standardized</div>
+        <div class="info-card-text">Consistent naming rules across all lineages. No more polyphyletic taxa or conflicting nomenclature between culture-based and genome-based names.</div>
+      </div>
+    </div>
+
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header">GTDB tree with standardized ranks</div>
+        <div class="canvas-wrap"><canvas id="gtdb-canvas" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaways" style="margin-top:8px">
+    <div class="tw tw-d" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> GTDB is not just a list of names. It is a genome-based taxonomic framework.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 8: GTDB-Tk ═══════════════════ -->
+<section data-slide-id="gtdb-tk">
+  <div class="tag tag-tax">Taxonomy</div>
+  <h2 class="stitle">GTDB-Tk places MAGs into the GTDB framework</h2>
+  <p class="sub">A three-step process: find markers, place on tree, assign lineage.</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-10 sidebar sidebar-wide">
+      <div class="card info-card" id="tk-card-0" style="border-left:3px solid var(--gd)">
+        <div class="info-card-title">1. Find marker genes</div>
+        <div class="info-card-text">Identify and extract the 120 bacterial (or 53 archaeal) marker proteins from the MAG using profile HMMs.</div>
+      </div>
+      <div class="card info-card" id="tk-card-1" style="opacity:.4;border-left:3px solid var(--gb)">
+        <div class="info-card-title">2. Place on reference tree</div>
+        <div class="info-card-text">Concatenate markers and insert the MAG into the GTDB reference tree using pplacer or EPA-ng.</div>
+      </div>
+      <div class="card info-card" id="tk-card-2" style="opacity:.4;border-left:3px solid var(--ga)">
+        <div class="info-card-title">3. Assign lineage</div>
+        <div class="info-card-text">Based on the placement position, assign domain through species. Compute average nucleotide identity (ANI) to the closest reference genome.</div>
+      </div>
+    </div>
+
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header" id="tk-header">Step 1: use &rarr; to step through</div>
+        <div class="canvas-wrap"><canvas id="tk-canvas" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <span class="fragment" data-fragment-index="0" style="display:none"></span>
+  <span class="fragment" data-fragment-index="1" style="display:none"></span>
+
+  <div class="takeaways" style="margin-top:8px">
+    <div class="tw tw-d" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> GTDB-Tk automates genome-based taxonomy: find markers, place on tree, assign ranks.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 9: LINEAGE OUTPUT ═══════════════════ -->
+<section data-slide-id="lineage-output">
+  <div class="tag tag-tax">Taxonomy</div>
+  <h2 class="stitle">Taxonomic labels have ranks and caveats</h2>
+  <p class="sub">How to read a GTDB lineage string and recognize placeholder names.</p>
+
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:20px;">
+    <div style="padding:16px 22px;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-sm);font-family:var(--mono);font-size:13px;line-height:2;overflow-x:auto">
+      <span style="color:var(--ink-3)">d__</span><span style="color:var(--ink);font-weight:600">Bacteria</span><span style="color:var(--ink-4)">; </span>
+      <span style="color:var(--bad)">p__</span><span style="color:var(--ink);font-weight:600">Bacteroidota</span><span style="color:var(--ink-4)">; </span>
+      <span style="color:var(--warn)">c__</span><span style="color:var(--ink);font-weight:600">Bacteroidia</span><span style="color:var(--ink-4)">; </span>
+      <span style="color:var(--gd)">o__</span><span style="color:var(--ink);font-weight:600">Bacteroidales</span><span style="color:var(--ink-4)">; </span>
+      <span style="color:var(--gb)">f__</span><span style="color:var(--ink);font-weight:600">Bacteroidaceae</span><span style="color:var(--ink-4)">; </span>
+      <span style="color:var(--gc)">g__</span><span style="color:var(--ink);font-weight:600">Bacteroides</span><span style="color:var(--ink-4)">; </span>
+      <span style="color:var(--ga)">s__</span><span style="color:var(--ink);font-weight:600">Bacteroides_A sp003456789</span>
+    </div>
+
+    <div class="row g-16">
+      <div class="card f1" style="padding:16px 20px;">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--ink-4);margin-bottom:8px">Rank prefixes</div>
+        <div style="font-size:12px;color:var(--ink-2);line-height:1.8;font-family:var(--mono)">
+          <span style="color:var(--ink-3)">d__</span> domain,
+          <span style="color:var(--bad)">p__</span> phylum,
+          <span style="color:var(--warn)">c__</span> class,
+          <span style="color:var(--gd)">o__</span> order,
+          <span style="color:var(--gb)">f__</span> family,
+          <span style="color:var(--gc)">g__</span> genus,
+          <span style="color:var(--ga)">s__</span> species
+        </div>
+      </div>
+      <div class="card f1" style="padding:16px 20px;">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--gd);margin-bottom:8px">Placeholder names</div>
+        <div style="font-size:12px;color:var(--ink-2);line-height:1.8">
+          <code style="font-size:11px;background:#f1f5f9;padding:2px 6px;border-radius:3px">g__UBA1234</code> = genome-only genus<br>
+          <code style="font-size:11px;background:#f1f5f9;padding:2px 6px;border-radius:3px">s__sp000000000</code> = unnamed species<br>
+          <code style="font-size:11px;background:#f1f5f9;padding:2px 6px;border-radius:3px">Bacteroides_A</code> = suffixed to resolve polyphyly
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaways" style="margin-top:8px">
+    <div class="tw tw-d" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Placeholder names mean the lineage is known from genomes but not formally described.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 10: TAX CAVEATS ═══════════════════ -->
+<section data-slide-id="tax-caveats">
+  <div class="tag tag-tax">Taxonomy</div>
+  <h2 class="stitle">Taxonomy is only as good as the MAG and the references</h2>
+  <p class="sub">Four common situations that reduce confidence in a taxonomic assignment.</p>
+
+  <div style="flex:1;display:flex;align-items:center;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%">
+      <div class="card" style="border-left:4px solid var(--warn);padding:18px 20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 3v7M9 13v1" stroke="var(--warn)" stroke-width="2" stroke-linecap="round"/></svg>
+          <span style="font-size:13px;font-weight:700;color:var(--warn)">Missing markers</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--ink-2);line-height:1.55">Few marker genes found in the MAG. Placement on the tree is uncertain. Confidence at deeper ranks drops.</div>
+      </div>
+      <div class="card" style="border-left:4px solid var(--bad);padding:18px 20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M5 5l8 8M13 5l-8 8" stroke="var(--bad)" stroke-width="2" stroke-linecap="round"/></svg>
+          <span style="font-size:13px;font-weight:700;color:var(--bad)">Contaminating markers</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--ink-2);line-height:1.55">Markers from multiple organisms create a mixed signal. The MAG may be placed between clades or assigned to a wrong lineage.</div>
+      </div>
+      <div class="card" style="border-left:4px solid var(--gb);padding:18px 20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="7" cy="9" r="4" fill="none" stroke="var(--gb)" stroke-width="1.5"/><circle cx="11" cy="9" r="4" fill="none" stroke="var(--gb)" stroke-width="1.5"/></svg>
+          <span style="font-size:13px;font-weight:700;color:var(--gb)">Close strains</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--ink-2);line-height:1.55">When multiple reference genomes are nearly identical, the species-level call may be ambiguous. ANI values near the 95% threshold are borderline.</div>
+      </div>
+      <div class="card" style="border-left:4px solid var(--gc);padding:18px 20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6" fill="none" stroke="var(--gc)" stroke-width="1.5" stroke-dasharray="3 2"/><text x="9" y="12" text-anchor="middle" font-size="9" fill="var(--gc)" font-weight="700">?</text></svg>
+          <span style="font-size:13px;font-weight:700;color:var(--gc)">Novel lineage</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--ink-2);line-height:1.55">The MAG has no close reference in GTDB. Assigned a placeholder name. Classification to family or order only.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaways" style="margin-top:8px">
+    <div class="tw tw-d" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Taxonomy should always be interpreted together with MAG quality.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 11: TAXONOMY ACTIVITY ═══════════════════ -->
+<section data-slide-id="tax-activity">
+  <div class="tag tag-tax">Pair activity &mdash; 8 min</div>
+  <h2 class="stitle">How confident is the taxonomic label?</h2>
+  <p class="sub">For each MAG, assess how much you trust the GTDB-Tk result.</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="col g-12 f1">
+      <div class="card" style="flex:1;padding:20px;border-left:3px solid var(--gd)">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--gd);margin-bottom:10px">MAG A</div>
+        <table style="width:100%;font-size:13px;line-height:1.8;color:var(--ink-2)">
+          <tr><td style="font-weight:500">Completeness</td><td style="text-align:right;font-family:var(--mono)">94%</td></tr>
+          <tr><td style="font-weight:500">Contamination</td><td style="text-align:right;font-family:var(--mono)">2%</td></tr>
+          <tr><td style="font-weight:500">Markers found</td><td style="text-align:right;font-family:var(--mono)">118 / 120</td></tr>
+          <tr><td style="font-weight:500">GTDB result</td><td style="text-align:right;font-family:var(--mono)">genus + species</td></tr>
+          <tr><td style="font-weight:500">ANI to reference</td><td style="text-align:right;font-family:var(--mono)">97.8%</td></tr>
+        </table>
+        <div class="fragment" style="margin-top:10px;padding:8px 12px;background:#ecfdf5;border-radius:6px;font-size:11.5px;color:var(--ga);font-weight:500">High confidence. Nearly all markers, low contamination, strong ANI match. Trust the species call.</div>
+      </div>
+    </div>
+    <div class="col g-12 f1">
+      <div class="card" style="flex:1;padding:20px;border-left:3px solid var(--gb)">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--gb);margin-bottom:10px">MAG B</div>
+        <table style="width:100%;font-size:13px;line-height:1.8;color:var(--ink-2)">
+          <tr><td style="font-weight:500">Completeness</td><td style="text-align:right;font-family:var(--mono)">62%</td></tr>
+          <tr><td style="font-weight:500">Contamination</td><td style="text-align:right;font-family:var(--mono)">1%</td></tr>
+          <tr><td style="font-weight:500">Markers found</td><td style="text-align:right;font-family:var(--mono)">74 / 120</td></tr>
+          <tr><td style="font-weight:500">GTDB result</td><td style="text-align:right;font-family:var(--mono)">family only</td></tr>
+          <tr><td style="font-weight:500">ANI to reference</td><td style="text-align:right;font-family:var(--mono)">82%</td></tr>
+        </table>
+        <div class="fragment" style="margin-top:10px;padding:8px 12px;background:#fffbeb;border-radius:6px;font-size:11.5px;color:var(--gd);font-weight:500">Moderate confidence. Clean but incomplete. Family is likely correct. Species and genus are unknown (novel lineage).</div>
+      </div>
+    </div>
+    <div class="col g-12 f1">
+      <div class="card" style="flex:1;padding:20px;border-left:3px solid var(--gc)">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--gc);margin-bottom:10px">MAG C</div>
+        <table style="width:100%;font-size:13px;line-height:1.8;color:var(--ink-2)">
+          <tr><td style="font-weight:500">Completeness</td><td style="text-align:right;font-family:var(--mono)">91%</td></tr>
+          <tr><td style="font-weight:500">Contamination</td><td style="text-align:right;font-family:var(--mono)">14%</td></tr>
+          <tr><td style="font-weight:500">Markers found</td><td style="text-align:right;font-family:var(--mono)">135 / 120</td></tr>
+          <tr><td style="font-weight:500">GTDB result</td><td style="text-align:right;font-family:var(--mono)">conflicting</td></tr>
+          <tr><td style="font-weight:500">ANI to reference</td><td style="text-align:right;font-family:var(--mono)">n/a</td></tr>
+        </table>
+        <div class="fragment" style="margin-top:10px;padding:8px 12px;background:#fef2f2;border-radius:6px;font-size:11.5px;color:var(--bad);font-weight:500">Do not trust. More markers than expected = contamination. Mixed signal means the taxonomy is unreliable. Decontaminate first.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 18px;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-sm);width:fit-content">
+    <span style="font-size:1.2em">&#x1F4AC;</span>
+    <span style="font-size:.85em;color:var(--ink-3);font-weight:500">5 min pair discussion + 3 min class discussion, then click to reveal</span>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 12: ACT 2 INTRO ═══════════════════ -->
+<section data-slide-id="act2-intro" style="display:flex;justify-content:center;align-items:center;text-align:center;">
+  <div style="opacity:.92">
+    <div style="display:inline-block;width:56px;height:3px;background:var(--gb);border-radius:2px;margin-bottom:18px"></div>
+    <h2 style="font-size:2.8em;font-weight:800;color:var(--gb);margin:0 0 10px;letter-spacing:-.02em">Act 2</h2>
+    <p style="font-size:1.3em;font-weight:500;color:#475569;margin:0;letter-spacing:.01em">From genes to functions</p>
+    <p style="font-size:.85em;color:#94a3b8;margin:12px 0 0;font-style:italic">Before annotation, we need predicted proteins</p>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 13: GENE PREDICTION ═══════════════════ -->
+<section data-slide-id="gene-prediction">
+  <div class="tag tag-gene">Gene prediction</div>
+  <h2 class="stitle">Gene prediction finds likely protein-coding regions</h2>
+  <p class="sub">Prodigal scans each contig for open reading frames with coding-like patterns.</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-10 sidebar sidebar-wide">
+      <div class="card info-card" style="border-left:3px solid var(--gb)">
+        <div class="info-card-title">Long ORFs</div>
+        <div class="info-card-text">Real genes tend to have long open reading frames. Short random ORFs are filtered out by length and coding potential.</div>
+      </div>
+      <div class="card info-card" style="border-left:3px solid var(--ga)">
+        <div class="info-card-title">Coding patterns</div>
+        <div class="info-card-text">Codon usage, GC frame bias, and hexamer frequencies distinguish real genes from random sequence.</div>
+      </div>
+      <div class="card info-card" style="border-left:3px solid var(--gd)">
+        <div class="info-card-title">Start site signals</div>
+        <div class="info-card-text">Ribosome binding sites (Shine-Dalgarno) and start codons (ATG, GTG, TTG) help identify the correct translation start.</div>
+      </div>
+      <div style="padding:8px 10px;border-radius:8px;background:#f1f5f9;font-size:10px;color:var(--ink-3);text-align:center;line-height:1.5;font-family:var(--mono)">
+        MAG.fna &rarr; genes.gff + proteins.faa
+      </div>
+    </div>
+
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header">Contig with predicted ORFs in reading frames</div>
+        <div class="canvas-wrap"><canvas id="gp-canvas" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaways" style="margin-top:8px">
+    <div class="tw tw-b" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Prodigal predicts genes by identifying ORFs with coding-like patterns and plausible start sites.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 14: GENE PREDICTION CAVEATS ═══════════════════ -->
+<section data-slide-id="gene-caveats">
+  <div class="tag tag-gene">Gene prediction</div>
+  <h2 class="stitle">MAGs complicate gene prediction</h2>
+  <p class="sub">Fragmented assemblies and contamination create systematic prediction errors.</p>
+
+  <div style="flex:1;display:flex;align-items:center;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%">
+      <div class="card" style="border-left:4px solid var(--warn);padding:18px 20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="7" width="14" height="4" rx="2" fill="var(--warn)" opacity=".5"/><line x1="14" y1="5" x2="14" y2="13" stroke="var(--warn)" stroke-width="1.5" stroke-dasharray="2 1.5"/></svg>
+          <span style="font-size:13px;font-weight:700;color:var(--warn)">Contig edge cuts gene</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--ink-2);line-height:1.55">A gene at the end of a contig is truncated. Prodigal marks it as partial, but the protein product is incomplete.</div>
+      </div>
+      <div class="card" style="border-left:4px solid var(--gd);padding:18px 20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="4" y="7" width="10" height="4" rx="2" fill="var(--gd)" opacity=".5"/></svg>
+          <span style="font-size:13px;font-weight:700;color:var(--gd)">Short contig, weak context</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--ink-2);line-height:1.55">On very short contigs, Prodigal has too little sequence to learn coding patterns. Gene calls are less reliable.</div>
+      </div>
+      <div class="card" style="border-left:4px solid var(--bad);padding:18px 20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="6" cy="9" r="3" fill="var(--bad)" opacity=".3"/><circle cx="12" cy="9" r="3" fill="var(--gb)" opacity=".3"/></svg>
+          <span style="font-size:13px;font-weight:700;color:var(--bad)">Contamination</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--ink-2);line-height:1.55">Genes from another organism are predicted correctly, but they do not belong to this MAG. They add noise to annotation.</div>
+      </div>
+      <div class="card" style="border-left:4px solid var(--gc);padding:18px 20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="7" width="14" height="4" rx="2" fill="var(--gc)" opacity=".3"/><line x1="9" y1="5" x2="9" y2="13" stroke="var(--gc)" stroke-width="2" stroke-linecap="round"/></svg>
+          <span style="font-size:13px;font-weight:700;color:var(--gc)">Frameshift or error</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--ink-2);line-height:1.55">A sequencing error or assembly misjoining shifts the reading frame. One real gene becomes two broken ORFs.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaways" style="margin-top:8px">
+    <div class="tw tw-b" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> All downstream annotation starts from the predicted proteins. Errors here propagate.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 15: ANNOTATION IS EVIDENCE ═══════════════════ -->
+<section data-slide-id="annotation-evidence">
+  <div class="tag tag-gene">Annotation logic</div>
+  <h2 class="stitle">Annotation is evidence, not proof</h2>
+  <p class="sub">We compare predicted proteins against databases of known sequences or models.</p>
+
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;">
+    <div style="position:relative;width:700px;height:360px;">
+      <!-- Center hub -->
+      <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,#f1f5f9,#e2e8f0);border:2px solid var(--border);display:grid;place-items:center;z-index:2;box-shadow:var(--shadow-md)">
+        <div style="text-align:center">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="4" y="6" width="20" height="16" rx="3" fill="none" stroke="var(--ink-3)" stroke-width="1.5"/><text x="14" y="17" text-anchor="middle" font-size="8" fill="var(--ink-3)" font-weight="700">?</text></svg>
+          <div style="font-size:9px;font-weight:600;color:var(--ink-3);margin-top:2px">Unknown<br>protein</div>
+        </div>
+      </div>
+      <!-- Spokes + database cards -->
+      <div class="card" style="position:absolute;left:0;top:0;width:135px;padding:12px 14px;border-left:3px solid var(--gd)">
+        <div style="font-size:11px;font-weight:700;color:var(--gd)">KEGG</div>
+        <div style="font-size:9px;color:var(--ink-3);margin-top:2px">Metabolic pathways</div>
+      </div>
+      <div class="card" style="position:absolute;right:0;top:0;width:135px;padding:12px 14px;border-left:3px solid var(--gb)">
+        <div style="font-size:11px;font-weight:700;color:var(--gb)">Pfam</div>
+        <div style="font-size:9px;color:var(--ink-3);margin-top:2px">Protein domains</div>
+      </div>
+      <div class="card" style="position:absolute;right:0;bottom:0;width:135px;padding:12px 14px;border-left:3px solid var(--ga)">
+        <div style="font-size:11px;font-weight:700;color:var(--ga)">CAZy / dbCAN</div>
+        <div style="font-size:9px;color:var(--ink-3);margin-top:2px">Carbohydrate enzymes</div>
+      </div>
+      <div class="card" style="position:absolute;left:0;bottom:0;width:135px;padding:12px 14px;border-left:3px solid var(--gc)">
+        <div style="font-size:11px;font-weight:700;color:var(--gc)">antiSMASH</div>
+        <div style="font-size:9px;color:var(--ink-3);margin-top:2px">Biosynthetic gene clusters</div>
+      </div>
+      <div class="card" style="position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:135px;padding:12px 14px;border-left:3px solid var(--ink-4)">
+        <div style="font-size:11px;font-weight:700;color:var(--ink-3)">eggNOG / COG</div>
+        <div style="font-size:9px;color:var(--ink-3);margin-top:2px">Ortholog groups</div>
+      </div>
+      <!-- Connecting lines (SVG) -->
+      <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1" viewBox="0 0 700 360">
+        <line x1="290" y1="165" x2="135" y2="60" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line x1="410" y1="165" x2="565" y2="60" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line x1="410" y1="195" x2="565" y2="300" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line x1="290" y1="195" x2="135" y2="300" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line x1="350" y1="240" x2="350" y2="310" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="4 3"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="takeaways" style="margin-top:8px">
+    <div class="tw tw-b" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> We compare proteins to known sequences or models. Strong match = strong evidence, not direct observation.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 16: HMMER CONCEPT ═══════════════════ -->
+<section data-slide-id="hmmer-concept">
+  <div class="tag tag-gene">Annotation logic</div>
+  <h2 class="stitle">Some tools search against family models</h2>
+  <p class="sub">Two strategies for finding homologs, each with different strengths.</p>
+
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:18px;">
+    <div class="row g-16">
+      <div class="card f1" style="padding:20px 22px;border-left:3px solid var(--gb)">
+        <div style="font-size:13px;font-weight:700;color:var(--gb);margin-bottom:10px">Pairwise search (BLAST-like)</div>
+        <div style="font-size:12px;color:var(--ink-2);line-height:1.6;margin-bottom:10px">Compare your protein against every individual protein in the database. Works well when the query has a close homolog.</div>
+        <div class="info-card-code" style="font-size:10px">
+          Query: &nbsp;&nbsp;MKTLIVASFL...<br>
+          Hit 1:&nbsp;&nbsp;MKTLIVA<span style="color:var(--bad)">T</span>FL... &nbsp;98% id<br>
+          Hit 2:&nbsp;&nbsp;MK<span style="color:var(--bad)">S</span>LIVA<span style="color:var(--bad)">S</span>FL... &nbsp;92% id
+        </div>
+      </div>
+      <div class="card f1" style="padding:20px 22px;border-left:3px solid var(--gc)">
+        <div style="font-size:13px;font-weight:700;color:var(--gc);margin-bottom:10px">Profile-HMM search (HMMER)</div>
+        <div style="font-size:12px;color:var(--ink-2);line-height:1.6;margin-bottom:10px">Compare your protein against a statistical model of a protein family. Detects remote homologs that pairwise search misses.</div>
+        <div class="info-card-code" style="font-size:10px">
+          Model: &nbsp;M[KR]xLIVA[ST]FL...<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(position-specific probabilities)<br>
+          Query: &nbsp;MKRLIVAAFL... &rarr; match!
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout-info" style="font-size:11px">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M7 6v4M7 4.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Profile HMMs are used in: Pfam, dbCAN, biosynthetic domain detection, and GTDB-Tk marker identification
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;padding:14px 24px;background:linear-gradient(135deg,#eff6ff 0%,#f0f9ff 100%);border:1px solid #bfdbfe;border-radius:10px">
+      <span style="font-size:1.4em">&#x1F4AD;</span>
+      <span style="font-size:.95em;color:var(--ink-2);font-weight:500"><strong>Reflection:</strong> A gene is annotated as "hypothetical protein." Does that mean it has no function?</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 17: ACT 3 INTRO ═══════════════════ -->
+<section data-slide-id="act3-intro" style="display:flex;justify-content:center;align-items:center;text-align:center;">
+  <div style="opacity:.92">
+    <div style="display:inline-block;width:56px;height:3px;background:var(--ga);border-radius:2px;margin-bottom:18px"></div>
+    <h2 style="font-size:2.8em;font-weight:800;color:var(--ga);margin:0 0 10px;letter-spacing:-.02em">Act 3</h2>
+    <p style="font-size:1.3em;font-weight:500;color:#475569;margin:0;letter-spacing:.01em">Databases and interpretation</p>
+    <p style="font-size:.85em;color:#94a3b8;margin:12px 0 0;font-style:italic">Different databases answer different biological questions</p>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 18: DATABASE OVERVIEW ═══════════════════ -->
+<section data-slide-id="db-overview">
+  <div class="tag tag-func">Functional databases</div>
+  <h2 class="stitle">No database answers everything</h2>
+  <p class="sub">Choose the database according to the biological question you are asking.</p>
+
+  <div style="flex:1;display:flex;align-items:center;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%">
+      <div class="card" style="border-left:4px solid var(--gd);padding:16px 20px">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink-4);margin-bottom:6px">Question</div>
+        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">What pathway is present?</div>
+        <div style="font-size:11px;color:var(--ink-3)">KEGG orthology (KOfam, KO modules)</div>
+      </div>
+      <div class="card" style="border-left:4px solid var(--gb);padding:16px 20px">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink-4);margin-bottom:6px">Question</div>
+        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">What domain does this protein contain?</div>
+        <div style="font-size:11px;color:var(--ink-3)">Pfam (protein domain families)</div>
+      </div>
+      <div class="card" style="border-left:4px solid var(--ga);padding:16px 20px">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink-4);margin-bottom:6px">Question</div>
+        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">Can it degrade carbohydrates?</div>
+        <div style="font-size:11px;color:var(--ink-3)">CAZy / dbCAN (carbohydrate-active enzymes)</div>
+      </div>
+      <div class="card" style="border-left:4px solid var(--gc);padding:16px 20px">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink-4);margin-bottom:6px">Question</div>
+        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">Can it produce specialized metabolites?</div>
+        <div style="font-size:11px;color:var(--ink-3)">antiSMASH / MIBiG (biosynthetic gene clusters)</div>
+      </div>
+      <div class="card" style="border-left:4px solid var(--ink-4);padding:16px 20px;grid-column:span 2">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink-4);margin-bottom:6px">Question</div>
+        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">What broad ortholog group does this protein belong to?</div>
+        <div style="font-size:11px;color:var(--ink-3)">eggNOG / COG (clusters of orthologous groups)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaways" style="margin-top:8px">
+    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Choose the database according to the biological question.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 19: KEGG ═══════════════════ -->
+<section data-slide-id="kegg">
+  <div class="tag tag-func">Functional databases</div>
+  <h2 class="stitle">KEGG links genes to metabolism</h2>
+  <p class="sub">Each gene is assigned a KO number that maps to metabolic pathways and modules.</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header">Simplified pathway: present vs missing enzymes</div>
+        <div class="canvas-wrap"><canvas id="kegg-canvas" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+
+    <div class="f0 col g-8 sidebar sidebar-wide">
+      <div class="card" style="padding:14px 16px;border-left:3px solid var(--gd)">
+        <div style="font-size:11px;font-weight:700;color:var(--gd);margin-bottom:8px">Why might a gene be missing?</div>
+        <div style="font-size:10.5px;color:var(--ink-2);line-height:1.7">
+          1. Truly absent from the organism<br>
+          2. Present but too divergent to match<br>
+          3. Gene is on a missing contig<br>
+          4. Gene was not predicted (edge, frameshift)<br>
+          5. Non-homologous replacement enzyme
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaways" style="margin-top:8px">
+    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Missing annotation is not always missing biology. The gene may be absent, fragmented, divergent, or replaced.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 20: PFAM ═══════════════════ -->
+<section data-slide-id="pfam">
+  <div class="tag tag-func">Functional databases</div>
+  <h2 class="stitle">Pfam identifies protein domains</h2>
+  <p class="sub">Proteins are modular. Pfam detects conserved functional units within a protein sequence.</p>
+
+  <div style="flex:1;display:flex;flex-direction:column;min-height:0;">
+    <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+      <div class="card-header">Proteins with colored domain architectures</div>
+      <div class="canvas-wrap"><canvas id="pfam-canvas" class="canvas-fill"></canvas></div>
+    </div>
+  </div>
+
+  <div class="takeaways" style="margin-top:8px">
+    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Proteins are modular. The same domain can appear in many proteins, and one protein can have several domains.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 21: CAZymes ═══════════════════ -->
+<section data-slide-id="cazymes">
+  <div class="tag tag-func">Functional databases</div>
+  <h2 class="stitle">CAZymes reveal carbohydrate metabolism</h2>
+  <p class="sub">Carbohydrate-active enzymes are classified into families that predict substrate specificity.</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header">Polysaccharide degradation</div>
+        <div class="canvas-wrap"><canvas id="cazy-canvas" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+
+    <div class="f0 col g-8 sidebar sidebar-wide">
+      <div class="card" style="padding:10px 14px;border-left:3px solid var(--ga)">
+        <div style="font-size:11px;font-weight:700;color:var(--ga)">GH</div>
+        <div style="font-size:9.5px;color:var(--ink-3)">Glycoside hydrolases. Break glycosidic bonds.</div>
+      </div>
+      <div class="card" style="padding:10px 14px;border-left:3px solid var(--gb)">
+        <div style="font-size:11px;font-weight:700;color:var(--gb)">GT</div>
+        <div style="font-size:9.5px;color:var(--ink-3)">Glycosyltransferases. Form glycosidic bonds.</div>
+      </div>
+      <div class="card" style="padding:10px 14px;border-left:3px solid var(--gc)">
+        <div style="font-size:11px;font-weight:700;color:var(--gc)">PL</div>
+        <div style="font-size:9.5px;color:var(--ink-3)">Polysaccharide lyases. Cleave via elimination.</div>
+      </div>
+      <div class="card" style="padding:10px 14px;border-left:3px solid var(--gd)">
+        <div style="font-size:11px;font-weight:700;color:var(--gd)">CE</div>
+        <div style="font-size:9.5px;color:var(--ink-3)">Carbohydrate esterases. Remove ester groups.</div>
+      </div>
+      <div class="card" style="padding:10px 14px;border-left:3px solid var(--ink-3)">
+        <div style="font-size:11px;font-weight:700;color:var(--ink-3)">CBM</div>
+        <div style="font-size:9.5px;color:var(--ink-3)">Carbohydrate-binding modules. Target substrates.</div>
+      </div>
+      <div class="card" style="padding:10px 14px;border-left:3px solid var(--bad)">
+        <div style="font-size:11px;font-weight:700;color:var(--bad)">AA</div>
+        <div style="font-size:9.5px;color:var(--ink-3)">Auxiliary activities. Redox enzymes aiding degradation.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaways" style="margin-top:8px">
+    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> CAZyme profiles suggest what substrates a MAG might use, but families can be broad.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 22: BGCs ═══════════════════ -->
+<section data-slide-id="bgcs">
+  <div class="tag tag-func">Functional databases</div>
+  <h2 class="stitle">BGCs encode specialized metabolic potential</h2>
+  <p class="sub">Biosynthetic gene clusters are physically linked genes that produce specialized metabolites.</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header">Gene cluster with biosynthetic, transport, and regulatory genes</div>
+        <div class="canvas-wrap"><canvas id="bgc-canvas" class="canvas-fill"></canvas></div>
+      </div>
+    </div>
+
+    <div class="f0 col g-8 sidebar sidebar-wide">
+      <div class="card" style="padding:10px 14px;border-left:3px solid var(--gc)">
+        <div style="font-size:11px;font-weight:700;color:var(--gc)">NRPS</div>
+        <div style="font-size:9.5px;color:var(--ink-3)">Nonribosomal peptide synthetases</div>
+      </div>
+      <div class="card" style="padding:10px 14px;border-left:3px solid var(--gb)">
+        <div style="font-size:11px;font-weight:700;color:var(--gb)">PKS</div>
+        <div style="font-size:9.5px;color:var(--ink-3)">Polyketide synthases</div>
+      </div>
+      <div class="card" style="padding:10px 14px;border-left:3px solid var(--ga)">
+        <div style="font-size:11px;font-weight:700;color:var(--ga)">RiPP</div>
+        <div style="font-size:9.5px;color:var(--ink-3)">Ribosomally synthesized peptides</div>
+      </div>
+      <div class="card" style="padding:10px 14px;border-left:3px solid var(--gd)">
+        <div style="font-size:11px;font-weight:700;color:var(--gd)">Terpene</div>
+        <div style="font-size:9.5px;color:var(--ink-3)">Terpene / terpenoid clusters</div>
+      </div>
+      <div class="card" style="padding:10px 14px;border-left:3px solid var(--bad)">
+        <div style="font-size:11px;font-weight:700;color:var(--bad)">Siderophore</div>
+        <div style="font-size:9.5px;color:var(--ink-3)">Iron-chelating compound biosynthesis</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaways" style="margin-top:8px">
+    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> antiSMASH predicts biosynthetic potential. It does not prove the compound is produced.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 23: BGC CAVEATS ═══════════════════ -->
+<section data-slide-id="bgc-caveats">
+  <div class="tag tag-func">Functional databases</div>
+  <h2 class="stitle">BGCs are vulnerable to fragmentation</h2>
+  <p class="sub">Assembly breaks often cut through gene clusters, reducing prediction confidence.</p>
+
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;">
+    <div class="row g-16">
+      <div class="card f1" style="border-left:4px solid var(--ok);padding:18px 20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M5 9.5L7.5 12L13 6" fill="none" stroke="var(--ok)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span style="font-size:13px;font-weight:700;color:var(--ok)">Complete BGC</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--ink-2);line-height:1.55">Entire cluster on one contig, all domains present. Strongest evidence for biosynthetic potential.</div>
+      </div>
+      <div class="card f1" style="border-left:4px solid var(--warn);padding:18px 20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 3v7M9 13v1" stroke="var(--warn)" stroke-width="2" stroke-linecap="round"/></svg>
+          <span style="font-size:13px;font-weight:700;color:var(--warn)">BGC on contig edge</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--ink-2);line-height:1.55">Cluster is cut at one or both contig edges. Some genes may be missing. Classification is less certain.</div>
+      </div>
+      <div class="card f1" style="border-left:4px solid var(--bad);padding:18px 20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M5 5l8 8M13 5l-8 8" stroke="var(--bad)" stroke-width="2" stroke-linecap="round"/></svg>
+          <span style="font-size:13px;font-weight:700;color:var(--bad)">BGC split across gap</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--ink-2);line-height:1.55">Parts of the cluster may be on different contigs or entirely missing. Cannot confidently reconstruct the product.</div>
+      </div>
+    </div>
+
+    <div class="row g-16">
+      <div class="card f1" style="padding:14px 18px;border-left:3px solid var(--ok)">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--ok);margin-bottom:6px">Strong candidate</div>
+        <div style="font-size:11px;color:var(--ink-2);line-height:1.55">NRPS cluster, 45 kb, complete on contig, 78% similarity to known BGC in MIBiG. All core domains present.</div>
+      </div>
+      <div class="card f1" style="padding:14px 18px;border-left:3px solid var(--bad)">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--bad);margin-bottom:6px">Weak candidate</div>
+        <div style="font-size:11px;color:var(--ink-2);line-height:1.55">Terpene cluster, 8 kb, on contig edge, no MIBiG match, single biosynthetic domain detected. Could be a false positive.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaways" style="margin-top:8px">
+    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> When reading BGC predictions, ask: complete? On contig edge? Resembles known cluster?</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 24: ACTIVITY 2 ═══════════════════ -->
+<section data-slide-id="func-activity">
+  <div class="tag tag-func">Pair activity &mdash; 8 min</div>
+  <h2 class="stitle">What might this MAG be doing?</h2>
+  <p class="sub">For each MAG: what biological hypothesis would you make, what evidence supports it, and what would make you distrust it?</p>
+
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="col g-12 f1">
+      <div class="card" style="flex:1;padding:18px;border-left:3px solid var(--ga)">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--ga);margin-bottom:8px">MAG 1</div>
+        <table style="width:100%;font-size:12px;line-height:1.7;color:var(--ink-2)">
+          <tr><td style="font-weight:500">Taxonomy</td><td style="text-align:right;font-family:var(--mono);font-size:11px">Bacteroidota</td></tr>
+          <tr><td style="font-weight:500">Quality</td><td style="text-align:right;font-family:var(--mono);font-size:11px">91% / 2%</td></tr>
+          <tr><td style="font-weight:500">CAZymes</td><td style="text-align:right;font-family:var(--mono);font-size:11px">GH5, GH9, GH43, PL1, CBM3</td></tr>
+          <tr><td style="font-weight:500">KEGG</td><td style="text-align:right;font-family:var(--mono);font-size:11px">Glycolysis complete, TCA partial</td></tr>
+          <tr><td style="font-weight:500">BGCs</td><td style="text-align:right;font-family:var(--mono);font-size:11px">None</td></tr>
+        </table>
+        <div class="fragment" style="margin-top:8px;padding:8px 12px;background:#ecfdf5;border-radius:6px;font-size:11px;color:var(--ga);font-weight:500">Likely plant-polysaccharide degrader. Good quality, coherent CAZyme evidence.</div>
+      </div>
+    </div>
+    <div class="col g-12 f1">
+      <div class="card" style="flex:1;padding:18px;border-left:3px solid var(--gc)">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--gc);margin-bottom:8px">MAG 2</div>
+        <table style="width:100%;font-size:12px;line-height:1.7;color:var(--ink-2)">
+          <tr><td style="font-weight:500">Taxonomy</td><td style="text-align:right;font-family:var(--mono);font-size:11px">Actinomycetota</td></tr>
+          <tr><td style="font-weight:500">Quality</td><td style="text-align:right;font-family:var(--mono);font-size:11px">88% / 3%</td></tr>
+          <tr><td style="font-weight:500">CAZymes</td><td style="text-align:right;font-family:var(--mono);font-size:11px">Low (GH13 only)</td></tr>
+          <tr><td style="font-weight:500">KEGG</td><td style="text-align:right;font-family:var(--mono);font-size:11px">Many regulatory domains</td></tr>
+          <tr><td style="font-weight:500">BGCs</td><td style="text-align:right;font-family:var(--mono);font-size:11px">NRPS, terpene, siderophore</td></tr>
+        </table>
+        <div class="fragment" style="margin-top:8px;padding:8px 12px;background:#f5f3ff;border-radius:6px;font-size:11px;color:var(--gc);font-weight:500">Likely biosynthetic potential. Investigate BGCs, but not proof of production.</div>
+      </div>
+    </div>
+    <div class="col g-12 f1">
+      <div class="card" style="flex:1;padding:18px;border-left:3px solid var(--bad)">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--bad);margin-bottom:8px">MAG 3</div>
+        <table style="width:100%;font-size:12px;line-height:1.7;color:var(--ink-2)">
+          <tr><td style="font-weight:500">Taxonomy</td><td style="text-align:right;font-family:var(--mono);font-size:11px">Mixed / uncertain</td></tr>
+          <tr><td style="font-weight:500">Quality</td><td style="text-align:right;font-family:var(--mono);font-size:11px">96% / 18%</td></tr>
+          <tr><td style="font-weight:500">CAZymes</td><td style="text-align:right;font-family:var(--mono);font-size:11px">Broad mixture</td></tr>
+          <tr><td style="font-weight:500">KEGG</td><td style="text-align:right;font-family:var(--mono);font-size:11px">Denitrification + methanogenesis</td></tr>
+          <tr><td style="font-weight:500">BGCs</td><td style="text-align:right;font-family:var(--mono);font-size:11px">Partial cluster</td></tr>
+        </table>
+        <div class="fragment" style="margin-top:8px;padding:8px 12px;background:#fef2f2;border-radius:6px;font-size:11px;color:var(--bad);font-weight:500">Do not trust. High contamination likely explains conflicting metabolisms.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 18px;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-sm);width:fit-content">
+    <span style="font-size:1.2em">&#x1F4AC;</span>
+    <span style="font-size:.85em;color:var(--ink-3);font-weight:500">5 min pair discussion + 3 min class discussion, then click to reveal</span>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 25: REPORTING ═══════════════════ -->
+<section data-slide-id="reporting">
+  <div class="tag tag-interp">Interpretation</div>
+  <h2 class="stitle">Report evidence and uncertainty</h2>
+  <p class="sub">Reproducible characterization requires transparency about tools, versions, and caveats.</p>
+
+  <div style="flex:1;display:flex;align-items:center;">
+    <div class="row g-20" style="width:100%">
+      <div class="card f1" style="padding:22px 24px;border-left:4px solid var(--ok)">
+        <div style="font-size:12px;font-weight:700;color:var(--ok);margin-bottom:14px;text-transform:uppercase;letter-spacing:1px">Report</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--ink-2);line-height:1.5">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;margin-top:2px"><path d="M3 7.5L5.5 10L11 4" stroke="var(--ok)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Tool names and versions (GTDB-Tk v2.x, Prodigal v2.6)
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--ink-2);line-height:1.5">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;margin-top:2px"><path d="M3 7.5L5.5 10L11 4" stroke="var(--ok)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Database versions (GTDB r220, Pfam 36.0, KEGG release date)
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--ink-2);line-height:1.5">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;margin-top:2px"><path d="M3 7.5L5.5 10L11 4" stroke="var(--ok)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            MAG quality (completeness, contamination, MIMAG tier)
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--ink-2);line-height:1.5">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;margin-top:2px"><path d="M3 7.5L5.5 10L11 4" stroke="var(--ok)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            E-value thresholds and filtering criteria
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--ink-2);line-height:1.5">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;margin-top:2px"><path d="M3 7.5L5.5 10L11 4" stroke="var(--ok)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Caveats (incomplete pathways, edge-cut BGCs, placeholder taxa)
+          </div>
+        </div>
+      </div>
+
+      <div class="card f1" style="padding:22px 24px;border-left:4px solid var(--bad)">
+        <div style="font-size:12px;font-weight:700;color:var(--bad);margin-bottom:14px;text-transform:uppercase;letter-spacing:1px">Avoid</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--ink-2);line-height:1.5">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;margin-top:2px"><path d="M4 4l6 6M10 4l-6 6" stroke="var(--bad)" stroke-width="1.8" stroke-linecap="round"/></svg>
+            Claiming function without reporting quality
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--ink-2);line-height:1.5">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;margin-top:2px"><path d="M4 4l6 6M10 4l-6 6" stroke="var(--bad)" stroke-width="1.8" stroke-linecap="round"/></svg>
+            Interpreting absence of annotation as absence of biology
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--ink-2);line-height:1.5">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;margin-top:2px"><path d="M4 4l6 6M10 4l-6 6" stroke="var(--bad)" stroke-width="1.8" stroke-linecap="round"/></svg>
+            Using species-level taxonomy from a 60% complete MAG
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--ink-2);line-height:1.5">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;margin-top:2px"><path d="M4 4l6 6M10 4l-6 6" stroke="var(--bad)" stroke-width="1.8" stroke-linecap="round"/></svg>
+            Treating annotation as experimental proof of activity
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--ink-2);line-height:1.5">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;margin-top:2px"><path d="M4 4l6 6M10 4l-6 6" stroke="var(--bad)" stroke-width="1.8" stroke-linecap="round"/></svg>
+            Omitting database version or thresholds
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaways" style="margin-top:8px">
+    <div class="tw tw-c" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Reproducible characterization requires reporting tools, database versions, quality, and caveats.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 26: SYNTHESIS ═══════════════════ -->
+<section data-slide-id="synthesis">
+  <div class="tag tag-interp">Interpretation</div>
+  <h2 class="stitle">From MAG to biological story</h2>
+  <p class="sub">A strong interpretation integrates all three dimensions.</p>
+
+  <div style="flex:1;display:flex;flex-direction:column;min-height:0;">
+    <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+      <div class="card-header">Three pillars of MAG interpretation</div>
+      <div class="canvas-wrap"><canvas id="synth-canvas" class="canvas-fill"></canvas></div>
+    </div>
+  </div>
+
+  <div class="takeaways" style="margin-top:8px">
+    <div class="tw tw-c" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> A strong interpretation integrates taxonomy, function, and quality.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 27: CLOSING ═══════════════════ -->
+<section data-slide-id="closing" style="justify-content:center;align-items:center;text-align:center;padding:24px 40px 32px;">
+  <h2 class="stitle" style="text-align:center;margin-bottom:28px;font-size:2.2em;">Summary</h2>
+  <div style="max-width:820px;display:flex;flex-direction:column;gap:18px;margin-bottom:32px;">
+    <div class="tw tw-d" style="padding:18px 22px;font-size:15px;line-height:1.6;text-align:left;">
+      <strong>Taxonomy.</strong> GTDB and GTDB-Tk provide genome-based taxonomy, but confidence depends on MAG quality and reference context.
+    </div>
+    <div class="tw tw-b" style="padding:18px 22px;font-size:15px;line-height:1.6;text-align:left;">
+      <strong>Function.</strong> Gene prediction plus annotation against KEGG, Pfam, CAZymes, and BGC tools answers different biological questions.
+    </div>
+    <div class="tw tw-a" style="padding:18px 22px;font-size:15px;line-height:1.6;text-align:left;">
+      <strong>Interpretation.</strong> Annotation is evidence, not proof. Always consider completeness, contamination, and database limitations.
+    </div>
+  </div>
+  <div style="margin-bottom:16px;font-size:1.1em;font-weight:600;color:var(--gc);font-style:italic">Annotation is evidence, not proof.</div>
+  <div style="margin-bottom:22px;font-size:1.9em;font-weight:700;color:var(--ink);">Questions?</div>
+  <div style="font-size:14px;color:var(--ink-3);">antonio.fernandez-guerra@sund.ku.dk</div>
+</section>
+
+<!-- ═══════════════════ OPTIONAL ACTIVITY 3 ═══════════════════ -->
+<section data-slide-id="optional-activity">
+  <div class="tag tag-interp">Quick activity &mdash; 5 min (optional)</div>
+  <h2 class="stitle">Which MAG would you report?</h2>
+  <p class="sub">Report, curate, or flag as exploratory only?</p>
+
+  <div style="flex:1;display:flex;align-items:center;">
+    <div style="width:100%;overflow-x:auto;">
+      <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:13px;color:var(--ink-2)">
+        <thead>
+          <tr style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink-4)">
+            <th style="padding:10px 14px;text-align:left;border-bottom:2px solid var(--border)"></th>
+            <th style="padding:10px 14px;text-align:left;border-bottom:2px solid var(--border)">Taxonomy</th>
+            <th style="padding:10px 14px;text-align:center;border-bottom:2px solid var(--border)">Comp.</th>
+            <th style="padding:10px 14px;text-align:center;border-bottom:2px solid var(--border)">Cont.</th>
+            <th style="padding:10px 14px;text-align:left;border-bottom:2px solid var(--border)">KEGG</th>
+            <th style="padding:10px 14px;text-align:left;border-bottom:2px solid var(--border)">CAZymes</th>
+            <th style="padding:10px 14px;text-align:left;border-bottom:2px solid var(--border)">BGCs</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="background:var(--card)">
+            <td style="padding:10px 14px;font-weight:700;color:var(--ga);border-bottom:1px solid var(--border)">MAG X</td>
+            <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11px">Bacteroidota, species-level</td>
+            <td style="padding:10px 14px;text-align:center;border-bottom:1px solid var(--border);font-family:var(--mono)">95%</td>
+            <td style="padding:10px 14px;text-align:center;border-bottom:1px solid var(--border);font-family:var(--mono)">2%</td>
+            <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:11px">Complete glycolysis</td>
+            <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:11px">GH5, GH9, CBM6</td>
+            <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:11px">None</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 14px;font-weight:700;color:var(--gb);border-bottom:1px solid var(--border)">MAG Y</td>
+            <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11px">Gammaproteobacteria, family</td>
+            <td style="padding:10px 14px;text-align:center;border-bottom:1px solid var(--border);font-family:var(--mono)">58%</td>
+            <td style="padding:10px 14px;text-align:center;border-bottom:1px solid var(--border);font-family:var(--mono)">4%</td>
+            <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:11px">Partial TCA</td>
+            <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:11px">GH13</td>
+            <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:11px">Siderophore (edge)</td>
+          </tr>
+          <tr style="background:var(--card)">
+            <td style="padding:10px 14px;font-weight:700;color:var(--gc);border-bottom:1px solid var(--border)">MAG Z</td>
+            <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11px">Conflicting (mixed)</td>
+            <td style="padding:10px 14px;text-align:center;border-bottom:1px solid var(--border);font-family:var(--mono)">93%</td>
+            <td style="padding:10px 14px;text-align:center;border-bottom:1px solid var(--border);font-family:var(--mono)">22%</td>
+            <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:11px">Nitrification + sulfate red.</td>
+            <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:11px">GH2, GT4, PL7</td>
+            <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:11px">NRPS (partial)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="col g-8" style="margin-top:12px">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 18px;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-sm);width:fit-content">
+      <span style="font-size:1.2em">&#x1F4AC;</span>
+      <span style="font-size:.85em;color:var(--ink-3);font-weight:500">Report, curate, or flag as exploratory only?</span>
+    </div>
+    <div class="fragment" style="padding:12px 18px;background:#eff6ff;border-radius:8px;font-size:12.5px;color:var(--ink-2);line-height:1.55;max-width:900px">
+      <strong style="color:var(--ga)">MAG X:</strong> Report. High quality, coherent signal, species-level taxonomy.
+      <strong style="color:var(--gb)">MAG Y:</strong> Exploratory. Clean but incomplete. Pathway gaps may be real or due to missing contigs. The edge BGC needs caution.
+      <strong style="color:var(--gc)">MAG Z:</strong> Do not report. Very high contamination. Conflicting metabolisms are almost certainly from mixed organisms.
+    </div>
+  </div>
+</section>
+
+</div></div>
+
+<!-- Help overlay (?) -->
+<div id="help-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);justify-content:center;align-items:center">
+  <div style="background:#fff;border-radius:16px;padding:32px 36px;max-width:520px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.25);font-family:'DM Sans',system-ui,sans-serif;color:#1e293b">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h3 style="margin:0;font-size:1.3em;font-weight:700">Keyboard shortcuts</h3>
+      <button onclick="toggleHelp()" style="background:none;border:none;font-size:1.5em;cursor:pointer;color:#94a3b8;line-height:1">&times;</button>
+    </div>
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:14px;line-height:1.8">
+      <kbd style="background:#f1f5f9;padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:12px;font-weight:600">&larr; &rarr;</kbd><span>Navigate slides</span>
+      <kbd style="background:#f1f5f9;padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:12px;font-weight:600">&darr; &uarr;</kbd><span>Navigate fragments (steps)</span>
+      <kbd style="background:#f1f5f9;padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:12px;font-weight:600">O</kbd><span>Overview grid</span>
+      <kbd style="background:#f1f5f9;padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:12px;font-weight:600">F</kbd><span>Fullscreen</span>
+      <kbd style="background:#f1f5f9;padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:12px;font-weight:600">M</kbd><span>Slide navigator</span>
+      <kbd style="background:#f1f5f9;padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:12px;font-weight:600">N</kbd><span>Toggle speaker notes</span>
+      <kbd style="background:#f1f5f9;padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:12px;font-weight:600">S</kbd><span>Speaker view (new window)</span>
+      <kbd style="background:#f1f5f9;padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:12px;font-weight:600">?</kbd><span>This help panel</span>
+    </div>
+  </div>
+</div>
+
+<!-- Slide navigator (M) -->
+<div id="nav-overlay" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);justify-content:center;align-items:center">
+  <div style="background:#fff;border-radius:16px;padding:28px 32px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);font-family:'DM Sans',system-ui,sans-serif;color:#1e293b">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="margin:0;font-size:1.3em;font-weight:700">Slide navigator</h3>
+      <button onclick="toggleNav()" style="background:none;border:none;font-size:1.5em;cursor:pointer;color:#94a3b8;line-height:1">&times;</button>
+    </div>
+    <input id="nav-search" type="text" placeholder="Search slides..." style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:inherit;margin-bottom:12px;outline:none" oninput="filterNav(this.value)">
+    <div id="nav-list" style="display:flex;flex-direction:column;gap:4px"></div>
+  </div>
+</div>
+
+<script>
+function toggleHelp(){const o=document.getElementById('help-overlay');o.style.display=o.style.display==='flex'?'none':'flex'}
+function toggleNav(){
+  const o=document.getElementById('nav-overlay');
+  if(o.style.display==='flex'){o.style.display='none';return}
+  o.style.display='flex';
+  buildNavList();
+  const s=document.getElementById('nav-search');s.value='';s.focus();
+}
+function buildNavList(){
+  const list=document.getElementById('nav-list');list.innerHTML='';
+  const sections=document.querySelectorAll('.reveal .slides>section');
+  const colors={'tag-tax':'#d97706','tag-gene':'#3b82f6','tag-func':'#0d9488','tag-recap':'#64748b','tag-interp':'#8b5cf6'};
+  sections.forEach((sec,i)=>{
+    const id=sec.getAttribute('data-slide-id')||'';
+    const h=sec.querySelector('h1,h2');
+    const tag=sec.querySelector('.tag');
+    const title=h?h.textContent:id||'Slide '+(i+1);
+    const tagText=tag?tag.textContent:'';
+    const tagClass=tag?tag.className:'';
+    let col='#94a3b8';
+    for(const[cls,c]of Object.entries(colors)){if(tagClass.includes(cls)){col=c;break}}
+    if(id.includes('act')&&id.includes('intro'))col=id.includes('1')?'#d97706':id.includes('2')?'#3b82f6':'#0d9488';
+    const btn=document.createElement('button');
+    btn.className='nav-item';
+    btn.dataset.search=(title+' '+tagText+' '+id).toLowerCase();
+    btn.style.cssText='display:flex;align-items:center;gap:10px;width:100%;padding:8px 12px;border:none;background:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;text-align:left;color:#1e293b;transition:background .15s';
+    btn.onmouseenter=()=>btn.style.background='#f1f5f9';
+    btn.onmouseleave=()=>btn.style.background='none';
+    btn.innerHTML='<span style="min-width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:'+col+'14;color:'+col+';font-weight:700;font-size:11px">'+(i+1)+'</span>'
+      +'<span style="flex:1;font-weight:500">'+title+'</span>'
+      +(tagText?'<span style="font-size:10px;color:'+col+';font-weight:600;text-transform:uppercase;letter-spacing:.5px">'+tagText+'</span>':'');
+    btn.onclick=()=>{Reveal.slide(i);toggleNav()};
+    list.appendChild(btn);
+  });
+}
+function filterNav(q){
+  q=q.toLowerCase();
+  document.querySelectorAll('.nav-item').forEach(b=>{b.style.display=b.dataset.search.includes(q)?'flex':'none'});
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='?'&&!e.ctrlKey&&!e.metaKey){e.preventDefault();toggleHelp()}
+  if(e.key==='Escape'){document.getElementById('help-overlay').style.display='none';document.getElementById('nav-overlay').style.display='none'}
+});
+</script>
+
+<script src="reveal.min.js"></script>
+<script src="slides.js"></script>
+</body></html>
