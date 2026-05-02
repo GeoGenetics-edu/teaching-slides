@@ -618,111 +618,112 @@ function drawTkStep1(ctx){
 }
 
 function drawTkStep2(ctx){
-  // Step 3: Assign lineage + ANI — clean top-to-bottom flow
-  _label(ctx,'From tree placement to taxonomic label',400,22,13,COLORS.ink2,'center','700');
+  // Step 3: ANI species concept + lineage assignment
+  _label(ctx,'Species = cluster of genomes with ANI > 95%',400,20,13,COLORS.ink2,'center','700');
 
-  // ── 1. Lineage string with colored rank prefixes ──
-  const ly=50;
-  _roundRect(ctx,30,ly,740,80,10,'#fff',COLORS.border,1.5);
-  // Two-line lineage with colored rank prefixes
-  ctx.font='500 10px "DM Mono",Consolas,monospace';
-  const line1='d__Bacteria; p__Bacteroidota; c__Bacteroidia; o__Bacteroidales;';
-  const line2='f__Bacteroidaceae; g__Bacteroides; s__Bacteroides_A sp003456789';
-  // Colour map: prefix → colour
-  const pCols={d:COLORS.ink3,p:COLORS.bad,c:COLORS.warn,o:COLORS.gd,f:COLORS.gb,g:COLORS.gc,s:COLORS.ga};
-  function drawLineage(str,y){
-    ctx.font='500 10px "DM Mono",Consolas,monospace';
-    let x=55;
-    // Split by semicolons preserving them
-    const parts=str.split(/(;\s*)/);
-    for(const part of parts){
-      const m=part.match(/^([a-z])__/);
-      if(m){
-        // Rank prefix in colour
-        const pre=m[0];
-        const rest=part.slice(pre.length);
-        ctx.fillStyle=pCols[m[1]]||COLORS.ink3;ctx.textAlign='left';ctx.textBaseline='middle';
-        ctx.fillText(pre,x,y);x+=ctx.measureText(pre).width;
-        ctx.fillStyle=COLORS.ink;
-        ctx.fillText(rest,x,y);x+=ctx.measureText(rest).width;
-      } else {
-        ctx.fillStyle=COLORS.ink4;ctx.textAlign='left';ctx.textBaseline='middle';
-        ctx.fillText(part,x,y);x+=ctx.measureText(part).width;
-      }
+  // ── 1. ANI clustering diagram (left half) ──
+  // Three species clusters as genome dot clouds + the MAG
+  const clusters=[
+    {cx:150,cy:160,r:65,col:COLORS.gb,name:'Species A',
+     pts:[{dx:-20,dy:-25},{dx:15,dy:-18},{dx:-10,dy:10},{dx:22,dy:5},{dx:-5,dy:28},{dx:8,dy:-35}]},
+    {cx:370,cy:190,r:58,col:COLORS.gc,name:'Species B',
+     pts:[{dx:-15,dy:-20},{dx:18,dy:-10},{dx:-8,dy:15},{dx:12,dy:22},{dx:-22,dy:5}]},
+    {cx:570,cy:155,r:55,col:COLORS.gd,name:'Species C',
+     pts:[{dx:-12,dy:-18},{dx:16,dy:-8},{dx:-5,dy:12},{dx:20,dy:16},{dx:-18,dy:20}]},
+  ];
+
+  // Draw 95% ANI radius circles
+  for(const cl of clusters){
+    ctx.beginPath();ctx.arc(cl.cx,cl.cy,cl.r,0,Math.PI*2);
+    ctx.fillStyle=cl.col+'0c';ctx.fill();
+    ctx.strokeStyle=cl.col+'44';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);ctx.stroke();
+    ctx.setLineDash([]);
+    // Cluster label
+    _label(ctx,cl.name,cl.cx,cl.cy-cl.r-10,10,cl.col,'center','700');
+  }
+
+  // Draw genome dots
+  for(const cl of clusters){
+    for(const p of cl.pts){
+      ctx.beginPath();ctx.arc(cl.cx+p.dx,cl.cy+p.dy,5,0,Math.PI*2);
+      ctx.fillStyle=cl.col+'cc';ctx.fill();
+      ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();
     }
   }
-  drawLineage(line1,ly+28);
-  drawLineage(line2,ly+55);
 
-  // ── 2. Two-column: ANI check + Confidence ──
-  const row2y=ly+100;
+  // MAG: falls inside Species B cluster
+  const magX=355,magY=175;
+  ctx.shadowColor=COLORS.gd;ctx.shadowBlur=8;
+  ctx.beginPath();ctx.arc(magX,magY,8,0,Math.PI*2);
+  ctx.fillStyle=COLORS.bad+'33';ctx.fill();
+  ctx.strokeStyle=COLORS.bad;ctx.lineWidth=2;ctx.stroke();
+  ctx.shadowBlur=0;
+  _label(ctx,'MAG',magX,magY,7,COLORS.bad,'center','700');
 
-  // Left: ANI verification — focused gauge (80-100%)
-  _roundRect(ctx,30,row2y,360,130,10,'#ecfdf5',COLORS.ok+'66',1.5);
-  _label(ctx,'ANI verification',210,row2y+20,12,COLORS.ok,'center','700');
-
-  // Gauge: 80%→100% range for clarity
-  const gaugeX=70,gaugeY=row2y+52,gaugeW=280;
-  const gMin=80,gMax=100;
-  const gPos=v=>gaugeX+((v-gMin)/(gMax-gMin))*gaugeW;
-
-  // Background track
-  ctx.fillStyle=COLORS.border+'33';
-  _roundRect(ctx,gaugeX,gaugeY,gaugeW,14,4,COLORS.border+'22','transparent',0);
-  ctx.fillStyle=COLORS.border+'22';ctx.fill();
-
-  // Fill to 97.8%
-  const fillEnd=gPos(97.8);
-  ctx.fillStyle=COLORS.ok+'44';
-  ctx.fillRect(gaugeX,gaugeY,fillEnd-gaugeX,14);
-
-  // 95% threshold line
-  const threshX=gPos(95);
-  ctx.strokeStyle=COLORS.warn;ctx.lineWidth=2;ctx.setLineDash([4,3]);
-  ctx.beginPath();ctx.moveTo(threshX,gaugeY-6);ctx.lineTo(threshX,gaugeY+20);ctx.stroke();
+  // ANI distance annotation between MAG and nearest Species B genome
+  const nearX=clusters[1].cx+18,nearY=clusters[1].cy-10;
+  ctx.strokeStyle=COLORS.ok;ctx.lineWidth=1;ctx.setLineDash([3,2]);
+  ctx.beginPath();ctx.moveTo(magX+9,magY);ctx.lineTo(nearX-5,nearY);ctx.stroke();
   ctx.setLineDash([]);
-  _label(ctx,'95% species',threshX,gaugeY-12,8,COLORS.warn,'center','600');
-  _label(ctx,'threshold',threshX,gaugeY-3,7,COLORS.warn,'center','500');
+  _label(ctx,'97.8%',((magX+nearX)/2)+12,((magY+nearY)/2)-8,9,COLORS.ok,'center','700');
 
-  // Value marker
-  ctx.beginPath();ctx.arc(fillEnd,gaugeY+7,6,0,Math.PI*2);
-  ctx.fillStyle=COLORS.ok;ctx.fill();
-  ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
-  _label(ctx,'97.8%',fillEnd,gaugeY+28,11,COLORS.ok,'center','700');
+  // Inter-cluster distance (between A and B)
+  ctx.strokeStyle=COLORS.ink4+'88';ctx.lineWidth=0.8;ctx.setLineDash([2,3]);
+  ctx.beginPath();ctx.moveTo(clusters[0].cx+clusters[0].r+2,clusters[0].cy);
+  ctx.lineTo(clusters[1].cx-clusters[1].r-2,clusters[1].cy);ctx.stroke();
+  ctx.setLineDash([]);
+  _label(ctx,'< 80%',260,((clusters[0].cy+clusters[1].cy)/2)-10,8,COLORS.ink4,'center','500');
 
-  // Scale labels
-  _label(ctx,'80%',gaugeX,gaugeY+28,8,COLORS.ink4,'center','500');
-  _label(ctx,'100%',gaugeX+gaugeW,gaugeY+28,8,COLORS.ink4,'center','500');
+  // 95% ANI radius label on Species A
+  const rlx=clusters[0].cx+clusters[0].r+3,rly=clusters[0].cy-clusters[0].r+15;
+  ctx.strokeStyle=clusters[0].col+'88';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(clusters[0].cx+10,clusters[0].cy-clusters[0].r);
+  ctx.lineTo(rlx+5,rly-12);ctx.stroke();
+  _label(ctx,'95% ANI',rlx+5,rly-4,8,clusters[0].col,'left','600');
+  _label(ctx,'radius',rlx+5,rly+6,7,clusters[0].col,'left','500');
 
-  // Verdict
-  _label(ctx,'Above threshold → species-level call',210,row2y+110,10,COLORS.ok,'center','600');
-  _label(ctx,'s__Bacteroides_A sp003456789',210,row2y+122,9,COLORS.ink3,'center','500');
+  // ── 2. Lineage result (bottom) ──
+  const by=265;
+  _roundRect(ctx,30,by,740,60,10,'#fff',COLORS.border,1.5);
+  _label(ctx,'Assigned lineage:',70,by+15,10,COLORS.ink3,'left','600');
 
-  // Right: Confidence factors
-  _roundRect(ctx,410,row2y,360,130,10,'#fff',COLORS.border,1);
-  _label(ctx,'Confidence factors',590,row2y+20,12,COLORS.ink2,'center','700');
-
-  const factors=[
-    {label:'Markers found',val:'118 / 120',pct:0.98},
-    {label:'ANI to reference',val:'97.8%',pct:0.978},
-    {label:'MAG completeness',val:'92%',pct:0.92},
-    {label:'Contamination',val:'2%',pct:0.98},
-  ];
-  for(let i=0;i<factors.length;i++){
-    const fy=row2y+42+i*22;
-    const f=factors[i];
-    _label(ctx,f.label,430,fy,9.5,COLORS.ink3,'left','500');
-    // Mini bar
-    const bx=560,bw=100;
-    ctx.fillStyle=COLORS.border+'33';ctx.fillRect(bx,fy-5,bw,8);
-    ctx.fillStyle=f.pct>0.9?COLORS.ok+'88':COLORS.warn+'88';
-    ctx.fillRect(bx,fy-5,bw*f.pct,8);
-    _label(ctx,f.val,bx+bw+8,fy,9,f.pct>0.9?COLORS.ok:COLORS.warn,'left','600');
+  // Compact single-line lineage with colored prefixes
+  ctx.font='500 9.5px "DM Mono",Consolas,monospace';
+  const lineage='d__Bacteria; p__Bacteroidota; c__Bacteroidia; o__Bacteroidales; f__Bacteroidaceae; g__Bacteroides; s__Bacteroides_A sp003456789';
+  const pCols={d:COLORS.ink3,p:COLORS.bad,c:COLORS.warn,o:COLORS.gd,f:COLORS.gb,g:COLORS.gc,s:COLORS.ga};
+  let lx=55;
+  const parts=lineage.split(/(;\s*)/);
+  for(const part of parts){
+    const m=part.match(/^([a-z])__/);
+    if(m){
+      const pre=m[0],rest=part.slice(pre.length);
+      ctx.fillStyle=pCols[m[1]]||COLORS.ink3;ctx.textAlign='left';ctx.textBaseline='middle';
+      ctx.fillText(pre,lx,by+40);lx+=ctx.measureText(pre).width;
+      ctx.fillStyle=COLORS.ink;
+      ctx.fillText(rest,lx,by+40);lx+=ctx.measureText(rest).width;
+    } else {
+      ctx.fillStyle=COLORS.ink4;ctx.textAlign='left';ctx.textBaseline='middle';
+      ctx.fillText(part,lx,by+40);lx+=ctx.measureText(part).width;
+    }
   }
 
-  // ── 3. Bottom note ──
-  _roundRect(ctx,80,row2y+148,640,28,6,'#fffbeb',COLORS.gd+'44',1);
-  _label(ctx,'Always report: GTDB version, ANI value, and number of markers recovered',400,row2y+162,10,COLORS.gd,'center','600');
+  // ── 3. Key points ──
+  const ky=by+78;
+  const points=[
+    {icon:'Within species:',val:'ANI > 95%',col:COLORS.ok},
+    {icon:'Between species:',val:'ANI < 80–90%',col:COLORS.ink4},
+    {icon:'Your MAG:',val:'97.8% → s__Bacteroides_A',col:COLORS.bad},
+  ];
+  for(let i=0;i<points.length;i++){
+    const px=55+i*260,p=points[i];
+    _roundRect(ctx,px-10,ky,240,38,6,'#fff',p.col+'44',1);
+    _label(ctx,p.icon,px,ky+14,9,p.col,'left','600');
+    _label(ctx,p.val,px,ky+28,10,p.col,'left','700');
+  }
+
+  // ── 4. Bottom note ──
+  _roundRect(ctx,100,ky+52,600,24,6,'#fffbeb',COLORS.gd+'44',1);
+  _label(ctx,'Always report: GTDB version, ANI value, and markers recovered',400,ky+64,9,COLORS.gd,'center','600');
 }
 
 /* ═══════════════════════════════════════════════════════════
