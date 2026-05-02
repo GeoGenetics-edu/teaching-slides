@@ -252,191 +252,244 @@ function drawGtdbCanvas(){
   const ctx=_c('gtdb-canvas');if(!ctx)return;
   ctx.clearRect(0,0,800,440);
 
-  // ── LEFT HALF: Radial tree with RED bands ──
-  const cx=200,cy=195,maxR=160;
-  const rankCols=[COLORS.ink3,COLORS.bad,COLORS.warn,COLORS.gd,COLORS.gb,COLORS.gc,COLORS.ga];
-  const rankNames=['Domain','Phylum','Class','Order','Family','Genus','Species'];
-  // RED median values (approximate from GTDB stats)
-  const redVals=[0,0.18,0.32,0.43,0.56,0.72,0.87];
+  /* ── Horizontal dendrogram with RED scale ──
+     X-axis = RED (0 at left, 1 at right)
+     Colored vertical bands mark each rank boundary
+     Tree drawn left→right so students read RED as distance from root */
 
-  // Draw concentric RED bands
-  for(let i=6;i>=0;i--){
-    const r=redVals[i]*maxR;
-    const rOuter=(i<6?redVals[i+1]:1.0)*maxR;
-    ctx.beginPath();ctx.arc(cx,cy,rOuter,0,Math.PI*2);
-    ctx.fillStyle=rankCols[i]+'0a';ctx.fill();
-    // Band boundary
-    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);
-    ctx.strokeStyle=rankCols[i]+'44';ctx.lineWidth=1;
-    ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);
+  const L=60, R=750, T=55, B=390;           // tree area
+  const treeW=R-L;
+  const redX=r=>L+r*treeW;                  // RED→pixel
+
+  // Rank definitions: name, RED median, colour
+  const ranks=[
+    {n:'Phylum',   abbr:'p__', red:0.18, col:COLORS.bad},
+    {n:'Class',    abbr:'c__', red:0.32, col:COLORS.warn},
+    {n:'Order',    abbr:'o__', red:0.43, col:COLORS.gd},
+    {n:'Family',   abbr:'f__', red:0.56, col:COLORS.gb},
+    {n:'Genus',    abbr:'g__', red:0.72, col:COLORS.gc},
+  ];
+
+  // ── 1. Draw rank bands (±0.1 around median) ──
+  for(const rk of ranks){
+    const x0=redX(rk.red-0.1), x1=redX(rk.red+0.1);
+    ctx.fillStyle=rk.col+'10';
+    ctx.fillRect(x0,T-10,x1-x0,B-T+20);
+    // Centre line (median)
+    ctx.strokeStyle=rk.col+'55';ctx.lineWidth=1;
+    ctx.setLineDash([6,4]);
+    ctx.beginPath();ctx.moveTo(redX(rk.red),T-10);ctx.lineTo(redX(rk.red),B+10);ctx.stroke();
+    ctx.setLineDash([]);
+    // Rank label at top
+    _label(ctx,rk.n,redX(rk.red),T-22,10,rk.col,'center','700');
   }
 
-  // Outer ring (tips, RED=1)
-  ctx.beginPath();ctx.arc(cx,cy,maxR,0,Math.PI*2);
-  ctx.strokeStyle=COLORS.border;ctx.lineWidth=1.5;ctx.stroke();
-
-  // Root dot
-  ctx.beginPath();ctx.arc(cx,cy,3,0,Math.PI*2);
-  ctx.fillStyle=COLORS.ink;ctx.fill();
-
-  // Draw a simplified tree with 8 tips
-  const tips=8;
-  const angles=[];
-  for(let i=0;i<tips;i++) angles.push(-Math.PI/2+(i/(tips-1))*Math.PI*0.85+Math.PI*0.075);
-
-  // Internal branching pattern (left subtree, right subtree)
-  function drawBranch(ctx,cx,cy,angle,fromR,toR,col,lw){
-    const x1=cx+Math.cos(angle)*fromR,y1=cy+Math.sin(angle)*fromR;
-    const x2=cx+Math.cos(angle)*toR,y2=cy+Math.sin(angle)*toR;
-    ctx.strokeStyle=col;ctx.lineWidth=lw;
-    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
-  }
-
-  // Tree structure: root splits at RED~0.18, sub-splits at deeper ranks
-  const treeCol=COLORS.ink3+'88';
-  // Main trunk to first split
-  const splitR1=redVals[1]*maxR;
-  const midAngle=(angles[3]+angles[4])/2;
-  drawBranch(ctx,cx,cy,midAngle,0,splitR1*0.6,treeCol,2);
-
-  // Left clade (4 tips: 0-3)
-  const lAngle=(angles[0]+angles[3])/2;
-  // Arc from trunk to left
-  const splitR2=redVals[2]*maxR;
-  ctx.strokeStyle=treeCol;ctx.lineWidth=1.5;
-  ctx.beginPath();ctx.moveTo(cx+Math.cos(midAngle)*splitR1*0.6,cy+Math.sin(midAngle)*splitR1*0.6);
-  ctx.lineTo(cx+Math.cos(lAngle)*splitR1,cy+Math.sin(lAngle)*splitR1);ctx.stroke();
-
-  const rAngle=(angles[4]+angles[7])/2;
-  ctx.beginPath();ctx.moveTo(cx+Math.cos(midAngle)*splitR1*0.6,cy+Math.sin(midAngle)*splitR1*0.6);
-  ctx.lineTo(cx+Math.cos(rAngle)*splitR1,cy+Math.sin(rAngle)*splitR1);ctx.stroke();
-
-  // Sub-splits in left clade
-  const lSub1=(angles[0]+angles[1])/2,lSub2=(angles[2]+angles[3])/2;
-  drawBranch(ctx,cx,cy,lAngle,splitR1,splitR2*0.95,treeCol,1.2);
-  ctx.beginPath();ctx.moveTo(cx+Math.cos(lAngle)*splitR2*0.95,cy+Math.sin(lAngle)*splitR2*0.95);
-  ctx.lineTo(cx+Math.cos(lSub1)*splitR2,cy+Math.sin(lSub1)*splitR2);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(cx+Math.cos(lAngle)*splitR2*0.95,cy+Math.sin(lAngle)*splitR2*0.95);
-  ctx.lineTo(cx+Math.cos(lSub2)*splitR2,cy+Math.sin(lSub2)*splitR2);ctx.stroke();
-
-  // Sub-splits in right clade
-  const rSub1=(angles[4]+angles[5])/2,rSub2=(angles[6]+angles[7])/2;
-  drawBranch(ctx,cx,cy,rAngle,splitR1,splitR2*0.95,treeCol,1.2);
-  ctx.beginPath();ctx.moveTo(cx+Math.cos(rAngle)*splitR2*0.95,cy+Math.sin(rAngle)*splitR2*0.95);
-  ctx.lineTo(cx+Math.cos(rSub1)*splitR2,cy+Math.sin(rSub1)*splitR2);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(cx+Math.cos(rAngle)*splitR2*0.95,cy+Math.sin(rAngle)*splitR2*0.95);
-  ctx.lineTo(cx+Math.cos(rSub2)*splitR2,cy+Math.sin(rSub2)*splitR2);ctx.stroke();
-
-  // Terminal branches to tips
-  for(let i=0;i<tips;i++){
-    const pairAngle=i<2?lSub1:i<4?lSub2:i<6?rSub1:rSub2;
-    drawBranch(ctx,cx,cy,pairAngle,splitR2,redVals[4]*maxR,treeCol,1);
-    drawBranch(ctx,cx,cy,angles[i],redVals[4]*maxR,maxR,treeCol,0.8);
-    // Tip dot
-    const tx=cx+Math.cos(angles[i])*maxR,ty=cy+Math.sin(angles[i])*maxR;
-    ctx.beginPath();ctx.arc(tx,ty,3,0,Math.PI*2);ctx.fillStyle=COLORS.gb;ctx.fill();
-  }
-
-  // RED labels — each rank at a distinct angle so they don't overlap
-  const labelAngles=[-1.2,-0.85,-0.5,-0.15,0.2];
-  for(let i=1;i<=5;i++){
-    const r=redVals[i]*maxR;
-    const ang=labelAngles[i-1];
-    const lx=cx+Math.cos(ang)*r, ly=cy+Math.sin(ang)*r;
-    // tick mark on ring
-    const ox=Math.cos(ang),oy=Math.sin(ang);
-    ctx.strokeStyle=rankCols[i];ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(lx+ox*10,ly+oy*10);ctx.stroke();
-    _label(ctx,rankNames[i],lx+ox*14,ly+oy*14,8,rankCols[i],ang>0?'left':'left','600');
-  }
-
-  // RED scale label
-  _label(ctx,'RED = 0',cx,cy+16,9,COLORS.ink3,'center','600');
-  _label(ctx,'(root)',cx,cy+28,8,COLORS.ink4,'center','400');
-  _label(ctx,'RED = 1 (tips)',cx+maxR+8,cy+maxR-5,8,COLORS.ink3,'left','600');
-
-  // Title
-  _label(ctx,'Radial tree with RED rank bands',cx,25,12,COLORS.ink,'center','700');
-
-  // ── RIGHT HALF: RED distribution bars ──
-  const bx=440,by=40,bw=330,bh=330;
-  _label(ctx,'RED distribution by rank',bx+bw/2,25,12,COLORS.ink,'center','700');
-
-  // Axes
-  ctx.strokeStyle=COLORS.border;ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx,by+bh);ctx.lineTo(bx+bw,by+bh);ctx.stroke();
-
-  // Y-axis: RED 0 to 1
+  // ── 2. RED scale axis at bottom ──
+  ctx.strokeStyle=COLORS.ink3;ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(L,B+14);ctx.lineTo(R,B+14);ctx.stroke();
+  // Arrow head
+  ctx.beginPath();ctx.moveTo(R,B+14);ctx.lineTo(R-6,B+10);ctx.lineTo(R-6,B+18);ctx.closePath();
+  ctx.fillStyle=COLORS.ink3;ctx.fill();
   for(let v=0;v<=10;v++){
-    const y=by+bh-(v/10)*bh;
-    ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.5;
-    ctx.beginPath();ctx.moveTo(bx,y);ctx.lineTo(bx+bw,y);ctx.stroke();
-    if(v%2===0){
-      _label(ctx,(v/10).toFixed(1),bx-8,y+1,9,COLORS.ink3,'right','500');
+    const x=redX(v/10);
+    ctx.strokeStyle=COLORS.ink4;ctx.lineWidth=0.8;
+    ctx.beginPath();ctx.moveTo(x,B+10);ctx.lineTo(x,B+18);ctx.stroke();
+    if(v%2===0) _label(ctx,(v/10).toFixed(1),x,B+30,9,COLORS.ink3,'center','500');
+  }
+  _label(ctx,'RED = 0  (root)',L,B+42,9,COLORS.ink3,'left','600');
+  _label(ctx,'RED = 1  (tips)',R,B+42,9,COLORS.ink3,'right','600');
+  _label(ctx,'Relative Evolutionary Divergence',L+treeW/2,B+42,9,COLORS.ink2,'center','600');
+
+  // ── 3. Tree structure (rectangular dendrogram) ──
+  // 8 tips, two main clades, realistic uneven branching
+  // Node format: {red, y, children:[...]} or {red, y, label}
+  const tipGap=(B-T-20)/7;  // 8 tips
+  const tipY=i=>T+10+i*tipGap;
+
+  // Helper: draw rectangular (elbow) branch
+  function elbow(x1,y1,x2,y2,col,lw){
+    ctx.strokeStyle=col;ctx.lineWidth=lw;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x1,y2);ctx.lineTo(x2,y2);ctx.stroke();
+  }
+
+  const tc=COLORS.ink3;  // tree colour
+
+  // Tips (species level, RED≈0.95-1.0)
+  const tips=[
+    {red:0.97,y:tipY(0),lbl:'Sp. A'},
+    {red:0.95,y:tipY(1),lbl:'Sp. B'},
+    {red:0.98,y:tipY(2),lbl:'Sp. C'},
+    {red:0.96,y:tipY(3),lbl:'Sp. D'},
+    {red:0.97,y:tipY(4),lbl:'Sp. E'},
+    {red:0.95,y:tipY(5),lbl:'Sp. F'},
+    {red:0.99,y:tipY(6),lbl:'Sp. G'},
+    {red:0.96,y:tipY(7),lbl:'Sp. H'},
+  ];
+
+  // Internal nodes (RED, y-midpoint of children)
+  // Genus splits
+  const g1={red:0.74,y:(tips[0].y+tips[1].y)/2};  // Sp.A+B
+  const g2={red:0.70,y:(tips[2].y+tips[3].y)/2};  // Sp.C+D
+  const g3={red:0.73,y:(tips[4].y+tips[5].y)/2};  // Sp.E+F
+  const g4={red:0.71,y:(tips[6].y+tips[7].y)/2};  // Sp.G+H
+  // Family splits
+  const f1={red:0.55,y:(g1.y+g2.y)/2};  // g1+g2
+  const f2={red:0.57,y:(g3.y+g4.y)/2};  // g3+g4
+  // Order splits
+  const o1={red:0.42,y:(f1.y+tips[3].y*0+f1.y)/1};  // just f1
+  const o2={red:0.44,y:f2.y};
+  // Class split
+  const c1={red:0.30,y:(f1.y+f2.y)/2};
+  // Phylum split (root splits into two phyla)
+  const p1={red:0.17,y:c1.y};
+  // Root
+  const root={red:0.0, y:(tips[0].y+tips[7].y)/2};
+
+  // Draw branches bottom-up (elbows: horizontal from parent, then vertical to child)
+  function drawNode(parent,child,lw){
+    const px=redX(parent.red),py=parent.y;
+    const cx2=redX(child.red),cy2=child.y;
+    // horizontal from parent.red at child.y, then vertical
+    ctx.strokeStyle=tc;ctx.lineWidth=lw;
+    ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px,cy2);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(px,cy2);ctx.lineTo(cx2,cy2);ctx.stroke();
+  }
+
+  // Root → phylum
+  drawNode(root,p1,2.5);
+  // Phylum → class
+  drawNode(p1,c1,2.2);
+  // Add a second small clade below to show the split more clearly
+  // (root also connects down to a single "outgroup" tip at the bottom)
+
+  // Class → orders
+  drawNode(c1,{red:c1.red,y:f1.y},2);
+  ctx.strokeStyle=tc;ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(redX(c1.red),f1.y);ctx.lineTo(redX(o1.red),f1.y);ctx.stroke();
+  // Actually let me simplify: just use clean elbows throughout
+
+  // Let me redraw cleanly with a recursive approach
+  ctx.clearRect(L-5,T-5,treeW+15,B-T+15);
+
+  // Re-draw rank bands (they got cleared)
+  for(const rk of ranks){
+    const x0=redX(rk.red-0.1), x1=redX(rk.red+0.1);
+    ctx.fillStyle=rk.col+'10';
+    ctx.fillRect(x0,T-10,x1-x0,B-T+20);
+    ctx.strokeStyle=rk.col+'55';ctx.lineWidth=1;
+    ctx.setLineDash([6,4]);
+    ctx.beginPath();ctx.moveTo(redX(rk.red),T-10);ctx.lineTo(redX(rk.red),B+10);ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Clean rectangular dendrogram drawing
+  function drawClade(nodeRed, children, lw){
+    // children = [{red,y},...] — draw vertical bar + horizontal to each child
+    if(children.length<2)return;
+    const ys=children.map(c=>c.y);
+    const yMin=Math.min(...ys), yMax=Math.max(...ys);
+    const nx=redX(nodeRed);
+    // Vertical bar spanning children
+    ctx.strokeStyle=tc;ctx.lineWidth=lw;
+    ctx.beginPath();ctx.moveTo(nx,yMin);ctx.lineTo(nx,yMax);ctx.stroke();
+    // Horizontal to each child
+    for(const c of children){
+      ctx.beginPath();ctx.moveTo(nx,c.y);ctx.lineTo(redX(c.red),c.y);ctx.stroke();
     }
   }
-  _label(ctx,'RED',bx-30,by+bh/2,10,COLORS.ink2,'center','700');
 
-  // Draw simplified violin/box for each rank (skip domain, shown as bands)
-  const rankShort=['p','c','o','f','g'];
-  const medians=[0.18,0.32,0.43,0.56,0.72];
-  const q1s=   [0.14,0.27,0.38,0.50,0.66];
-  const q3s=   [0.22,0.37,0.48,0.62,0.78];
-  const mins=  [0.08,0.20,0.30,0.42,0.58];
-  const maxs=  [0.28,0.42,0.53,0.68,0.87];
-  const rCols= [COLORS.bad,COLORS.warn,COLORS.gd,COLORS.gb,COLORS.gc];
+  // Draw from root outward
+  // Root (RED=0) splits into two phyla
+  drawClade(0.0,[{red:0.17,y:(tips[0].y+tips[3].y)/2},{red:0.19,y:(tips[4].y+tips[7].y)/2}],2.5);
+  // Root trunk
+  ctx.strokeStyle=tc;ctx.lineWidth=2.5;
+  ctx.beginPath();ctx.moveTo(redX(0),root.y);ctx.lineTo(redX(0),(tips[0].y+tips[3].y)/2);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(redX(0),root.y);ctx.lineTo(redX(0),(tips[4].y+tips[7].y)/2);ctx.stroke();
 
-  const barW=bw/(rankShort.length+1);
-  for(let i=0;i<rankShort.length;i++){
-    const xc=bx+barW*(i+0.8);
-    const w=barW*0.5;
+  // Phylum A → two classes
+  const pAy=(tips[0].y+tips[3].y)/2;
+  drawClade(0.17,[{red:0.31,y:(tips[0].y+tips[1].y)/2},{red:0.33,y:(tips[2].y+tips[3].y)/2}],2);
 
-    // RED band (median ±0.1) as grey background
-    const bandTop=by+bh-(medians[i]+0.1)*bh;
-    const bandBot=by+bh-(medians[i]-0.1)*bh;
-    ctx.fillStyle=rCols[i]+'15';
-    ctx.fillRect(xc-w*1.2,bandTop,w*2.4,bandBot-bandTop);
+  // Phylum B → two classes
+  const pBy=(tips[4].y+tips[7].y)/2;
+  drawClade(0.19,[{red:0.30,y:(tips[4].y+tips[5].y)/2},{red:0.32,y:(tips[6].y+tips[7].y)/2}],2);
 
-    // Whisker line (min to max)
-    const yMin=by+bh-mins[i]*bh,yMax=by+bh-maxs[i]*bh;
-    ctx.strokeStyle=rCols[i];ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.moveTo(xc,yMin);ctx.lineTo(xc,yMax);ctx.stroke();
-    // Whisker caps
-    ctx.beginPath();ctx.moveTo(xc-6,yMin);ctx.lineTo(xc+6,yMin);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(xc-6,yMax);ctx.lineTo(xc+6,yMax);ctx.stroke();
+  // Class → order (each class goes to one order for simplicity)
+  // Class A1 → order → family → genus → tips
+  const cA1y=(tips[0].y+tips[1].y)/2, cA2y=(tips[2].y+tips[3].y)/2;
+  const cB1y=(tips[4].y+tips[5].y)/2, cB2y=(tips[6].y+tips[7].y)/2;
 
-    // IQR box
-    const yQ1=by+bh-q1s[i]*bh,yQ3=by+bh-q3s[i]*bh;
-    ctx.fillStyle=rCols[i]+'33';
-    ctx.fillRect(xc-w/2,yQ3,w,yQ1-yQ3);
-    ctx.strokeStyle=rCols[i];ctx.lineWidth=1.5;
-    ctx.strokeRect(xc-w/2,yQ3,w,yQ1-yQ3);
+  // Orders
+  drawClade(0.31,[{red:0.55,y:tips[0].y},{red:0.55,y:tips[1].y}],1.5);
+  drawClade(0.33,[{red:0.54,y:tips[2].y},{red:0.56,y:tips[3].y}],1.5);
+  drawClade(0.30,[{red:0.57,y:tips[4].y},{red:0.55,y:tips[5].y}],1.5);
+  drawClade(0.32,[{red:0.54,y:tips[6].y},{red:0.56,y:tips[7].y}],1.5);
 
-    // Median line
-    const yMed=by+bh-medians[i]*bh;
-    ctx.strokeStyle=rCols[i];ctx.lineWidth=2.5;
-    ctx.beginPath();ctx.moveTo(xc-w/2,yMed);ctx.lineTo(xc+w/2,yMed);ctx.stroke();
-
-    // Rank label
-    _label(ctx,rankShort[i]+'__',xc,by+bh+16,10,rCols[i],'center','700');
+  // Skip family/genus level — go straight from order→family→tips
+  // Family→Genus→Tips for each pair
+  // Pair 0-1
+  drawClade(0.55,[{red:0.74,y:tips[0].y},{red:0.74,y:tips[1].y}],1.2);
+  // Tips
+  for(const t of [tips[0],tips[1]]){
+    ctx.strokeStyle=tc;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(redX(0.74),t.y);ctx.lineTo(redX(t.red),t.y);ctx.stroke();
+  }
+  // Pair 2-3
+  drawClade(0.54,[{red:0.70,y:tips[2].y},{red:0.72,y:tips[3].y}],1.2);
+  for(const t of [tips[2],tips[3]]){
+    const gx=t===tips[2]?0.70:0.72;
+    ctx.strokeStyle=tc;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(redX(gx),t.y);ctx.lineTo(redX(t.red),t.y);ctx.stroke();
+  }
+  // Pair 4-5
+  drawClade(0.57,[{red:0.73,y:tips[4].y},{red:0.73,y:tips[5].y}],1.2);
+  for(const t of [tips[4],tips[5]]){
+    ctx.strokeStyle=tc;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(redX(0.73),t.y);ctx.lineTo(redX(t.red),t.y);ctx.stroke();
+  }
+  // Pair 6-7
+  drawClade(0.54,[{red:0.71,y:tips[6].y},{red:0.71,y:tips[7].y}],1.2);
+  for(const t of [tips[6],tips[7]]){
+    ctx.strokeStyle=tc;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(redX(0.71),t.y);ctx.lineTo(redX(t.red),t.y);ctx.stroke();
   }
 
-  // Annotation: "median ± 0.1" bracket
-  const annI=2; // order
-  const annXc=bx+barW*(annI+0.8);
-  const annMedY=by+bh-medians[annI]*bh;
-  const annBandTop=by+bh-(medians[annI]+0.1)*bh;
-  const annBandBot=by+bh-(medians[annI]-0.1)*bh;
-  // Small bracket on right
-  const brX=annXc+barW*0.5;
-  ctx.strokeStyle=COLORS.ink3;ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(brX,annBandTop);ctx.lineTo(brX+6,annBandTop);
-  ctx.lineTo(brX+6,annBandBot);ctx.lineTo(brX,annBandBot);ctx.stroke();
-  _label(ctx,'±0.1',brX+10,(annBandTop+annBandBot)/2+1,8,COLORS.ink3,'left','600');
+  // ── 4. Tip labels ──
+  for(const t of tips){
+    const tx=redX(t.red);
+    ctx.beginPath();ctx.arc(tx,t.y,3,0,Math.PI*2);
+    ctx.fillStyle=COLORS.gb;ctx.fill();
+    _label(ctx,t.lbl,tx+8,t.y+1,9,COLORS.ink2,'left','500');
+  }
 
-  // Bottom note
-  _roundRect(ctx,bx-10,by+bh+28,bw+20,32,6,'#eff6ff',COLORS.gb+'66',1);
-  _label(ctx,'Same RED band = same rank, regardless of lineage',bx+bw/2,by+bh+44,10,COLORS.gb,'center','600');
+  // ── 5. Root marker ──
+  ctx.beginPath();ctx.arc(redX(0),root.y,5,0,Math.PI*2);
+  ctx.fillStyle=COLORS.ink;ctx.fill();
+  _label(ctx,'Root',redX(0)-4,root.y-12,10,COLORS.ink,'center','700');
+
+  // ── 6. Node dots at key splits to show where ranks fall ──
+  const nodeDots=[
+    {red:0.17,y:pAy,col:ranks[0].col},{red:0.19,y:pBy,col:ranks[0].col},
+    {red:0.31,y:cA1y,col:ranks[1].col},{red:0.33,y:cA2y,col:ranks[1].col},
+    {red:0.30,y:cB1y,col:ranks[1].col},{red:0.32,y:cB2y,col:ranks[1].col},
+  ];
+  for(const nd of nodeDots){
+    ctx.beginPath();ctx.arc(redX(nd.red),nd.y,4,0,Math.PI*2);
+    ctx.fillStyle=nd.col;ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+  }
+
+  // ── 7. Title ──
+  _label(ctx,'Phylogenetic tree with RED rank boundaries',400,18,13,COLORS.ink,'center','700');
+
+  // ── 8. Annotation: bracket showing ±0.1 on the Order band ──
+  const oBandL=redX(0.33),oBandR=redX(0.53);
+  const annY=B+4;
+  ctx.strokeStyle=COLORS.ink3;ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(oBandL,annY);ctx.lineTo(oBandL,annY+5);
+  ctx.lineTo(oBandR,annY+5);ctx.lineTo(oBandR,annY);ctx.stroke();
+  _label(ctx,'median ± 0.1',redX(0.43),annY+14,8,COLORS.ink3,'center','600');
 }
 
 /* ═══════════════════════════════════════════════════════════
