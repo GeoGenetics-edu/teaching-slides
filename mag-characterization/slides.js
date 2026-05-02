@@ -1481,136 +1481,131 @@ function drawSbs4(ctx){
 function drawSbs5(ctx){
 
   /* ── Title ── */
-  _label(ctx,'One read covers ~150 bp, but the fragment is 300–500 bp',400,18,15,COLORS.ink,'center','700');
-  _label(ctx,'The sequencer reads from both ends to cover more of the insert',400,38,11,COLORS.ga,'center','600');
+  _label(ctx,'One read covers ~150 bp, but the fragment is 300–500 bp',400,20,15,COLORS.ink,'center','700');
+  _label(ctx,'The sequencer reads from both ends to cover more of the insert',400,42,11,COLORS.ga,'center','600');
 
   /* ════════════════════════════════════════════════════════════
      Flow-cell surface schematics (same style as bridge amp)
      4 sub-steps on flow cell surfaces with arrows between them
      ════════════════════════════════════════════════════════════ */
   const stX=[100,280,480,660];   // x centre of each sub-step
-  const surfY=150;               // surface y baseline
-  const sw=130;                  // surface width
+  const surfY=185;               // surface y baseline (pushed down to fill canvas)
+  const sw=140;                  // surface width
+  const strandH=70;              // strand height above surface
 
   for(let i=0;i<4;i++){
     const cx=stX[i];
-    // Flow cell surface
     _flowSurface(ctx,cx-sw/2,surfY,sw,10);
     for(let j=0;j<5;j++) _oligo(ctx,cx-40+j*20,surfY,4,COLORS.ink4+'55');
   }
 
+  /* ── Arrows between sub-steps (drawn first so pills cover them) ── */
+  for(let i=0;i<3;i++){
+    _arrow(ctx,stX[i]+sw/2-5,surfY-35, stX[i+1]-sw/2+5,surfY-35, COLORS.ink4+'88',1.5);
+  }
+
   /* ── Sub-step 1: Sequence R1 ── */
   const cx1=stX[0];
-  // Strand anchored at P5 (left), going up and right
   ctx.strokeStyle=COLORS.gb; ctx.lineWidth=3; ctx.lineCap='round';
   ctx.beginPath(); ctx.moveTo(cx1-30,surfY);
-  ctx.lineTo(cx1-30,surfY-55); ctx.lineTo(cx1+35,surfY-55); ctx.stroke();
-  // P5 pill at anchor
+  ctx.lineTo(cx1-30,surfY-strandH); ctx.lineTo(cx1+40,surfY-strandH); ctx.stroke();
   _roundRect(ctx,cx1-42,surfY-14,24,14,3,COLORS.gd,null);
   _label(ctx,'P5',cx1-30,surfY-7,7,'#fff','center','700');
-  // P7 dangling at strand end
-  _roundRect(ctx,cx1+24,surfY-62,24,14,3,COLORS.gc+'88',null);
-  _label(ctx,'P7',cx1+36,surfY-55,7,'#fff','center','700');
-  // R1 sequencing arrow
-  _arrow(ctx,cx1-24,surfY-38,cx1+20,surfY-38,COLORS.gb,2);
-  _label(ctx,'R1 →',cx1,surfY-28,10,COLORS.gb,'center','700');
-  // Label
-  _label(ctx,'1. Sequence R1',cx1,surfY+24,10,COLORS.gb,'center','700');
-  _label(ctx,'from P5 end',cx1,surfY+36,8,COLORS.ink3,'center','400');
+  _roundRect(ctx,cx1+28,surfY-strandH-7,24,14,3,COLORS.gc,null);
+  _label(ctx,'P7',cx1+40,surfY-strandH,7,'#fff','center','700');
+  _arrow(ctx,cx1-24,surfY-strandH+18,cx1+24,surfY-strandH+18,COLORS.gb,2);
+  _label(ctx,'R1 →',cx1,surfY-strandH+30,10,COLORS.gb,'center','700');
+  _label(ctx,'1. Sequence R1',cx1,surfY+26,11,COLORS.gb,'center','700');
+  _label(ctx,'from P5 end',cx1,surfY+40,9,COLORS.ink3,'center','400');
 
   /* ── Sub-step 2: Wash R1 ── */
   const cx2=stX[1];
-  // Single strand, faded (R1 products removed)
   ctx.strokeStyle=COLORS.ink3+'66'; ctx.lineWidth=2;
   ctx.beginPath(); ctx.moveTo(cx2-20,surfY);
-  ctx.lineTo(cx2-20,surfY-40); ctx.lineTo(cx2+20,surfY-40); ctx.stroke();
+  ctx.lineTo(cx2-20,surfY-50); ctx.lineTo(cx2+20,surfY-50); ctx.stroke();
   _roundRect(ctx,cx2-32,surfY-14,24,14,3,COLORS.gd,null);
   _label(ctx,'P5',cx2-20,surfY-7,7,'#fff','center','700');
-  // × over the washed area
   ctx.strokeStyle=COLORS.bad+'99'; ctx.lineWidth=2.5;
-  ctx.beginPath(); ctx.moveTo(cx2-10,surfY-52); ctx.lineTo(cx2+10,surfY-32); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(cx2+10,surfY-52); ctx.lineTo(cx2-10,surfY-32); ctx.stroke();
-  _label(ctx,'2. Wash off',cx2,surfY+24,10,COLORS.bad,'center','700');
-  _label(ctx,'R1 products',cx2,surfY+36,8,COLORS.ink3,'center','400');
+  ctx.beginPath(); ctx.moveTo(cx2-12,surfY-62); ctx.lineTo(cx2+12,surfY-38); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx2+12,surfY-62); ctx.lineTo(cx2-12,surfY-38); ctx.stroke();
+  _label(ctx,'2. Wash off',cx2,surfY+26,11,COLORS.bad,'center','700');
+  _label(ctx,'R1 products',cx2,surfY+40,9,COLORS.ink3,'center','400');
 
   /* ── Sub-step 3: Re-bridge to P7 ── */
   const cx3=stX[2];
-  // Bridge: strand bends from P5 oligo over to P7 oligo (same as bridge amp)
   ctx.strokeStyle=COLORS.gd; ctx.lineWidth=3;
-  ctx.beginPath(); ctx.moveTo(cx3-30,surfY);
-  ctx.quadraticCurveTo(cx3-30,surfY-60, cx3,surfY-65);
-  ctx.quadraticCurveTo(cx3+30,surfY-60, cx3+30,surfY); ctx.stroke();
-  // P5 and P7 anchors on surface
-  _roundRect(ctx,cx3-42,surfY-14,24,14,3,COLORS.gd,null);
-  _label(ctx,'P5',cx3-30,surfY-7,7,'#fff','center','700');
-  _roundRect(ctx,cx3+18,surfY-14,24,14,3,COLORS.gc,null);
-  _label(ctx,'P7',cx3+30,surfY-7,7,'#fff','center','700');
-  _label(ctx,'3. Re-bridge',cx3,surfY+24,10,COLORS.gd,'center','700');
-  _label(ctx,'to P7 oligo',cx3,surfY+36,8,COLORS.ink3,'center','400');
+  ctx.beginPath(); ctx.moveTo(cx3-35,surfY);
+  ctx.quadraticCurveTo(cx3-35,surfY-strandH-5, cx3,surfY-strandH-10);
+  ctx.quadraticCurveTo(cx3+35,surfY-strandH-5, cx3+35,surfY); ctx.stroke();
+  _roundRect(ctx,cx3-47,surfY-14,24,14,3,COLORS.gd,null);
+  _label(ctx,'P5',cx3-35,surfY-7,7,'#fff','center','700');
+  _roundRect(ctx,cx3+23,surfY-14,24,14,3,COLORS.gc,null);
+  _label(ctx,'P7',cx3+35,surfY-7,7,'#fff','center','700');
+  _label(ctx,'3. Re-bridge',cx3,surfY+26,11,COLORS.gd,'center','700');
+  _label(ctx,'to P7 oligo',cx3,surfY+40,9,COLORS.ink3,'center','400');
 
   /* ── Sub-step 4: Sequence R2 ── */
   const cx4=stX[3];
-  // Strand anchored at P7 (right), going up and left
   ctx.strokeStyle=COLORS.gc; ctx.lineWidth=3; ctx.lineCap='round';
   ctx.beginPath(); ctx.moveTo(cx4+30,surfY);
-  ctx.lineTo(cx4+30,surfY-55); ctx.lineTo(cx4-35,surfY-55); ctx.stroke();
-  // P7 pill at anchor
+  ctx.lineTo(cx4+30,surfY-strandH); ctx.lineTo(cx4-40,surfY-strandH); ctx.stroke();
   _roundRect(ctx,cx4+18,surfY-14,24,14,3,COLORS.gc,null);
   _label(ctx,'P7',cx4+30,surfY-7,7,'#fff','center','700');
-  // P5 dangling at strand end
-  _roundRect(ctx,cx4-48,surfY-62,24,14,3,COLORS.gd+'88',null);
-  _label(ctx,'P5',cx4-36,surfY-55,7,'#fff','center','700');
-  // R2 sequencing arrow (leftward)
-  _arrow(ctx,cx4+24,surfY-38,cx4-20,surfY-38,COLORS.gc,2);
-  _label(ctx,'← R2',cx4,surfY-28,10,COLORS.gc,'center','700');
-  _label(ctx,'4. Sequence R2',cx4,surfY+24,10,COLORS.gc,'center','700');
-  _label(ctx,'from P7 end',cx4,surfY+36,8,COLORS.ink3,'center','400');
-
-  /* ── Arrows between sub-steps ── */
-  for(let i=0;i<3;i++){
-    _arrow(ctx,stX[i]+sw/2-5,surfY-30, stX[i+1]-sw/2+5,surfY-30, COLORS.ink4+'88',1.5);
-  }
+  _roundRect(ctx,cx4-52,surfY-strandH-7,24,14,3,COLORS.gd,null);
+  _label(ctx,'P5',cx4-40,surfY-strandH,7,'#fff','center','700');
+  _arrow(ctx,cx4+24,surfY-strandH+18,cx4-24,surfY-strandH+18,COLORS.gc,2);
+  _label(ctx,'← R2',cx4,surfY-strandH+30,10,COLORS.gc,'center','700');
+  _label(ctx,'4. Sequence R2',cx4,surfY+26,11,COLORS.gc,'center','700');
+  _label(ctx,'from P7 end',cx4,surfY+40,9,COLORS.ink3,'center','400');
 
   /* ════════════════════════════════════════════════════════════
      Result: what the two reads cover on the original fragment
      ════════════════════════════════════════════════════════════ */
-  const ry=surfY+56;
-  _label(ctx,'Result: two reads from opposite ends of the same fragment',400,ry,12,COLORS.ink,'center','700');
+  const ry=surfY+64;
+  _label(ctx,'Result: two reads from opposite ends of the same fragment',400,ry,13,COLORS.ink,'center','700');
 
-  const ffy=ry+16, ffx=80, ffw=640, ffh=24, adW=40;
-  // P5
-  _roundRect(ctx,ffx,ffy,adW,ffh,4,COLORS.gd+'dd',COLORS.gd,1.5);
-  _label(ctx,'P5',ffx+adW/2,ffy+ffh/2,10,'#fff','center','700');
-  // Insert
-  const ig=ctx.createLinearGradient(ffx+adW,0,ffx+ffw-adW,0);
+  const ffy=ry+22, ffx=60, ffw=680, ffh=38, adW=46;
+  // P5 adapter
+  _roundRect(ctx,ffx,ffy,adW,ffh,4,COLORS.gd,COLORS.gd,1.5);
+  _label(ctx,'P5',ffx+adW/2,ffy+ffh/2,12,'#fff','center','700');
+  // Insert region
+  const insX=ffx+adW, insW=ffw-adW*2;
+  const ig=ctx.createLinearGradient(insX,0,insX+insW,0);
   ig.addColorStop(0,'#dbeafe'); ig.addColorStop(0.5,'#eff6ff'); ig.addColorStop(1,'#dbeafe');
-  ctx.fillStyle=ig; ctx.fillRect(ffx+adW,ffy,ffw-adW*2,ffh);
-  ctx.strokeStyle=COLORS.gb+'33'; ctx.lineWidth=1; ctx.strokeRect(ffx+adW,ffy,ffw-adW*2,ffh);
-  // P7
-  _roundRect(ctx,ffx+ffw-adW,ffy,adW,ffh,4,COLORS.gc+'dd',COLORS.gc,1.5);
-  _label(ctx,'P7',ffx+ffw-adW/2,ffy+ffh/2,10,'#fff','center','700');
-  // R1 coverage
-  const r1w=ffw*0.30;
-  ctx.fillStyle=COLORS.gb+'22'; ctx.fillRect(ffx+adW+1,ffy+1,r1w,ffh-2);
-  _arrow(ctx,ffx+adW+4,ffy+ffh+10,ffx+adW+r1w,ffy+ffh+10,COLORS.gb,2);
-  _label(ctx,'R1 — 150 bp',ffx+adW+r1w/2,ffy+ffh+24,10,COLORS.gb,'center','700');
-  // R2 coverage
-  const r2w=ffw*0.30;
-  ctx.fillStyle=COLORS.gc+'22'; ctx.fillRect(ffx+ffw-adW-r2w,ffy+1,r2w,ffh-2);
-  _arrow(ctx,ffx+ffw-adW-4,ffy+ffh+10,ffx+ffw-adW-r2w,ffy+ffh+10,COLORS.gc,2);
-  _label(ctx,'R2 — 150 bp',ffx+ffw-adW-r2w/2,ffy+ffh+24,10,COLORS.gc,'center','700');
+  ctx.fillStyle=ig; ctx.fillRect(insX,ffy,insW,ffh);
+  ctx.strokeStyle=COLORS.gb+'33'; ctx.lineWidth=1; ctx.strokeRect(insX,ffy,insW,ffh);
+  _label(ctx,'insert (300–500 bp)',ffx+ffw/2,ffy+ffh/2,11,COLORS.ink4,'center','500');
+  // P7 adapter
+  _roundRect(ctx,ffx+ffw-adW,ffy,adW,ffh,4,COLORS.gc,COLORS.gc,1.5);
+  _label(ctx,'P7',ffx+ffw-adW/2,ffy+ffh/2,12,'#fff','center','700');
 
-  /* ── R2 quality + output ── */
-  const qy=ffy+ffh+40;
-  _label(ctx,'R2 quality is lower than R1:',260,qy,10,COLORS.bad,'center','700');
-  _label(ctx,'reagents depleted · strands lose sync (phasing) · clusters decay',260,qy+14,9,COLORS.ink3,'center','400');
+  // R1 coverage highlight
+  const r1w=insW*0.30;
+  ctx.fillStyle=COLORS.gb+'30'; ctx.fillRect(insX+1,ffy+1,r1w,ffh-2);
+  _arrow(ctx,insX+4,ffy+ffh+14,insX+r1w,ffy+ffh+14,COLORS.gb,2);
+  _label(ctx,'R1 — ~150 bp',insX+r1w/2,ffy+ffh+30,11,COLORS.gb,'center','700');
 
-  _roundRect(ctx,520,qy-12,250,58,8,'#f8fafc',COLORS.border,1);
-  _label(ctx,'Output per sample:',544,qy+2,9,COLORS.ink2,'left','600');
-  _roundRect(ctx,548,qy+14,140,13,3,COLORS.gb+'11',COLORS.gb+'66',1);
-  _monoLabel(ctx,'sample_R1.fastq.gz',618,qy+20,8,COLORS.gb,'center');
-  _roundRect(ctx,548,qy+31,140,13,3,COLORS.gc+'11',COLORS.gc+'66',1);
-  _monoLabel(ctx,'sample_R2.fastq.gz',618,qy+37,8,COLORS.gc,'center');
+  // R2 coverage highlight
+  const r2w=insW*0.30;
+  const r2x=insX+insW-r2w;
+  ctx.fillStyle=COLORS.gc+'30'; ctx.fillRect(r2x,ffy+1,r2w,ffh-2);
+  _arrow(ctx,insX+insW-4,ffy+ffh+14,r2x,ffy+ffh+14,COLORS.gc,2);
+  _label(ctx,'R2 — ~150 bp',r2x+r2w/2,ffy+ffh+30,11,COLORS.gc,'center','700');
+
+  // Unsequenced gap in the middle
+  const gapX1=insX+r1w, gapX2=r2x;
+  if(gapX2-gapX1>20){
+    ctx.setLineDash([4,4]); ctx.strokeStyle=COLORS.ink4+'55'; ctx.lineWidth=1;
+    const gapMidY=ffy+ffh+14;
+    ctx.beginPath(); ctx.moveTo(gapX1+4,gapMidY); ctx.lineTo(gapX2-4,gapMidY); ctx.stroke();
+    ctx.setLineDash([]);
+    _label(ctx,'unsequenced gap',(gapX1+gapX2)/2,ffy+ffh+30,9,COLORS.ink4,'center','400');
+  }
+
+  /* ── R2 quality note (centred below) ── */
+  const qy=ffy+ffh+52;
+  _label(ctx,'R2 quality is lower than R1:  reagents depleted · strands lose sync (phasing) · clusters decay',
+    400,qy,10,COLORS.ink3,'center','400');
 }
 
 /* ═══════════════════════════════════════════════════════════
