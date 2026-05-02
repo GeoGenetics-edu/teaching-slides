@@ -287,34 +287,8 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
   <h2 class="stitle">Small errors can become biological claims</h2>
   <p class="sub">Errors propagate through the pipeline. Each step inherits the limitations of the previous one.</p>
 
-  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:28px;">
-    <div>
-      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--bad);margin-bottom:10px">Error chain 1: quality to annotation</div>
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-        <span class="chain-step" style="border-color:#fecaca;color:var(--bad)">Low-quality base</span>
-        <span class="chain-arrow">&rarr;</span>
-        <span class="chain-step" style="border-color:#fed7aa;color:var(--warn)">False k-mer</span>
-        <span class="chain-arrow">&rarr;</span>
-        <span class="chain-step" style="border-color:#fed7aa;color:var(--warn)">Graph branch</span>
-        <span class="chain-arrow">&rarr;</span>
-        <span class="chain-step" style="border-color:#fde68a;color:var(--gd)">Fragmented contig</span>
-        <span class="chain-arrow">&rarr;</span>
-        <span class="chain-step" style="border-color:#dbeafe;color:var(--gb)">Broken gene</span>
-        <span class="chain-arrow">&rarr;</span>
-        <span class="chain-step" style="border-color:#e9d5ff;color:var(--gc)">Missing annotation</span>
-      </div>
-    </div>
-
-    <div>
-      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--bad);margin-bottom:10px">Error chain 2: contamination to false function</div>
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-        <span class="chain-step" style="border-color:#fecaca;color:var(--bad)">Contaminant read</span>
-        <span class="chain-arrow">&rarr;</span>
-        <span class="chain-step" style="border-color:#fed7aa;color:var(--warn)">Wrong bin</span>
-        <span class="chain-arrow">&rarr;</span>
-        <span class="chain-step" style="border-color:#e9d5ff;color:var(--gc)">False function</span>
-      </div>
-    </div>
+  <div style="flex:1;display:flex;align-items:center;justify-content:center">
+    <canvas id="error-bridge-canvas" width="800" height="440" style="width:100%;max-width:960px;border-radius:12px;background:var(--surface);border:1px solid var(--border)"></canvas>
   </div>
 
   <div class="takeaways" style="margin-top:8px">

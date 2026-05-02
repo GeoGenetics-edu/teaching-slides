@@ -2126,10 +2126,122 @@ Reveal.initialize({
     if(hdr)hdr.textContent=tkHeaders[step]||tkHeaders[0];
   }
 
+  /* ═══════════════════════════════════════════════════════════
+     ERROR BRIDGE — pipeline error propagation visual
+     ═══════════════════════════════════════════════════════════ */
+  function drawErrorBridge(){
+    const ctx=_c('error-bridge-canvas');if(!ctx)return;
+    ctx.clearRect(0,0,800,440);
+
+    /* ── Top: 4 pipeline stages ── */
+    const stages=[
+      {label:'Reads',sub:'Raw sequences',col:COLORS.ok,x:60,icon:'📖'},
+      {label:'Assembly',sub:'Contigs',col:COLORS.gb,x:250,icon:'🧩'},
+      {label:'Binning',sub:'MAGs',col:COLORS.gd,x:440,icon:'📦'},
+      {label:'Annotation',sub:'Biological claims',col:COLORS.gc,x:630,icon:'🏷️'}
+    ];
+    const bw=130,bh=52,by=10;
+    for(let i=0;i<4;i++){
+      const s=stages[i];
+      _roundRect(ctx,s.x,by,bw,bh,8,s.col+'15',s.col,2);
+      _label(ctx,s.label,s.x+bw/2,by+20,14,s.col,'center','700');
+      _label(ctx,s.sub,s.x+bw/2,by+40,9,COLORS.ink4,'center','500');
+      if(i<3){
+        _arrow(ctx,s.x+bw+4,by+bh/2,stages[i+1].x-4,by+bh/2,COLORS.ink4+'88',2);
+      }
+    }
+
+    /* ── Pipeline label ── */
+    _label(ctx,'The metagenomics pipeline',400,by+bh+20,10,COLORS.ink4,'center','500');
+
+    /* ── Error chain 1: quality → annotation ── */
+    const c1y=by+bh+48;
+    _label(ctx,'Error chain 1: a single bad base call',400,c1y,11,COLORS.bad,'center','700');
+
+    const chain1=[
+      {label:'Low-quality\nbase call',col:COLORS.bad,x:40,w:100},
+      {label:'False k-mer\nin graph',col:'#dc2626',x:160,w:100},
+      {label:'Spurious\ngraph branch',col:COLORS.warn,x:280,w:100},
+      {label:'Fragmented\ncontig',col:COLORS.gd,x:400,w:100},
+      {label:'Broken\ngene',col:COLORS.gb,x:520,w:100},
+      {label:'Missing\nannotation',col:COLORS.gc,x:640,w:110}
+    ];
+    const c1by=c1y+14;
+    for(let i=0;i<chain1.length;i++){
+      const c=chain1[i];
+      // Gradient fill getting darker as error propagates
+      const alpha=Math.min(0.08+i*0.03,0.22);
+      const alphaHex=Math.round(alpha*255).toString(16).padStart(2,'0');
+      _roundRect(ctx,c.x,c1by,c.w,44,6,COLORS.bad+alphaHex,c.col+'88',1.5);
+      const lines=c.label.split('\n');
+      for(let l=0;l<lines.length;l++){
+        _label(ctx,lines[l],c.x+c.w/2,c1by+16+l*14,9,c.col,'center','600');
+      }
+      if(i<chain1.length-1){
+        _arrow(ctx,c.x+c.w+2,c1by+22,chain1[i+1].x-2,c1by+22,COLORS.bad+'66',1.5);
+      }
+    }
+
+    /* ── Magnification metaphor ── */
+    const my=c1by+62;
+    // Small dot on the left growing into big impact on the right
+    ctx.save();
+    const grad=ctx.createLinearGradient(80,0,720,0);
+    grad.addColorStop(0,COLORS.bad+'08');grad.addColorStop(1,COLORS.bad+'25');
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.moveTo(80,my+2);ctx.lineTo(720,my-12);ctx.lineTo(720,my+38);ctx.lineTo(80,my+24);ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    // Small circle left
+    ctx.beginPath();ctx.arc(80,my+13,4,0,Math.PI*2);ctx.fillStyle=COLORS.bad+'44';ctx.fill();
+    ctx.strokeStyle=COLORS.bad;ctx.lineWidth=1;ctx.stroke();
+    // Big circle right
+    ctx.beginPath();ctx.arc(720,my+13,14,0,Math.PI*2);ctx.fillStyle=COLORS.bad+'33';ctx.fill();
+    ctx.strokeStyle=COLORS.bad;ctx.lineWidth=1.5;ctx.stroke();
+    _label(ctx,'Q20 error',80,my+30,8,COLORS.bad,'center','500');
+    _label(ctx,'(1 in 100)',80,my+40,7,COLORS.ink4,'center','400');
+    _label(ctx,'"Novel enzyme',720,my+36,8,COLORS.bad,'center','600');
+    _label(ctx,'in uncultured archaeon"',720,my+46,8,COLORS.bad,'center','600');
+    _label(ctx,'Errors amplify: small sequencing noise can become a published biological claim',400,my+14,10,COLORS.ink3,'center','500');
+
+    /* ── Error chain 2: contamination → false function ── */
+    const c2y=my+68;
+    _label(ctx,'Error chain 2: a contaminant read',400,c2y,11,COLORS.bad,'center','700');
+
+    const chain2=[
+      {label:'Contaminant\nread',col:COLORS.bad,x:120,w:110},
+      {label:'Wrong\nbin (MAG)',col:COLORS.warn,x:290,w:110},
+      {label:'Chimeric\ngenome',col:COLORS.gd,x:460,w:110},
+      {label:'False metabolic\ncapability',col:COLORS.gc,x:630,w:120}
+    ];
+    const c2by=c2y+14;
+    for(let i=0;i<chain2.length;i++){
+      const c=chain2[i];
+      const alpha=Math.min(0.08+i*0.04,0.22);
+      const alphaHex=Math.round(alpha*255).toString(16).padStart(2,'0');
+      _roundRect(ctx,c.x,c2by,c.w,44,6,COLORS.bad+alphaHex,c.col+'88',1.5);
+      const lines=c.label.split('\n');
+      for(let l=0;l<lines.length;l++){
+        _label(ctx,lines[l],c.x+c.w/2,c2by+16+l*14,9,c.col,'center','600');
+      }
+      if(i<chain2.length-1){
+        _arrow(ctx,c.x+c.w+2,c2by+22,chain2[i+1].x-2,c2by+22,COLORS.bad+'66',1.5);
+      }
+    }
+
+    /* ── Bottom: what we can control ── */
+    const by2=c2by+68;
+    _roundRect(ctx,100,by2,600,50,8,COLORS.ok+'0c',COLORS.ok+'44',1.5);
+    _label(ctx,'What this lecture is about',400,by2+16,12,COLORS.ok,'center','700');
+    _label(ctx,'Quality control, validation, and knowing the limits of your MAGs before making claims',400,by2+36,10,COLORS.ink3,'center','500');
+  }
+
   /* ── Slide change handler ── */
   function go(){
     const i=Reveal.getState().indexh;
 
+    if(i===SID('error-bridge')){setTimeout(()=>drawErrorBridge(),300)}
     if(i===SID('illumina-sbs')){setTimeout(()=>{drawSbsCanvas(0);sbsHighlight(0)},300)}
     if(i===SID('illumina-quality')){setTimeout(()=>drawIlluCanvas(0),300)}
     if(i===SID('why-not-16s')){setTimeout(()=>drawTaxCanvas(),300)}
