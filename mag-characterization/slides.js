@@ -82,7 +82,9 @@ function _monoLabel(ctx,text,x,y,size,color,align){
    Shows a simplified tree: marker gene approach vs 16S approach
    ═══════════════════════════════════════════════════════════ */
 
-function drawTaxCanvas(){
+let taxStep=0;
+function drawTaxCanvas(step){
+  if(step!==undefined) taxStep=step;
   const ctx=_c('tax-canvas');if(!ctx)return;
   ctx.clearRect(0,0,800,440);
 
@@ -95,9 +97,11 @@ function drawTaxCanvas(){
   _label(ctx,'16S rRNA approach',p1x+pw/2,py+18,13,COLORS.bad,'center','700');
   _label(ctx,'Single gene, often missing from MAGs',p1x+pw/2,py+34,9,COLORS.ink4,'center','400');
 
+  if(taxStep>=1){
   _roundRect(ctx,p2x,py,pw,ph,10,'#f0fdf4'+'44',COLORS.ok+'33',1);
   _label(ctx,'Genome-based approach',p2x+pw/2,py+18,13,COLORS.ok,'center','700');
   _label(ctx,'120+ universal marker genes',p2x+pw/2,py+34,9,COLORS.ink4,'center','400');
+  }
 
   /* ── Shared tree structure (rectangular cladogram) ── */
   // Tips: 8 taxa with spacing
@@ -214,27 +218,30 @@ function drawTaxCanvas(){
     }
   }
 
-  /* ── Draw both trees ── */
+  /* ── Draw trees ── */
   drawTree(p1x+8,py+44,pw*0.5,ph-56,false);
-  drawTree(p2x+8,py+44,pw*0.5,ph-56,true);
-
-  /* ── Panel verdict labels (inside panel, bottom) ── */
   _label(ctx,'3 of 5 MAGs cannot be placed',p1x+pw/2,py+ph-12,11,COLORS.bad,'center','700');
-  _label(ctx,'All 5 MAGs placed with confidence',p2x+pw/2,py+ph-12,11,COLORS.ok,'center','700');
+
+  if(taxStep>=1){
+    drawTree(p2x+8,py+44,pw*0.5,ph-56,true);
+    _label(ctx,'All 5 MAGs placed with confidence',p2x+pw/2,py+ph-12,11,COLORS.ok,'center','700');
+  }
 
   /* ── Bottom comparison summary ── */
   const by=py+ph+14;
-  _roundRect(ctx,40,by,340,70,8,'#fef2f2'+'44',COLORS.bad+'33',1);
-  _label(ctx,'16S rRNA',60,by+16,11,COLORS.bad,'left','700');
-  _label(ctx,'Only ~40% of MAGs have 16S assembled',60,by+34,9,COLORS.ink3,'left','400');
-  _label(ctx,'Limited resolution below family level',60,by+50,9,COLORS.ink3,'left','400');
-  _label(ctx,'1 gene',60,by+64,8,COLORS.bad,'left','600');
+  _roundRect(ctx,40,by,340,80,8,'#fef2f2'+'44',COLORS.bad+'33',1);
+  _label(ctx,'16S rRNA',58,by+20,11,COLORS.bad,'left','700');
+  _label(ctx,'Only ~40% of MAGs have 16S assembled',58,by+38,9,COLORS.ink3,'left','400');
+  _label(ctx,'Limited resolution below family level',58,by+54,9,COLORS.ink3,'left','400');
+  _label(ctx,'1 gene',58,by+72,8,COLORS.bad,'left','600');
 
-  _roundRect(ctx,420,by,340,70,8,'#f0fdf4'+'44',COLORS.ok+'33',1);
-  _label(ctx,'Genome-based (e.g. GTDB-Tk)',440,by+16,11,COLORS.ok,'left','700');
-  _label(ctx,'Works for every MAG with enough completeness',440,by+34,9,COLORS.ink3,'left','400');
-  _label(ctx,'Species-level resolution using 120 markers',440,by+50,9,COLORS.ink3,'left','400');
-  _label(ctx,'120 genes',440,by+64,8,COLORS.ok,'left','600');
+  if(taxStep>=1){
+  _roundRect(ctx,420,by,340,80,8,'#f0fdf4'+'44',COLORS.ok+'33',1);
+  _label(ctx,'Genome-based (e.g. GTDB-Tk)',438,by+20,11,COLORS.ok,'left','700');
+  _label(ctx,'Works for every MAG with enough completeness',438,by+38,9,COLORS.ink3,'left','400');
+  _label(ctx,'Species-level resolution using 120 markers',438,by+54,9,COLORS.ink3,'left','400');
+  _label(ctx,'120 genes',438,by+72,8,COLORS.ok,'left','600');
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2317,7 +2324,7 @@ Reveal.initialize({
     if(i===SID('error-bridge')){setTimeout(()=>drawErrorBridge(),300)}
     if(i===SID('illumina-sbs')){setTimeout(()=>{drawSbsCanvas(0);sbsHighlight(0)},300)}
     if(i===SID('illumina-quality')){setTimeout(()=>drawIlluCanvas(0),300)}
-    if(i===SID('why-not-16s')){setTimeout(()=>drawTaxCanvas(),300)}
+    if(i===SID('why-not-16s')){setTimeout(()=>drawTaxCanvas(0),300)}
     if(i===SID('gtdb')){setTimeout(()=>drawGtdbCanvas(),300)}
     if(i===SID('gtdb-tk')){setTimeout(()=>{drawTkCanvas(0);tkHighlight(0)},300)}
     if(i===SID('gene-prediction')){setTimeout(()=>drawGpCanvas(),300)}
@@ -2347,6 +2354,9 @@ Reveal.initialize({
       const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
       drawIlluCanvas(idx+1);
     }
+    if(si===SID('why-not-16s')){
+      drawTaxCanvas(1);
+    }
   });
 
   Reveal.on('fragmenthidden',e=>{
@@ -2362,6 +2372,9 @@ Reveal.initialize({
     if(si===SID('illumina-quality')){
       const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
       drawIlluCanvas(idx);
+    }
+    if(si===SID('why-not-16s')){
+      drawTaxCanvas(0);
     }
   });
 
