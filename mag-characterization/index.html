@@ -375,13 +375,17 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
 
   <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
     <div class="f0 col g-10 sidebar sidebar-wide">
-      <div class="card info-card" style="border-left:3px solid var(--gd)">
-        <div class="info-card-title">Framework</div>
-        <div class="info-card-text">GTDB places every genome on a phylogenetic tree built from 120 (bacteria) or 53 (archaea) concatenated marker proteins. Ranks are defined by relative evolutionary divergence.</div>
+      <div class="card info-card fragment" data-fragment-index="0" style="border-left:3px solid var(--gd)">
+        <div class="info-card-title">Phylogenetic framework</div>
+        <div class="info-card-text">Every genome is placed on a tree built from 120 bacterial (or 53 archaeal) concatenated marker proteins.</div>
       </div>
-      <div class="card info-card" style="border-left:3px solid var(--gb)">
-        <div class="info-card-title">Standardized</div>
-        <div class="info-card-text">Consistent naming rules across all lineages. No more polyphyletic taxa or conflicting nomenclature between culture-based and genome-based names.</div>
+      <div class="card info-card fragment" data-fragment-index="1" style="border-left:3px solid var(--gb)">
+        <div class="info-card-title">RED normalization</div>
+        <div class="info-card-text">Ranks are set by Relative Evolutionary Divergence: RED = 0 at the root, RED = 1 at tips, internal nodes interpolated. Each rank spans a fixed RED band (median &#xB1; 0.1).</div>
+      </div>
+      <div class="card info-card fragment" data-fragment-index="2" style="border-left:3px solid var(--ga)">
+        <div class="info-card-title">Standardized naming</div>
+        <div class="info-card-text">Consistent naming across all lineages. Polyphyletic taxa are split (e.g. Bacteroides_A). Placeholder names (UBA, sp0) for genome-only lineages.</div>
       </div>
     </div>
 
