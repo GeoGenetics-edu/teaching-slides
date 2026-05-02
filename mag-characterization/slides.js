@@ -299,7 +299,8 @@ function drawGtdbCanvas(step){
   }
   _label(ctx,'RED = 0  (root)',L,B+42,9,COLORS.ink3,'left','600');
   _label(ctx,'RED = 1  (tips)',R,B+42,9,COLORS.ink3,'right','600');
-  _label(ctx,'Relative Evolutionary Divergence',L+treeW/2,B+42,9,COLORS.ink2,'center','600');
+  // Axis title: spell out the acronym prominently
+  _label(ctx,'Relative Evolutionary Divergence (RED)',L+treeW/2,B+42,10,COLORS.ink2,'center','700');
 
   // ── 3. Tree (asymmetric rectangular dendrogram) ──
   // Declarative tree: each node = {red, ch:[...]} or leaf {red, lbl}
@@ -327,18 +328,24 @@ function drawGtdbCanvas(step){
       ]},
     ]},
     {red:0.20,ch:[                           // Phylum B
-      {red:0.33,ch:[                         //   Class B1
-        {red:0.45,ch:[                       //     Order B1a
-          {red:0.54,ch:[                     //       Family B1a-i
-            {red:0.71,ch:[                   //         Genus gamma
+      {red:0.34,ch:[                         //   Class B1
+        {red:0.43,ch:[                       //     Order B1a
+          {red:0.56,ch:[                     //       Family B1a-i
+            {red:0.72,ch:[                   //         Genus gamma
               {red:0.97,lbl:'Sp. F'},
               {red:0.99,lbl:'Sp. G'},
+            ]},
+          ]},
+        ]},
+        {red:0.46,ch:[                       //     Order B1b
+          {red:0.58,ch:[                     //       Family B1b-i
+            {red:0.74,ch:[                   //         Genus delta
               {red:0.95,lbl:'Sp. H'},
+              {red:0.96,lbl:'Sp. I'},
             ]},
           ]},
         ]},
       ]},
-      {red:0.35,lbl:'Sp. I'},               //   deep-branching singleton
     ]},
   ]};
 
@@ -416,8 +423,8 @@ function drawGtdbCanvas(step){
 
   // ── 7. Title (changes with step) ──
   const titles=[
-    'Phylogenetic tree built from 120 marker proteins',
-    'RED defines where each rank falls on the tree',
+    'X-axis = RED: normalized distance from root (0) to tips (1)',
+    'Each rank occupies a fixed RED band (median \xb1 0.1)',
     'Same RED depth = same rank, regardless of lineage'
   ];
   _label(ctx,titles[step]||titles[0],400,18,13,COLORS.ink,'center','700');
