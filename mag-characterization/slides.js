@@ -1487,107 +1487,88 @@ function drawSbs5(ctx){
   /* ════════════════════════════════════════════════════════════
      Visual: 3-panel diagram showing what happens on the flow cell
      ════════════════════════════════════════════════════════════ */
-  const py=60; // panel top
-  const pw=220,ph=110,pg=18; // panel width, height, gap
+  const py=58; // panel top
+  const pw=232,ph=120,pg=12; // panel width, height, gap
   const px0=(800-pw*3-pg*2)/2; // center 3 panels
 
-  // Flow cell surface line helper
+  // Clean flow cell surface line
   function _surface(x,y,w){
-    ctx.strokeStyle=COLORS.ink4+'44';ctx.lineWidth=2;
+    ctx.strokeStyle=COLORS.ink4+'55';ctx.lineWidth=2;
     ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+w,y);ctx.stroke();
-    // oligo stubs
-    for(let i=0;i<5;i++){
-      const ox=x+20+i*(w-40)/4;
-      ctx.strokeStyle=COLORS.ink4+'33';ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(ox,y);ctx.lineTo(ox,y-8);ctx.stroke();
-    }
   }
 
   // ── Panel 1: Read R1 ──
   const p1x=px0;
   _roundRect(ctx,p1x,py,pw,ph,8,COLORS.gb+'08',COLORS.gb+'44',1);
-  _label(ctx,'1. Sequence Read 1',p1x+pw/2,py+16,11,COLORS.gb,'center','700');
+  _label(ctx,'1. Sequence R1',p1x+pw/2,py+16,12,COLORS.gb,'center','700');
 
-  // Flow cell surface
-  const sy1=py+ph-20;
-  _surface(p1x+10,sy1,pw-20);
+  const sy1=py+ph-18;
+  _surface(p1x+12,sy1,pw-24);
 
-  // Strand anchored at P5 on left, extending right
-  const sx1=p1x+30,strand1W=pw-60;
-  // P5 anchor (on surface)
-  _roundRect(ctx,sx1-2,sy1-18,20,14,3,COLORS.gd,null);
-  _label(ctx,'P5',sx1+8,sy1-11,7,'#fff','center','700');
-  // Strand curving up from surface
+  // P5 anchor on surface left
+  _roundRect(ctx,p1x+20,sy1-16,22,14,3,COLORS.gd,null);
+  _label(ctx,'P5',p1x+31,sy1-9,7,'#fff','center','700');
+  // Strand curving up and right
   ctx.strokeStyle=COLORS.gb;ctx.lineWidth=2.5;
-  ctx.beginPath();ctx.moveTo(sx1+18,sy1-12);
-  ctx.quadraticCurveTo(sx1+30,sy1-50,sx1+strand1W,sy1-50);ctx.stroke();
-  // Insert label on strand
-  _label(ctx,'insert DNA',sx1+strand1W/2+10,sy1-58,8,COLORS.ink3,'center','400');
+  ctx.beginPath();ctx.moveTo(p1x+42,sy1-10);
+  ctx.quadraticCurveTo(p1x+60,sy1-52,p1x+pw-30,sy1-52);ctx.stroke();
+  _label(ctx,'insert DNA',p1x+pw/2+10,sy1-60,8,COLORS.ink3,'center','400');
   // P7 dangling at end
-  _roundRect(ctx,sx1+strand1W-4,sy1-56,20,14,3,COLORS.gc+'88',null);
-  _label(ctx,'P7',sx1+strand1W+6,sy1-49,7,'#fff','center','700');
-  // R1 sequencing arrow under strand
-  _arrow(ctx,sx1+22,sy1-36,sx1+strand1W-20,sy1-36,COLORS.gb,2);
-  _label(ctx,'R1 →',sx1+strand1W/2+10,sy1-28,9,COLORS.gb,'center','700');
-  // Primer label
-  _label(ctx,'Rd1 primer',sx1+22,sy1-24,7,COLORS.ink4,'left','400');
+  _roundRect(ctx,p1x+pw-42,sy1-58,22,14,3,COLORS.gc+'88',null);
+  _label(ctx,'P7',p1x+pw-31,sy1-51,7,'#fff','center','700');
+  // R1 arrow
+  _arrow(ctx,p1x+46,sy1-36,p1x+pw-46,sy1-36,COLORS.gb,2);
+  _label(ctx,'R1 →',p1x+pw/2+10,sy1-26,10,COLORS.gb,'center','700');
 
   // ── Panel 2: Turnaround ──
   const p2x=px0+pw+pg;
   _roundRect(ctx,p2x,py,pw,ph,8,COLORS.gd+'08',COLORS.gd+'44',1);
-  _label(ctx,'2. Turnaround',p2x+pw/2,py+16,11,COLORS.gd,'center','700');
+  _label(ctx,'2. Turnaround',p2x+pw/2,py+16,12,COLORS.gd,'center','700');
 
-  const sy2=py+ph-20;
-  _surface(p2x+10,sy2,pw-20);
+  const sy2=py+ph-18;
+  _surface(p2x+12,sy2,pw-24);
 
-  // Strand bridges over — forms arch
-  const sx2=p2x+30,strand2W=pw-60;
   // P5 anchor left
-  _roundRect(ctx,sx2-2,sy2-18,20,14,3,COLORS.gd,null);
-  _label(ctx,'P5',sx2+8,sy2-11,7,'#fff','center','700');
-  // Arch (strand bends over to P7 on right)
+  _roundRect(ctx,p2x+20,sy2-16,22,14,3,COLORS.gd,null);
+  _label(ctx,'P5',p2x+31,sy2-9,7,'#fff','center','700');
+  // Arch (strand re-bridges to P7)
   ctx.strokeStyle=COLORS.ink3+'88';ctx.lineWidth=2;ctx.setLineDash([4,3]);
-  ctx.beginPath();ctx.moveTo(sx2+18,sy2-12);
-  ctx.quadraticCurveTo(sx2+strand2W/2,sy2-70,sx2+strand2W-18,sy2-12);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(p2x+42,sy2-10);
+  ctx.quadraticCurveTo(p2x+pw/2,sy2-75,p2x+pw-42,sy2-10);ctx.stroke();
   ctx.setLineDash([]);
   // P7 anchor right
-  _roundRect(ctx,sx2+strand2W-18,sy2-18,20,14,3,COLORS.gc,null);
-  _label(ctx,'P7',sx2+strand2W-8,sy2-11,7,'#fff','center','700');
+  _roundRect(ctx,p2x+pw-42,sy2-16,22,14,3,COLORS.gc,null);
+  _label(ctx,'P7',p2x+pw-31,sy2-9,7,'#fff','center','700');
   // Labels
-  _label(ctx,'Wash off R1',p2x+pw/2,sy2-56,8,COLORS.gd,'center','600');
-  _label(ctx,'Strand re-bridges',p2x+pw/2,sy2-44,8,COLORS.gd,'center','600');
-  _label(ctx,'to P7 oligo',p2x+pw/2,sy2-34,8,COLORS.gd,'center','600');
+  _label(ctx,'Wash off R1 products',p2x+pw/2,sy2-50,9,COLORS.gd,'center','600');
+  _label(ctx,'Strand re-bridges to P7',p2x+pw/2,sy2-38,9,COLORS.gd,'center','600');
 
   // ── Panel 3: Read R2 ──
   const p3x=px0+2*(pw+pg);
   _roundRect(ctx,p3x,py,pw,ph,8,COLORS.gc+'08',COLORS.gc+'44',1);
-  _label(ctx,'3. Sequence Read 2',p3x+pw/2,py+16,11,COLORS.gc,'center','700');
+  _label(ctx,'3. Sequence R2',p3x+pw/2,py+16,12,COLORS.gc,'center','700');
 
-  const sy3=py+ph-20;
-  _surface(p3x+10,sy3,pw-20);
+  const sy3=py+ph-18;
+  _surface(p3x+12,sy3,pw-24);
 
-  // Strand anchored at P7 on right, extending left
-  const sx3=p3x+30,strand3W=pw-60;
-  // P7 anchor (on surface, right side)
-  _roundRect(ctx,sx3+strand3W-18,sy3-18,20,14,3,COLORS.gc,null);
-  _label(ctx,'P7',sx3+strand3W-8,sy3-11,7,'#fff','center','700');
-  // Strand curving up from P7 leftward
+  // P7 anchor on surface right
+  _roundRect(ctx,p3x+pw-42,sy3-16,22,14,3,COLORS.gc,null);
+  _label(ctx,'P7',p3x+pw-31,sy3-9,7,'#fff','center','700');
+  // Strand curving up and left from P7
   ctx.strokeStyle=COLORS.gc;ctx.lineWidth=2.5;
-  ctx.beginPath();ctx.moveTo(sx3+strand3W-18,sy3-12);
-  ctx.quadraticCurveTo(sx3+strand3W-30,sy3-50,sx3,sy3-50);ctx.stroke();
-  // Insert label
-  _label(ctx,'insert DNA',sx3+strand3W/2-10,sy3-58,8,COLORS.ink3,'center','400');
+  ctx.beginPath();ctx.moveTo(p3x+pw-42,sy3-10);
+  ctx.quadraticCurveTo(p3x+pw-60,sy3-52,p3x+30,sy3-52);ctx.stroke();
+  _label(ctx,'insert DNA',p3x+pw/2-10,sy3-60,8,COLORS.ink3,'center','400');
   // P5 dangling at far end
-  _roundRect(ctx,sx3-16,sy3-56,20,14,3,COLORS.gd+'88',null);
-  _label(ctx,'P5',sx3-6,sy3-49,7,'#fff','center','700');
-  // R2 sequencing arrow (reversed direction)
-  _arrow(ctx,sx3+strand3W-22,sy3-36,sx3+20,sy3-36,COLORS.gc,2);
-  _label(ctx,'← R2',sx3+strand3W/2-10,sy3-28,9,COLORS.gc,'center','700');
-  _label(ctx,'Rd2 primer',sx3+strand3W-22,sy3-24,7,COLORS.ink4,'right','400');
+  _roundRect(ctx,p3x+14,sy3-58,22,14,3,COLORS.gd+'88',null);
+  _label(ctx,'P5',p3x+25,sy3-51,7,'#fff','center','700');
+  // R2 arrow (reversed)
+  _arrow(ctx,p3x+pw-46,sy3-36,p3x+46,sy3-36,COLORS.gc,2);
+  _label(ctx,'← R2',p3x+pw/2-10,sy3-26,10,COLORS.gc,'center','700');
 
   // Arrows between panels
-  _arrow(ctx,p1x+pw+3,py+ph/2,p2x-3,py+ph/2,COLORS.ink4+'88',1.5);
-  _arrow(ctx,p2x+pw+3,py+ph/2,p3x-3,py+ph/2,COLORS.ink4+'88',1.5);
+  _arrow(ctx,p1x+pw+2,py+ph/2,p2x-2,py+ph/2,COLORS.ink4+'88',1.5);
+  _arrow(ctx,p2x+pw+2,py+ph/2,p3x-2,py+ph/2,COLORS.ink4+'88',1.5);
 
   /* ════════════════════════════════════════════════════════════
      Result: what the two reads cover on the original fragment
@@ -1662,12 +1643,12 @@ function drawSbs6(){
     _label(ctx,'Full SBS cycle — animated',400,18,15,COLORS.ink,'center','700');
     _label(ctx,'Cycle '+(cycleNum+1)+' of '+totalCycles,400,36,11,COLORS.gd,'center','600');
 
-    // Progress bar
-    _roundRect(ctx,80,48,640,5,3,COLORS.border,null);
-    _roundRect(ctx,80,48,640*t,5,3,COLORS.gd,null);
+    // Cycle progress bar (thin, below header)
+    _roundRect(ctx,100,48,600,4,2,COLORS.border,null);
+    _roundRect(ctx,100,48,600*t,4,2,COLORS.gd,null);
 
-    // ── Template strand (always visible, centered vertically) ──
-    const tx=60,ty=80,tw=680;
+    // ── Template strand ──
+    const tx=60,ty=72,tw=680;
     const tSeq='ATGCTAGCATGCTA'.split('');
     _dnaStrand(ctx,tx,ty,tw,tSeq,COLORS.ink4+'55',1,4);
     _label(ctx,"3'",tx-14,ty,9,COLORS.ink4,'right','600');
@@ -1690,7 +1671,7 @@ function drawSbs6(){
     const curX=tx+(curIdx+0.5)*(tw/tSeq.length);
 
     // ── Cluster field (always visible, lower half) ──
-    const clY=200,clH=170;
+    const clY=180,clH=180;
     _roundRect(ctx,60,clY,680,clH,8,'#0f172a',COLORS.ink3+'44',1);
     _label(ctx,'Cluster field (millions of clusters)',400,clY-8,9,COLORS.ink4,'center','500');
 
@@ -1806,19 +1787,19 @@ function drawSbs6(){
       _label(ctx,'Read so far: '+(cycleNum+1)+' bases',400,ty+58,12,COLORS.gb,'center','700');
     }
 
+    // ── Phase label above read bar ──
+    _label(ctx,phaseText,400,380,11,COLORS.ink3,'center','500');
+
     // ── Growing read bar at bottom ──
-    const barY=390;
+    const barY=396;
     const barW=600,barX=100;
-    _roundRect(ctx,barX,barY,barW,20,3,COLORS.border+'55',null);
+    _roundRect(ctx,barX,barY,barW,16,3,COLORS.border,null);
     const readLen=cycleNum+(t>0.35?1:0);
     if(readLen>0){
       const filled=barW*(readLen/tSeq.length);
-      _roundRect(ctx,barX,barY,Math.min(filled,barW),20,3,COLORS.gb+'44',null);
+      _roundRect(ctx,barX,barY,Math.min(filled,barW),16,3,COLORS.gb,null);
     }
-    _label(ctx,'Read progress: '+Math.min(readLen,tSeq.length)+'/'+tSeq.length+' bases',400,barY+10,8,'#fff','center','600');
-
-    // Phase label
-    _label(ctx,phaseText,400,428,10,COLORS.ink3,'center','500');
+    _label(ctx,'Read: '+Math.min(readLen,tSeq.length)+'/'+tSeq.length+' bases',400,barY+8,9,readLen>0?'#fff':COLORS.ink3,'center','600');
 
     if(elapsed<totalDuration){
       sbsAnimId=requestAnimationFrame(frame);
