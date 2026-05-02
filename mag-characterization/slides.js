@@ -400,19 +400,20 @@ function drawGtdbCanvas(step){
   _label(ctx,'Root',redX(0)-4,tree.y-12,10,COLORS.ink,'center','700');
 
   // ── 6. Node dots at every split ──
-  // Map each internal node to its rank colour by RED value
-  function rankCol(red){
-    if(red<0.25) return ranks[0].col; // phylum
-    if(red<0.38) return ranks[1].col; // class
-    if(red<0.50) return ranks[2].col; // order
-    if(red<0.64) return ranks[3].col; // family
-    return ranks[4].col;              // genus
-  }
-  for(const nd of internals){
-    if(nd.red===0)continue; // skip root
-    const col=step>=2?rankCol(nd.red):COLORS.ink3;
+  const rankCol=function(red){
+    if(red<0.25) return ranks[0].col;
+    if(red<0.38) return ranks[1].col;
+    if(red<0.50) return ranks[2].col;
+    if(red<0.64) return ranks[3].col;
+    return ranks[4].col;
+  };
+  for(let ni=0;ni<internals.length;ni++){
+    const nd=internals[ni];
+    if(nd.red===0)continue;
+    const rc=rankCol(nd.red);
+    const col=step>=2?rc:COLORS.ink4;
     ctx.beginPath();ctx.arc(redX(nd.red),nd.y,4.5,0,Math.PI*2);
-    ctx.fillStyle=step>=2?col:col+'88';ctx.fill();
+    ctx.fillStyle=col;ctx.fill();
     ctx.strokeStyle='#fff';ctx.lineWidth=1.2;ctx.stroke();
   }
   if(step>=2){
@@ -523,6 +524,18 @@ function drawTkStep1(ctx){
   for(const[x1,y1,x2,y2] of branches){
     ctx.strokeStyle=COLORS.border;ctx.lineWidth=1.5;
     ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  }
+
+  // Internal nodes (branch points)
+  const intNodes=[
+    {x:tx,y:ty+180},         // root
+    {x:tx+80,y:ty+80},{x:tx+80,y:ty+140},{x:tx+80,y:ty+220},{x:tx+80,y:ty+280},
+    {x:tx+200,y:ty+50},{x:tx+200,y:ty+110},{x:tx+200,y:ty+190},{x:tx+200,y:ty+310}
+  ];
+  for(const n of intNodes){
+    ctx.beginPath();ctx.arc(n.x,n.y,4,0,Math.PI*2);
+    ctx.fillStyle=COLORS.ink4;ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();
   }
 
   // Reference tips
