@@ -1543,7 +1543,9 @@ function drawSbs5(ctx){
   // arrowhead
   ctx.fillStyle=COLORS.gd; ctx.beginPath();
   ctx.moveTo(arcR,y2+4); ctx.lineTo(arcR-5,y2-4); ctx.lineTo(arcR+5,y2-4); ctx.fill();
-  _label(ctx,'strand re-bridges to P7',((arcL+arcR)/2),y2-30,9,COLORS.gd,'center','600');
+  // Label on right side of arch, clear of R1 annotation
+  _label(ctx,'strand re-bridges to P7',arcR-60,y2-34,9,COLORS.gd,'center','700');
+  _label(ctx,'(same mechanism as step 3)',arcR-60,y2-22,8,COLORS.gd+'88','center','400');
 
   /* ── Step 3: Sequence R2 ── */
   const y3=y2+bh+26;
