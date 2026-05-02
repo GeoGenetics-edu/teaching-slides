@@ -1480,111 +1480,160 @@ function drawSbs4(ctx){
    ═══════════════════════════════════════════════════════════ */
 function drawSbs5(ctx){
 
-  /* ── Narrative bridge: connect to what the student just learned ── */
-  _label(ctx,'One read only covers ~150 bp of a 300-500 bp fragment',400,20,14,COLORS.ink,'center','700');
-  _label(ctx,'Solution: read from both ends',400,40,13,COLORS.ga,'center','600');
+  /* ── Title: bridge from previous steps ── */
+  _label(ctx,'One read covers ~150 bp, but the fragment is 300-500 bp',400,20,14,COLORS.ink,'center','700');
+  _label(ctx,'The sequencer reads from both ends to cover more of the insert',400,40,12,COLORS.ga,'center','600');
 
-  /* ── Fragment with problem highlighted ── */
-  const fy=62,fx=60,fw=680,fh=32;
+  /* ════════════════════════════════════════════════════════════
+     Visual: 3-panel diagram showing what happens on the flow cell
+     ════════════════════════════════════════════════════════════ */
+  const py=60; // panel top
+  const pw=220,ph=110,pg=18; // panel width, height, gap
+  const px0=(800-pw*3-pg*2)/2; // center 3 panels
 
-  // P5 adapter
-  _roundRect(ctx,fx,fy,60,fh,5,COLORS.gd+'dd',COLORS.gd,2);
-  _label(ctx,'P5',fx+30,fy+fh/2,12,'#fff','center','700');
-
-  // Insert DNA
-  const ig=ctx.createLinearGradient(fx+60,0,fx+fw-60,0);
-  ig.addColorStop(0,'#dbeafe');ig.addColorStop(0.5,'#eff6ff');ig.addColorStop(1,'#dbeafe');
-  ctx.fillStyle=ig;ctx.beginPath();ctx.rect(fx+60,fy,fw-120,fh);ctx.fill();
-  ctx.strokeStyle=COLORS.gb+'66';ctx.lineWidth=1;ctx.stroke();
-  _label(ctx,'Insert DNA (~300–500 bp)',fx+fw/2,fy+fh/2,12,COLORS.gb,'center','600');
-
-  // P7 adapter
-  _roundRect(ctx,fx+fw-60,fy,60,fh,5,COLORS.gc+'dd',COLORS.gc,2);
-  _label(ctx,'P7',fx+fw-30,fy+fh/2,12,'#fff','center','700');
-
-  // R1 arrow
-  const ry=fy+fh+22;
-  _arrow(ctx,fx+62,ry,fx+62+240,ry,COLORS.gb,3.5);
-  _label(ctx,'Read 1 (R1) — 150 bp',fx+62+120,ry-14,12,COLORS.gb,'center','700');
-
-  // Unsequenced gap — dashed bracket with question mark
-  ctx.strokeStyle=COLORS.ink4+'66';ctx.lineWidth=1;ctx.setLineDash([4,3]);
-  ctx.beginPath();ctx.moveTo(fx+62+244,ry-6);ctx.lineTo(fx+62+244,ry+6);
-  ctx.moveTo(fx+62+244,ry);ctx.lineTo(fx+fw-62-244,ry);
-  ctx.moveTo(fx+fw-62-244,ry-6);ctx.lineTo(fx+fw-62-244,ry+6);ctx.stroke();
-  ctx.setLineDash([]);
-  _label(ctx,'unsequenced gap?',fx+fw/2,ry+14,9,COLORS.ink4,'center','500');
-
-  // R2 arrow (reverse)
-  _arrow(ctx,fx+fw-62,ry,fx+fw-62-240,ry,COLORS.gc,3.5);
-  _label(ctx,'Read 2 (R2) — 150 bp',fx+fw-62-120,ry-14,12,COLORS.gc,'center','700');
-
-  // Insert size bracket
-  const bry=ry+24;
-  ctx.strokeStyle=COLORS.ink4;ctx.lineWidth=1;
-  ctx.beginPath();
-  ctx.moveTo(fx+62,bry);ctx.lineTo(fx+62,bry+8);
-  ctx.lineTo(fx+fw-62,bry+8);ctx.lineTo(fx+fw-62,bry);ctx.stroke();
-  _label(ctx,'Insert size (known from library prep)',fx+fw/2,bry+20,10,COLORS.ink4,'center','500');
-
-  /* ── How the machine does it: 4-step workflow ── */
-  const wy=bry+40;
-  _label(ctx,'How the sequencer reads both ends:',400,wy,13,COLORS.gd,'center','700');
-
-  const peSteps=[
-    {title:'Sequence R1',desc:'150 cycles from P5 end',col:COLORS.gb},
-    {title:'Block + wash',desc:'Strip primer, keep cluster',col:COLORS.ink3},
-    {title:'Index read',desc:'Read barcode for sample ID',col:COLORS.gd},
-    {title:'Sequence R2',desc:'150 cycles from P7 end',col:COLORS.gc}
-  ];
-
-  const sw=150,sg=10,sTotal=sw*4+sg*3;
-  const sx0=(800-sTotal)/2;
-  const sy=wy+16;
-
-  for(let i=0;i<4;i++){
-    const s=peSteps[i];
-    const bx=sx0+i*(sw+sg);
-    _roundRect(ctx,bx,sy,sw,48,6,s.col+'0c',s.col+'44',1);
-    _label(ctx,(i+1)+'. '+s.title,bx+sw/2,sy+16,11,s.col,'center','700');
-    _label(ctx,s.desc,bx+sw/2,sy+34,9,COLORS.ink3,'center','400');
-    if(i<3){
-      _arrow(ctx,bx+sw+1,sy+24,bx+sw+sg-1,sy+24,COLORS.ink4+'88',1.5);
+  // Flow cell surface line helper
+  function _surface(x,y,w){
+    ctx.strokeStyle=COLORS.ink4+'44';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+w,y);ctx.stroke();
+    // oligo stubs
+    for(let i=0;i<5;i++){
+      const ox=x+20+i*(w-40)/4;
+      ctx.strokeStyle=COLORS.ink4+'33';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(ox,y);ctx.lineTo(ox,y-8);ctx.stroke();
     }
   }
 
-  /* ── Why R2 < R1 ── */
-  const qy=sy+68;
-  _label(ctx,'Why R2 quality is always lower than R1:',400,qy,12,COLORS.bad,'center','700');
+  // ── Panel 1: Read R1 ──
+  const p1x=px0;
+  _roundRect(ctx,p1x,py,pw,ph,8,COLORS.gb+'08',COLORS.gb+'44',1);
+  _label(ctx,'1. Sequence Read 1',p1x+pw/2,py+16,11,COLORS.gb,'center','700');
 
-  const reasons=[
-    {title:'Reagent depletion',desc:'Consumed during R1',col:COLORS.ok},
-    {title:'Phasing',desc:'Strands lose sync over 300+ cycles',col:COLORS.warn},
-    {title:'Cluster decay',desc:'Signal drops as copies are lost',col:COLORS.bad}
-  ];
+  // Flow cell surface
+  const sy1=py+ph-20;
+  _surface(p1x+10,sy1,pw-20);
 
-  const rw=200,rg=20,rTotal=rw*3+rg*2;
-  const rx0=(800-rTotal)/2;
-  const rsy=qy+12;
+  // Strand anchored at P5 on left, extending right
+  const sx1=p1x+30,strand1W=pw-60;
+  // P5 anchor (on surface)
+  _roundRect(ctx,sx1-2,sy1-18,20,14,3,COLORS.gd,null);
+  _label(ctx,'P5',sx1+8,sy1-11,7,'#fff','center','700');
+  // Strand curving up from surface
+  ctx.strokeStyle=COLORS.gb;ctx.lineWidth=2.5;
+  ctx.beginPath();ctx.moveTo(sx1+18,sy1-12);
+  ctx.quadraticCurveTo(sx1+30,sy1-50,sx1+strand1W,sy1-50);ctx.stroke();
+  // Insert label on strand
+  _label(ctx,'insert DNA',sx1+strand1W/2+10,sy1-58,8,COLORS.ink3,'center','400');
+  // P7 dangling at end
+  _roundRect(ctx,sx1+strand1W-4,sy1-56,20,14,3,COLORS.gc+'88',null);
+  _label(ctx,'P7',sx1+strand1W+6,sy1-49,7,'#fff','center','700');
+  // R1 sequencing arrow under strand
+  _arrow(ctx,sx1+22,sy1-36,sx1+strand1W-20,sy1-36,COLORS.gb,2);
+  _label(ctx,'R1 →',sx1+strand1W/2+10,sy1-28,9,COLORS.gb,'center','700');
+  // Primer label
+  _label(ctx,'Rd1 primer',sx1+22,sy1-24,7,COLORS.ink4,'left','400');
 
-  for(let i=0;i<3;i++){
-    const r=reasons[i];
-    const bx=rx0+i*(rw+rg);
-    ctx.beginPath();ctx.arc(bx+14,rsy+14,10,0,Math.PI*2);
-    ctx.fillStyle=r.col+'22';ctx.fill();ctx.strokeStyle=r.col;ctx.lineWidth=1.5;ctx.stroke();
-    _label(ctx,''+(i+1),bx+14,rsy+14,10,r.col,'center','700');
-    _label(ctx,r.title,bx+30,rsy+8,10,r.col,'left','700');
-    _label(ctx,r.desc,bx+30,rsy+24,9,COLORS.ink3,'left','400');
-  }
+  // ── Panel 2: Turnaround ──
+  const p2x=px0+pw+pg;
+  _roundRect(ctx,p2x,py,pw,ph,8,COLORS.gd+'08',COLORS.gd+'44',1);
+  _label(ctx,'2. Turnaround',p2x+pw/2,py+16,11,COLORS.gd,'center','700');
 
-  /* ── Output: what the student gets ── */
-  const oy=rsy+46;
-  _roundRect(ctx,180,oy,440,44,8,'#f8fafc',COLORS.border,1);
-  _label(ctx,'You get two files per sample:',210,oy+22,10,COLORS.ink2,'left','600');
-  _roundRect(ctx,420,oy+4,180,14,3,COLORS.gb+'11',COLORS.gb+'66',1);
-  _monoLabel(ctx,'sample_R1.fastq.gz',510,oy+11,9,COLORS.gb,'center');
-  _roundRect(ctx,420,oy+24,180,14,3,COLORS.gc+'11',COLORS.gc+'66',1);
-  _monoLabel(ctx,'sample_R2.fastq.gz',510,oy+31,9,COLORS.gc,'center');
+  const sy2=py+ph-20;
+  _surface(p2x+10,sy2,pw-20);
+
+  // Strand bridges over — forms arch
+  const sx2=p2x+30,strand2W=pw-60;
+  // P5 anchor left
+  _roundRect(ctx,sx2-2,sy2-18,20,14,3,COLORS.gd,null);
+  _label(ctx,'P5',sx2+8,sy2-11,7,'#fff','center','700');
+  // Arch (strand bends over to P7 on right)
+  ctx.strokeStyle=COLORS.ink3+'88';ctx.lineWidth=2;ctx.setLineDash([4,3]);
+  ctx.beginPath();ctx.moveTo(sx2+18,sy2-12);
+  ctx.quadraticCurveTo(sx2+strand2W/2,sy2-70,sx2+strand2W-18,sy2-12);ctx.stroke();
+  ctx.setLineDash([]);
+  // P7 anchor right
+  _roundRect(ctx,sx2+strand2W-18,sy2-18,20,14,3,COLORS.gc,null);
+  _label(ctx,'P7',sx2+strand2W-8,sy2-11,7,'#fff','center','700');
+  // Labels
+  _label(ctx,'Wash off R1',p2x+pw/2,sy2-56,8,COLORS.gd,'center','600');
+  _label(ctx,'Strand re-bridges',p2x+pw/2,sy2-44,8,COLORS.gd,'center','600');
+  _label(ctx,'to P7 oligo',p2x+pw/2,sy2-34,8,COLORS.gd,'center','600');
+
+  // ── Panel 3: Read R2 ──
+  const p3x=px0+2*(pw+pg);
+  _roundRect(ctx,p3x,py,pw,ph,8,COLORS.gc+'08',COLORS.gc+'44',1);
+  _label(ctx,'3. Sequence Read 2',p3x+pw/2,py+16,11,COLORS.gc,'center','700');
+
+  const sy3=py+ph-20;
+  _surface(p3x+10,sy3,pw-20);
+
+  // Strand anchored at P7 on right, extending left
+  const sx3=p3x+30,strand3W=pw-60;
+  // P7 anchor (on surface, right side)
+  _roundRect(ctx,sx3+strand3W-18,sy3-18,20,14,3,COLORS.gc,null);
+  _label(ctx,'P7',sx3+strand3W-8,sy3-11,7,'#fff','center','700');
+  // Strand curving up from P7 leftward
+  ctx.strokeStyle=COLORS.gc;ctx.lineWidth=2.5;
+  ctx.beginPath();ctx.moveTo(sx3+strand3W-18,sy3-12);
+  ctx.quadraticCurveTo(sx3+strand3W-30,sy3-50,sx3,sy3-50);ctx.stroke();
+  // Insert label
+  _label(ctx,'insert DNA',sx3+strand3W/2-10,sy3-58,8,COLORS.ink3,'center','400');
+  // P5 dangling at far end
+  _roundRect(ctx,sx3-16,sy3-56,20,14,3,COLORS.gd+'88',null);
+  _label(ctx,'P5',sx3-6,sy3-49,7,'#fff','center','700');
+  // R2 sequencing arrow (reversed direction)
+  _arrow(ctx,sx3+strand3W-22,sy3-36,sx3+20,sy3-36,COLORS.gc,2);
+  _label(ctx,'← R2',sx3+strand3W/2-10,sy3-28,9,COLORS.gc,'center','700');
+  _label(ctx,'Rd2 primer',sx3+strand3W-22,sy3-24,7,COLORS.ink4,'right','400');
+
+  // Arrows between panels
+  _arrow(ctx,p1x+pw+3,py+ph/2,p2x-3,py+ph/2,COLORS.ink4+'88',1.5);
+  _arrow(ctx,p2x+pw+3,py+ph/2,p3x-3,py+ph/2,COLORS.ink4+'88',1.5);
+
+  /* ════════════════════════════════════════════════════════════
+     Result: what the two reads cover on the original fragment
+     ════════════════════════════════════════════════════════════ */
+  const ry=py+ph+24;
+  _label(ctx,'What you get: two reads from opposite ends of the same fragment',400,ry,12,COLORS.ink,'center','700');
+
+  const ffy=ry+18,ffx=100,ffw=600,ffh=26;
+  // P5
+  _roundRect(ctx,ffx,ffy,50,ffh,4,COLORS.gd+'dd',COLORS.gd,1.5);
+  _label(ctx,'P5',ffx+25,ffy+ffh/2,10,'#fff','center','700');
+  // Insert
+  const ig2=ctx.createLinearGradient(ffx+50,0,ffx+ffw-50,0);
+  ig2.addColorStop(0,'#dbeafe');ig2.addColorStop(0.5,'#eff6ff');ig2.addColorStop(1,'#dbeafe');
+  ctx.fillStyle=ig2;ctx.beginPath();ctx.rect(ffx+50,ffy,ffw-100,ffh);ctx.fill();
+  ctx.strokeStyle=COLORS.gb+'44';ctx.lineWidth=1;ctx.stroke();
+  // P7
+  _roundRect(ctx,ffx+ffw-50,ffy,50,ffh,4,COLORS.gc+'dd',COLORS.gc,1.5);
+  _label(ctx,'P7',ffx+ffw-25,ffy+ffh/2,10,'#fff','center','700');
+
+  // R1 coverage highlight
+  const r1w=ffw*0.36;
+  ctx.fillStyle=COLORS.gb+'22';ctx.fillRect(ffx+52,ffy+2,r1w,ffh-4);
+  _arrow(ctx,ffx+54,ffy+ffh+12,ffx+52+r1w,ffy+ffh+12,COLORS.gb,3);
+  _label(ctx,'R1 — 150 bp',ffx+54+r1w/2,ffy+ffh+26,11,COLORS.gb,'center','700');
+
+  // R2 coverage highlight
+  const r2w=ffw*0.36;
+  ctx.fillStyle=COLORS.gc+'22';ctx.fillRect(ffx+ffw-52-r2w,ffy+2,r2w,ffh-4);
+  _arrow(ctx,ffx+ffw-54,ffy+ffh+12,ffx+ffw-52-r2w,ffy+ffh+12,COLORS.gc,3);
+  _label(ctx,'R2 — 150 bp',ffx+ffw-54-r2w/2,ffy+ffh+26,11,COLORS.gc,'center','700');
+
+  /* ── Why R2 < R1 — single line ── */
+  const qy=ffy+ffh+46;
+  _label(ctx,'R2 quality is lower than R1 because:',400,qy,11,COLORS.bad,'center','700');
+  _label(ctx,'reagents depleted  ·  strands lose sync (phasing)  ·  clusters decay over 300+ cycles',
+    400,qy+16,10,COLORS.ink3,'center','400');
+
+  /* ── Output files ── */
+  const oy=qy+36;
+  _roundRect(ctx,200,oy,400,40,8,'#f8fafc',COLORS.border,1);
+  _label(ctx,'You get two FASTQ files per sample:',230,oy+20,10,COLORS.ink2,'left','600');
+  _roundRect(ctx,440,oy+4,145,13,3,COLORS.gb+'11',COLORS.gb+'66',1);
+  _monoLabel(ctx,'sample_R1.fastq.gz',512,oy+10,8,COLORS.gb,'center');
+  _roundRect(ctx,440,oy+22,145,13,3,COLORS.gc+'11',COLORS.gc+'66',1);
+  _monoLabel(ctx,'sample_R2.fastq.gz',512,oy+28,8,COLORS.gc,'center');
 }
 
 /* ═══════════════════════════════════════════════════════════
