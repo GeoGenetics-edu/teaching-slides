@@ -1060,7 +1060,7 @@ function drawSbs0(ctx){
   /* ── Arrow: fragmentation ── */
   const ay=gy+72;
   _arrow(ctx,400,ay,400,ay+35,COLORS.gd,2);
-  _label(ctx,'Enzymatic or mechanical shearing',400,ay+16,11,COLORS.gd,'right','600');
+  _label(ctx,'Enzymatic or mechanical shearing',392,ay+16,11,COLORS.gd,'right','600');
 
   /* ── Middle: three fragments with adapters ── */
   const fy=ay+50;
@@ -1171,7 +1171,7 @@ function drawSbs1(ctx){
   /* ── Arrow down: denature ── */
   const dy=sy+155;
   _arrow(ctx,400,dy,400,dy+30,COLORS.ink4,2);
-  _label(ctx,'Denature: wash away complement strand',400,dy+14,11,COLORS.ink3,'right','600');
+  _label(ctx,'Denature: wash away complement strand',392,dy+14,11,COLORS.ink3,'right','600');
 
   /* ── Bottom: single strands on surface ── */
   const ry=dy+40;
