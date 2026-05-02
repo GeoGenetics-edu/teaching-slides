@@ -1905,8 +1905,8 @@ function drawIlluCanvas(step){
     // Why? — explanation below the plot
     const wy=py+ph-60;
     _roundRect(ctx,px+80,wy,pw-160,50,6,COLORS.bad+'08',COLORS.bad+'33',1);
-    _label(ctx,'Why?  Each cycle adds a small error:',px+pw/2,wy+16,10,COLORS.bad,'center','700');
-    _label(ctx,'phasing (strands lose sync)  ·  signal decay (fluorescence fades)  ·  incomplete cleavage',
+    _label(ctx,'Why?  Each cycle accumulates small errors:',px+pw/2,wy+16,10,COLORS.bad,'center','700');
+    _label(ctx,'phasing (strands lose sync)  ·  signal decay (fluorescence fades)  ·  incomplete removal of terminators',
       px+pw/2,wy+34,9,COLORS.ink3,'center','400');
   }
   else if(illuStep===1){
