@@ -295,15 +295,15 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
 
   <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
     <div class="f0 col g-10 sidebar sidebar-wide">
-      <div class="card info-card" style="border-left:3px solid var(--bad)">
+      <div class="card info-card" id="qual-card-0" style="border-left:3px solid var(--bad)">
         <div class="info-card-title">3&prime; quality drop</div>
         <div class="info-card-text">Later sequencing cycles accumulate phasing and signal decay. Quality drops toward the 3&prime; end of every read.</div>
       </div>
-      <div class="card info-card" style="border-left:3px solid var(--warn)">
+      <div class="card info-card fragment" id="qual-card-1" data-fragment-index="0" style="border-left:3px solid var(--warn)">
         <div class="info-card-title">R2 is worse than R1</div>
         <div class="info-card-text">R2 is sequenced after R1 and additional chemistry steps. By the time R2 starts, clusters are noisier.</div>
       </div>
-      <div class="card info-card" style="border-left:3px solid var(--gd)">
+      <div class="card info-card fragment" id="qual-card-2" data-fragment-index="1" style="border-left:3px solid var(--gd)">
         <div class="info-card-title">Adapter read-through</div>
         <div class="info-card-text">When the insert is shorter than the read length, the sequencer reads into the adapter. These artificial bases must be trimmed.</div>
       </div>

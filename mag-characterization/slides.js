@@ -1807,7 +1807,10 @@ function drawSbs6(){
    11. ILLU-CANVAS — Illumina per-base quality (R1 vs R2)
    ═══════════════════════════════════════════════════════════ */
 
-function drawIlluCanvas(){
+let illuStep=0;
+
+function drawIlluCanvas(step){
+  if(step!==undefined) illuStep=step;
   const ctx=_c('illu-canvas');if(!ctx)return;
   ctx.clearRect(0,0,800,440);
 
@@ -1844,9 +1847,9 @@ function drawIlluCanvas(){
   }
   _label(ctx,'Position in read (bp)',px+pw/2,py+ph+30,10,COLORS.ink3,'center','600');
 
-  // Generate quality distributions — R1 (good, gentle decline) and R2 (worse, steeper decline)
-  function drawQualityTrack(label,col,baseQ,decayStart,decayRate,yJitter){
-    ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();
+  // Generate quality distributions
+  function drawQualityTrack(label,col,baseQ,decayStart,decayRate,yJitter,faded){
+    const alpha=faded?0.2:1;
     const medianPts=[];
     for(let i=0;i<nPos;i++){
       const decay=i>decayStart?(i-decayStart)*decayRate:0;
@@ -1860,7 +1863,7 @@ function drawIlluCanvas(){
       medianPts.push({x,yMed,yQ25,yQ75});
 
       // IQR box
-      ctx.globalAlpha=0.12;
+      ctx.globalAlpha=0.12*alpha;
       ctx.fillStyle=col;ctx.fillRect(x-bw/2+0.5,yQ75,bw-1,yQ25-yQ75);
       ctx.globalAlpha=1;
     }
@@ -1868,32 +1871,76 @@ function drawIlluCanvas(){
     // Median line
     ctx.beginPath();ctx.moveTo(medianPts[0].x,medianPts[0].yMed);
     for(let i=1;i<medianPts.length;i++){ctx.lineTo(medianPts[i].x,medianPts[i].yMed)}
-    ctx.strokeStyle=col;ctx.lineWidth=2;ctx.stroke();
+    ctx.strokeStyle=col;ctx.lineWidth=2;ctx.globalAlpha=alpha;ctx.stroke();ctx.globalAlpha=1;
 
-    // Label
+    // Label at end of line
     const lx=px+pw-40,ly=medianPts[nPos-1].yMed;
-    _label(ctx,label,lx,ly-10,11,col,'center','700');
+    ctx.globalAlpha=alpha;
+    _label(ctx,label,lx,ly-10,12,col,'center','700');
+    ctx.globalAlpha=1;
+
+    return medianPts;
   }
 
-  drawQualityTrack('R1',COLORS.gb,36,40,0.10,3);
-  drawQualityTrack('R2',COLORS.bad,34,20,0.18,4);
+  // Step 0: R1 only — show 3' quality drop
+  // Step 1: Add R2 — show it's worse
+  // Step 2: Add adapter read-through zone
 
-  // Adapter region indicator
-  const adapterStart=120;
-  ctx.fillStyle=COLORS.gd+'15';
-  ctx.fillRect(px+adapterStart*bw,py,pw-adapterStart*bw,ph);
-  ctx.strokeStyle=COLORS.gd;ctx.lineWidth=1;ctx.setLineDash([4,3]);
-  ctx.beginPath();ctx.moveTo(px+adapterStart*bw,py);ctx.lineTo(px+adapterStart*bw,py+ph);ctx.stroke();
-  ctx.setLineDash([]);
-  _label(ctx,'Adapter read-through zone',px+(adapterStart+nPos)/2*bw*0.5+px*0.5+200,py+14,10,COLORS.gd,'center','600');
-  _label(ctx,'(short inserts)',px+(adapterStart+nPos)/2*bw*0.5+px*0.5+200,py+28,9,COLORS.ink4,'center','500');
+  if(illuStep===0){
+    // R1 only, with annotation highlighting the 3' drop
+    const pts=drawQualityTrack('R1',COLORS.gb,36,40,0.10,3,false);
 
-  // Legend
-  _roundRect(ctx,px+140,py+ph-50,420,40,8,'#fff',COLORS.border,1);
-  ctx.fillStyle=COLORS.gb;ctx.fillRect(px+160,py+ph-40,20,3);
-  _label(ctx,'R1 (forward)',px+195,py+ph-38,10,COLORS.gb,'left','600');
-  ctx.fillStyle=COLORS.bad;ctx.fillRect(px+310,py+ph-40,20,3);
-  _label(ctx,'R2 (reverse, noisier)',px+345,py+ph-38,10,COLORS.bad,'left','600');
+    // Annotate the 3' drop with a bracket and arrow
+    const dropStart=Math.floor(40);
+    const xStart=px+dropStart*bw;
+    const yStart=pts[dropStart].yMed;
+    const yEnd=pts[nPos-1].yMed;
+    // Curly arrow from high to low
+    ctx.strokeStyle=COLORS.bad;ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
+    ctx.beginPath();ctx.moveTo(xStart,yStart-6);ctx.lineTo(px+pw-60,yEnd-6);ctx.stroke();
+    ctx.setLineDash([]);
+    _arrow(ctx,px+pw-80,yEnd-6,px+pw-55,yEnd-6,COLORS.bad,1.5);
+    _label(ctx,'quality drops toward 3′ end',px+pw/2+60,yStart-18,10,COLORS.bad,'center','600');
+  }
+  else if(illuStep===1){
+    // Both R1 and R2 — R2 is visibly lower
+    drawQualityTrack('R1',COLORS.gb,36,40,0.10,3,false);
+    const r2pts=drawQualityTrack('R2',COLORS.bad,34,20,0.18,4,false);
+
+    // Annotate gap between R1 and R2
+    const annotPos=100;
+    const r1y=py+ph-(Math.max(2,36-(annotPos>40?(annotPos-40)*0.10:0)))*(ph/42);
+    const r2y=r2pts[annotPos].yMed;
+    ctx.strokeStyle=COLORS.warn;ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(px+annotPos*bw+bw/2,r1y+4);ctx.lineTo(px+annotPos*bw+bw/2,r2y-4);ctx.stroke();
+    // Arrow tips
+    _label(ctx,'↑',px+annotPos*bw+bw/2,r1y+10,8,COLORS.warn,'center','700');
+    _label(ctx,'↓',px+annotPos*bw+bw/2,r2y-6,8,COLORS.warn,'center','700');
+    _label(ctx,'R2 always lower',px+annotPos*bw+bw/2+50,((r1y+r2y)/2),10,COLORS.warn,'left','600');
+  }
+  else{
+    // Full view: both tracks + adapter zone
+    drawQualityTrack('R1',COLORS.gb,36,40,0.10,3,false);
+    drawQualityTrack('R2',COLORS.bad,34,20,0.18,4,false);
+
+    // Adapter region indicator
+    const adapterStart=120;
+    ctx.fillStyle=COLORS.gd+'15';
+    ctx.fillRect(px+adapterStart*bw,py,pw-adapterStart*bw,ph);
+    ctx.strokeStyle=COLORS.gd;ctx.lineWidth=1;ctx.setLineDash([4,3]);
+    ctx.beginPath();ctx.moveTo(px+adapterStart*bw,py);ctx.lineTo(px+adapterStart*bw,py+ph);ctx.stroke();
+    ctx.setLineDash([]);
+    _label(ctx,'Adapter read-through zone',px+(adapterStart+nPos)/2*bw*0.5+px*0.5+200,py+14,11,COLORS.gd,'center','700');
+    _label(ctx,'(short inserts)',px+(adapterStart+nPos)/2*bw*0.5+px*0.5+200,py+30,9,COLORS.ink4,'center','500');
+  }
+
+  // Highlight active card
+  for(let i=0;i<3;i++){
+    const el=document.getElementById('qual-card-'+i);if(!el)continue;
+    el.style.opacity=i<=illuStep?'1':'.35';
+    el.style.transform=i===illuStep?'scale(1.02)':'scale(1)';
+    el.style.boxShadow=i===illuStep?'0 4px 6px rgba(15,23,42,.04),0 2px 12px rgba(15,23,42,.06)':'0 1px 2px rgba(15,23,42,.04),0 1px 3px rgba(15,23,42,.06)';
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2077,7 +2124,7 @@ Reveal.initialize({
     const i=Reveal.getState().indexh;
 
     if(i===SID('illumina-sbs')){setTimeout(()=>{drawSbsCanvas(0);sbsHighlight(0)},300)}
-    if(i===SID('illumina-quality')){setTimeout(()=>drawIlluCanvas(),300)}
+    if(i===SID('illumina-quality')){setTimeout(()=>drawIlluCanvas(0),300)}
     if(i===SID('why-not-16s')){setTimeout(()=>drawTaxCanvas(),300)}
     if(i===SID('gtdb')){setTimeout(()=>drawGtdbCanvas(),300)}
     if(i===SID('gtdb-tk')){setTimeout(()=>{drawTkCanvas(0);tkHighlight(0)},300)}
@@ -2093,7 +2140,7 @@ Reveal.initialize({
   Reveal.on('slidechanged',go);
   go();
 
-  /* ── Fragment events for GTDB-Tk stepping ── */
+  /* ── Fragment events for stepping slides ── */
   Reveal.on('fragmentshown',e=>{
     const si=Reveal.getState().indexh;
     if(si===SID('gtdb-tk')){
@@ -2103,6 +2150,10 @@ Reveal.initialize({
     if(si===SID('illumina-sbs')){
       const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
       drawSbsCanvas(idx+1);sbsHighlight(idx+1);
+    }
+    if(si===SID('illumina-quality')){
+      const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
+      drawIlluCanvas(idx+1);
     }
   });
 
@@ -2115,6 +2166,10 @@ Reveal.initialize({
     if(si===SID('illumina-sbs')){
       const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
       drawSbsCanvas(idx);sbsHighlight(idx);
+    }
+    if(si===SID('illumina-quality')){
+      const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
+      drawIlluCanvas(idx);
     }
   });
 
