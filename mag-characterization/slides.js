@@ -1367,19 +1367,19 @@ function drawSbs3(ctx){
 
   /* ── Key concepts ── */
   const ky=ty+75;
-  _roundRect(ctx,80,ky,280,110,8,'#f0fdf4',COLORS.ok+'44',1);
-  _label(ctx,'Modified nucleotides',220,ky+16,12,COLORS.ok,'center','700');
-  _label(ctx,'Each dNTP carries:',140,ky+38,10,COLORS.ink2,'left','600');
-  _label(ctx,'1. Fluorescent tag (unique color per base)',152,ky+54,10,COLORS.ink3,'left','400');
-  _label(ctx,'2. 3\' reversible terminator (blocker)',152,ky+70,10,COLORS.ink3,'left','400');
-  _label(ctx,'→ Only ONE base can incorporate per cycle',152,ky+90,10,COLORS.ok,'left','600');
+  _roundRect(ctx,60,ky,330,110,8,'#f0fdf4',COLORS.ok+'44',1);
+  _label(ctx,'Modified nucleotides',225,ky+16,12,COLORS.ok,'center','700');
+  _label(ctx,'Each dNTP carries:',100,ky+38,10,COLORS.ink2,'left','600');
+  _label(ctx,'1. Fluorescent tag (unique color per base)',112,ky+54,10,COLORS.ink3,'left','400');
+  _label(ctx,'2. 3\' reversible terminator (blocker)',112,ky+70,10,COLORS.ink3,'left','400');
+  _label(ctx,'→ Only ONE base can incorporate per cycle',112,ky+90,10,COLORS.ok,'left','600');
 
-  _roundRect(ctx,400,ky,320,110,8,'#eff6ff',COLORS.gb+'44',1);
-  _label(ctx,'Why this works',560,ky+16,12,COLORS.gb,'center','700');
-  _label(ctx,'All 4 modified dNTPs flood the cluster',425,ky+38,10,COLORS.ink3,'left','400');
-  _label(ctx,'Only the complement of the next template',425,ky+54,10,COLORS.ink3,'left','400');
-  _label(ctx,'base gets incorporated by polymerase',425,ky+70,10,COLORS.ink3,'left','400');
-  _label(ctx,'Blocker prevents chain extension',425,ky+90,10,COLORS.gb,'left','600');
+  _roundRect(ctx,410,ky,330,110,8,'#eff6ff',COLORS.gb+'44',1);
+  _label(ctx,'Why this works',575,ky+16,12,COLORS.gb,'center','700');
+  _label(ctx,'All 4 modified dNTPs flood the cluster',435,ky+38,10,COLORS.ink3,'left','400');
+  _label(ctx,'Only the complement of the next template',435,ky+54,10,COLORS.ink3,'left','400');
+  _label(ctx,'base gets incorporated by polymerase',435,ky+70,10,COLORS.ink3,'left','400');
+  _label(ctx,'Blocker prevents chain extension',435,ky+90,10,COLORS.gb,'left','600');
 
   /* ── Bottom: cycle overview ── */
   const cy=ky+125;
