@@ -1521,18 +1521,32 @@ function drawSbs5(ctx){
   _arrow(ctx,bx+adW+6,y1+bh+10,r1end,y1+bh+10,COLORS.gb,2.5);
   _label(ctx,'R1 — 150 bp',bx+adW+6+(r1end-bx-adW-6)/2,y1+bh+22,10,COLORS.gb,'center','700');
 
-  /* ── Turnaround annotation (between steps 1 and 2) ── */
-  const tay=y1+bh+38;
-  _label(ctx,'Wash R1 products, strand re-bridges to P7 oligo',400,tay,9,COLORS.gd,'center','600');
-
   /* ── Step 2: Turnaround ── */
-  const y2=tay+16;
+  const y2=y1+bh+42;
   _roundRect(ctx,28,y2-2,104,bh+4,6,COLORS.gd+'0a',COLORS.gd+'44',1);
   _label(ctx,'2. Turnaround',80,y2+bh/2,11,COLORS.gd,'center','700');
   _fbar(y2);
 
+  // Visual: "×" over the R1 region (washed off)
+  const wxC=bx+adW+(r1end-bx-adW)/2, wyC=y2+bh/2;
+  ctx.strokeStyle=COLORS.bad+'88'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(wxC-8,wyC-8); ctx.lineTo(wxC+8,wyC+8); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(wxC+8,wyC-8); ctx.lineTo(wxC-8,wyC+8); ctx.stroke();
+  _label(ctx,'R1 washed off',wxC,y2+bh+12,8,COLORS.bad+'aa','center','600');
+
+  // Visual: curved arrow showing strand re-bridges from P5 side → P7 side
+  const arcL=r1end+10, arcR=bx+bw-adW-20;
+  ctx.strokeStyle=COLORS.gd; ctx.lineWidth=2; ctx.setLineDash([5,3]);
+  ctx.beginPath(); ctx.moveTo(arcL,y2+4);
+  ctx.bezierCurveTo(arcL+30,y2-28, arcR-30,y2-28, arcR,y2+4);
+  ctx.stroke(); ctx.setLineDash([]);
+  // arrowhead
+  ctx.fillStyle=COLORS.gd; ctx.beginPath();
+  ctx.moveTo(arcR,y2+4); ctx.lineTo(arcR-5,y2-4); ctx.lineTo(arcR+5,y2-4); ctx.fill();
+  _label(ctx,'strand re-bridges to P7',((arcL+arcR)/2),y2-30,9,COLORS.gd,'center','600');
+
   /* ── Step 3: Sequence R2 ── */
-  const y3=y2+bh+16;
+  const y3=y2+bh+26;
   _roundRect(ctx,28,y3-2,104,bh+4,6,COLORS.gc+'0a',COLORS.gc+'44',1);
   _label(ctx,'3. Read R2',80,y3+bh/2,12,COLORS.gc,'center','700');
   _fbar(y3);
@@ -1563,12 +1577,12 @@ function drawSbs5(ctx){
   _label(ctx,'R2 quality is lower than R1:',290,qy,10,COLORS.bad,'center','700');
   _label(ctx,'reagents depleted · strands lose sync (phasing) · clusters decay',290,qy+14,9,COLORS.ink3,'center','400');
 
-  _roundRect(ctx,540,qy-10,230,52,8,'#f8fafc',COLORS.border,1);
+  _roundRect(ctx,540,qy-10,230,58,8,'#f8fafc',COLORS.border,1);
   _label(ctx,'Output per sample:',560,qy+4,9,COLORS.ink2,'left','600');
-  _roundRect(ctx,560,qy+14,130,12,3,COLORS.gb+'11',COLORS.gb+'66',1);
+  _roundRect(ctx,564,qy+14,122,13,3,COLORS.gb+'11',COLORS.gb+'66',1);
   _monoLabel(ctx,'sample_R1.fastq.gz',625,qy+20,7,COLORS.gb,'center');
-  _roundRect(ctx,560,qy+30,130,12,3,COLORS.gc+'11',COLORS.gc+'66',1);
-  _monoLabel(ctx,'sample_R2.fastq.gz',625,qy+36,7,COLORS.gc,'center');
+  _roundRect(ctx,564,qy+31,122,13,3,COLORS.gc+'11',COLORS.gc+'66',1);
+  _monoLabel(ctx,'sample_R2.fastq.gz',625,qy+37,7,COLORS.gc,'center');
 }
 
 /* ═══════════════════════════════════════════════════════════
