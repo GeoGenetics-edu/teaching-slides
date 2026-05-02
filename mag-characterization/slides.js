@@ -301,159 +301,83 @@ function drawGtdbCanvas(step){
   _label(ctx,'RED = 1  (tips)',R,B+42,9,COLORS.ink3,'right','600');
   _label(ctx,'Relative Evolutionary Divergence',L+treeW/2,B+42,9,COLORS.ink2,'center','600');
 
-  // ── 3. Tree structure (rectangular dendrogram) ──
-  // 8 tips, two main clades, realistic uneven branching
-  // Node format: {red, y, children:[...]} or {red, y, label}
-  const tipGap=(B-T-20)/7;  // 8 tips
-  const tipY=i=>T+10+i*tipGap;
+  // ── 3. Tree (asymmetric rectangular dendrogram) ──
+  // Declarative tree: each node = {red, ch:[...]} or leaf {red, lbl}
+  // Asymmetric: Phylum A has 5 tips (3+2), Phylum B has 4 tips (1+3)
+  const tree={red:0,ch:[
+    {red:0.18,ch:[                           // Phylum A
+      {red:0.31,ch:[                         //   Class A1
+        {red:0.42,ch:[                       //     Order A1a
+          {red:0.55,ch:[                     //       Family A1a-i
+            {red:0.73,ch:[                   //         Genus alpha
+              {red:0.96,lbl:'Sp. A'},
+              {red:0.98,lbl:'Sp. B'},
+            ]},
+            {red:0.70,lbl:'Sp. C'},          //         singleton genus
+          ]},
+        ]},
+        {red:0.44,ch:[                       //     Order A1b
+          {red:0.57,ch:[                     //       Family A1b-i
+            {red:0.74,ch:[                   //         Genus beta
+              {red:0.95,lbl:'Sp. D'},
+              {red:0.97,lbl:'Sp. E'},
+            ]},
+          ]},
+        ]},
+      ]},
+    ]},
+    {red:0.20,ch:[                           // Phylum B
+      {red:0.33,ch:[                         //   Class B1
+        {red:0.45,ch:[                       //     Order B1a
+          {red:0.54,ch:[                     //       Family B1a-i
+            {red:0.71,ch:[                   //         Genus gamma
+              {red:0.97,lbl:'Sp. F'},
+              {red:0.99,lbl:'Sp. G'},
+              {red:0.95,lbl:'Sp. H'},
+            ]},
+          ]},
+        ]},
+      ]},
+      {red:0.35,lbl:'Sp. I'},               //   deep-branching singleton
+    ]},
+  ]};
 
-  // Helper: draw rectangular (elbow) branch
-  function elbow(x1,y1,x2,y2,col,lw){
-    ctx.strokeStyle=col;ctx.lineWidth=lw;
-    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x1,y2);ctx.lineTo(x2,y2);ctx.stroke();
+  // Lay out y-positions: assign tips sequentially, internal = midpoint
+  const tipSpacing=(B-T-10)/8; // 9 tips
+  let tipIdx=0;
+  function layoutY(node){
+    if(node.lbl!==undefined){node.y=T+8+tipIdx*tipSpacing;tipIdx++;return;}
+    for(const c of node.ch) layoutY(c);
+    const ys=node.ch.map(c=>c.y);
+    node.y=(Math.min(...ys)+Math.max(...ys))/2;
   }
+  layoutY(tree);
 
-  const tc=COLORS.ink3;  // tree colour
-
-  // Tips (species level, RED≈0.95-1.0)
-  const tips=[
-    {red:0.97,y:tipY(0),lbl:'Sp. A'},
-    {red:0.95,y:tipY(1),lbl:'Sp. B'},
-    {red:0.98,y:tipY(2),lbl:'Sp. C'},
-    {red:0.96,y:tipY(3),lbl:'Sp. D'},
-    {red:0.97,y:tipY(4),lbl:'Sp. E'},
-    {red:0.95,y:tipY(5),lbl:'Sp. F'},
-    {red:0.99,y:tipY(6),lbl:'Sp. G'},
-    {red:0.96,y:tipY(7),lbl:'Sp. H'},
-  ];
-
-  // Internal nodes (RED, y-midpoint of children)
-  // Genus splits
-  const g1={red:0.74,y:(tips[0].y+tips[1].y)/2};  // Sp.A+B
-  const g2={red:0.70,y:(tips[2].y+tips[3].y)/2};  // Sp.C+D
-  const g3={red:0.73,y:(tips[4].y+tips[5].y)/2};  // Sp.E+F
-  const g4={red:0.71,y:(tips[6].y+tips[7].y)/2};  // Sp.G+H
-  // Family splits
-  const f1={red:0.55,y:(g1.y+g2.y)/2};  // g1+g2
-  const f2={red:0.57,y:(g3.y+g4.y)/2};  // g3+g4
-  // Order splits
-  const o1={red:0.42,y:(f1.y+tips[3].y*0+f1.y)/1};  // just f1
-  const o2={red:0.44,y:f2.y};
-  // Class split
-  const c1={red:0.30,y:(f1.y+f2.y)/2};
-  // Phylum split (root splits into two phyla)
-  const p1={red:0.17,y:c1.y};
-  // Root
-  const root={red:0.0, y:(tips[0].y+tips[7].y)/2};
-
-  // Draw branches bottom-up (elbows: horizontal from parent, then vertical to child)
-  function drawNode(parent,child,lw){
-    const px=redX(parent.red),py=parent.y;
-    const cx2=redX(child.red),cy2=child.y;
-    // horizontal from parent.red at child.y, then vertical
-    ctx.strokeStyle=tc;ctx.lineWidth=lw;
-    ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px,cy2);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(px,cy2);ctx.lineTo(cx2,cy2);ctx.stroke();
-  }
-
-  // Root → phylum
-  drawNode(root,p1,2.5);
-  // Phylum → class
-  drawNode(p1,c1,2.2);
-  // Add a second small clade below to show the split more clearly
-  // (root also connects down to a single "outgroup" tip at the bottom)
-
-  // Class → orders
-  drawNode(c1,{red:c1.red,y:f1.y},2);
-  ctx.strokeStyle=tc;ctx.lineWidth=2;
-  ctx.beginPath();ctx.moveTo(redX(c1.red),f1.y);ctx.lineTo(redX(o1.red),f1.y);ctx.stroke();
-  // Actually let me simplify: just use clean elbows throughout
-
-  // Let me redraw cleanly with a recursive approach
-  ctx.clearRect(L-5,T-5,treeW+15,B-T+15);
-
-  // Re-draw rank bands (they got cleared) — only from step 1
-  if(step>=1) for(const rk of ranks){
-    const x0=redX(rk.red-0.1), x1=redX(rk.red+0.1);
-    ctx.fillStyle=rk.col+'10';
-    ctx.fillRect(x0,T-10,x1-x0,B-T+20);
-    ctx.strokeStyle=rk.col+'55';ctx.lineWidth=1;
-    ctx.setLineDash([6,4]);
-    ctx.beginPath();ctx.moveTo(redX(rk.red),T-10);ctx.lineTo(redX(rk.red),B+10);ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  // Clean rectangular dendrogram drawing
-  function drawClade(nodeRed, children, lw){
-    // children = [{red,y},...] — draw vertical bar + horizontal to each child
-    if(children.length<2)return;
-    const ys=children.map(c=>c.y);
-    const yMin=Math.min(...ys), yMax=Math.max(...ys);
-    const nx=redX(nodeRed);
-    // Vertical bar spanning children
-    ctx.strokeStyle=tc;ctx.lineWidth=lw;
-    ctx.beginPath();ctx.moveTo(nx,yMin);ctx.lineTo(nx,yMax);ctx.stroke();
+  // Draw tree: thin elbow connectors (vertical bar + horizontal to each child)
+  const tc=COLORS.ink3+'cc';
+  function drawTree(node){
+    if(!node.ch)return;
+    const nx=redX(node.red);
+    const ys=node.ch.map(c=>c.y);
+    // Vertical span
+    ctx.strokeStyle=tc;ctx.lineWidth=1.2;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(nx,Math.min(...ys));ctx.lineTo(nx,Math.max(...ys));ctx.stroke();
     // Horizontal to each child
-    for(const c of children){
+    for(const c of node.ch){
       ctx.beginPath();ctx.moveTo(nx,c.y);ctx.lineTo(redX(c.red),c.y);ctx.stroke();
+      drawTree(c);
     }
   }
+  drawTree(tree);
 
-  // Draw from root outward
-  // Root (RED=0) splits into two phyla
-  drawClade(0.0,[{red:0.17,y:(tips[0].y+tips[3].y)/2},{red:0.19,y:(tips[4].y+tips[7].y)/2}],2.5);
-  // Root trunk
-  ctx.strokeStyle=tc;ctx.lineWidth=2.5;
-  ctx.beginPath();ctx.moveTo(redX(0),root.y);ctx.lineTo(redX(0),(tips[0].y+tips[3].y)/2);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(redX(0),root.y);ctx.lineTo(redX(0),(tips[4].y+tips[7].y)/2);ctx.stroke();
-
-  // Phylum A → two classes
-  const pAy=(tips[0].y+tips[3].y)/2;
-  drawClade(0.17,[{red:0.31,y:(tips[0].y+tips[1].y)/2},{red:0.33,y:(tips[2].y+tips[3].y)/2}],2);
-
-  // Phylum B → two classes
-  const pBy=(tips[4].y+tips[7].y)/2;
-  drawClade(0.19,[{red:0.30,y:(tips[4].y+tips[5].y)/2},{red:0.32,y:(tips[6].y+tips[7].y)/2}],2);
-
-  // Class → order (each class goes to one order for simplicity)
-  // Class A1 → order → family → genus → tips
-  const cA1y=(tips[0].y+tips[1].y)/2, cA2y=(tips[2].y+tips[3].y)/2;
-  const cB1y=(tips[4].y+tips[5].y)/2, cB2y=(tips[6].y+tips[7].y)/2;
-
-  // Orders
-  drawClade(0.31,[{red:0.55,y:tips[0].y},{red:0.55,y:tips[1].y}],1.5);
-  drawClade(0.33,[{red:0.54,y:tips[2].y},{red:0.56,y:tips[3].y}],1.5);
-  drawClade(0.30,[{red:0.57,y:tips[4].y},{red:0.55,y:tips[5].y}],1.5);
-  drawClade(0.32,[{red:0.54,y:tips[6].y},{red:0.56,y:tips[7].y}],1.5);
-
-  // Skip family/genus level — go straight from order→family→tips
-  // Family→Genus→Tips for each pair
-  // Pair 0-1
-  drawClade(0.55,[{red:0.74,y:tips[0].y},{red:0.74,y:tips[1].y}],1.2);
-  // Tips
-  for(const t of [tips[0],tips[1]]){
-    ctx.strokeStyle=tc;ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(redX(0.74),t.y);ctx.lineTo(redX(t.red),t.y);ctx.stroke();
+  // Collect tips and internal nodes for labelling/dots
+  const tips=[], internals=[];
+  function collect(node){
+    if(node.lbl!==undefined){tips.push(node);return;}
+    internals.push(node);
+    for(const c of node.ch) collect(c);
   }
-  // Pair 2-3
-  drawClade(0.54,[{red:0.70,y:tips[2].y},{red:0.72,y:tips[3].y}],1.2);
-  for(const t of [tips[2],tips[3]]){
-    const gx=t===tips[2]?0.70:0.72;
-    ctx.strokeStyle=tc;ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(redX(gx),t.y);ctx.lineTo(redX(t.red),t.y);ctx.stroke();
-  }
-  // Pair 4-5
-  drawClade(0.57,[{red:0.73,y:tips[4].y},{red:0.73,y:tips[5].y}],1.2);
-  for(const t of [tips[4],tips[5]]){
-    ctx.strokeStyle=tc;ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(redX(0.73),t.y);ctx.lineTo(redX(t.red),t.y);ctx.stroke();
-  }
-  // Pair 6-7
-  drawClade(0.54,[{red:0.71,y:tips[6].y},{red:0.71,y:tips[7].y}],1.2);
-  for(const t of [tips[6],tips[7]]){
-    ctx.strokeStyle=tc;ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(redX(0.71),t.y);ctx.lineTo(redX(t.red),t.y);ctx.stroke();
-  }
+  collect(tree);
 
   // ── 4. Tip labels ──
   for(const t of tips){
@@ -464,27 +388,30 @@ function drawGtdbCanvas(step){
   }
 
   // ── 5. Root marker ──
-  ctx.beginPath();ctx.arc(redX(0),root.y,5,0,Math.PI*2);
+  ctx.beginPath();ctx.arc(redX(0),tree.y,5,0,Math.PI*2);
   ctx.fillStyle=COLORS.ink;ctx.fill();
-  _label(ctx,'Root',redX(0)-4,root.y-12,10,COLORS.ink,'center','700');
+  _label(ctx,'Root',redX(0)-4,tree.y-12,10,COLORS.ink,'center','700');
 
-  // ── 6. Node dots at key splits (step ≥ 2) ──
+  // ── 6. Node dots at key splits (step >= 2) ──
   if(step>=2){
-    const nodeDots=[
-      {red:0.17,y:pAy,col:ranks[0].col},{red:0.19,y:pBy,col:ranks[0].col},
-      {red:0.31,y:cA1y,col:ranks[1].col},{red:0.33,y:cA2y,col:ranks[1].col},
-      {red:0.30,y:cB1y,col:ranks[1].col},{red:0.32,y:cB2y,col:ranks[1].col},
-      {red:0.55,y:tips[0].y,col:ranks[3].col},{red:0.54,y:tips[2].y,col:ranks[3].col},
-      {red:0.57,y:tips[4].y,col:ranks[3].col},{red:0.54,y:tips[6].y,col:ranks[3].col},
-    ];
-    for(const nd of nodeDots){
+    // Map each internal node to its rank colour by RED value
+    function rankCol(red){
+      if(red<0.25) return ranks[0].col; // phylum
+      if(red<0.38) return ranks[1].col; // class
+      if(red<0.50) return ranks[2].col; // order
+      if(red<0.64) return ranks[3].col; // family
+      return ranks[4].col;              // genus
+    }
+    for(const nd of internals){
+      if(nd.red===0)continue; // skip root
+      const col=rankCol(nd.red);
       ctx.beginPath();ctx.arc(redX(nd.red),nd.y,5,0,Math.PI*2);
-      ctx.fillStyle=nd.col;ctx.fill();
+      ctx.fillStyle=col;ctx.fill();
       ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
     }
     // Callout
-    _roundRect(ctx,L+2,B-32,220,26,4,'#fff8f0',ranks[0].col+'44',1);
-    _label(ctx,'Every split lands in its rank\'s band',L+112,B-19,8,ranks[0].col,'center','600');
+    _roundRect(ctx,L+2,B-32,230,26,4,'#fff8f0',ranks[0].col+'44',1);
+    _label(ctx,'Every split lands in its rank\'s band',L+117,B-19,9,ranks[0].col,'center','600');
   }
 
   // ── 7. Title (changes with step) ──
@@ -495,7 +422,7 @@ function drawGtdbCanvas(step){
   ];
   _label(ctx,titles[step]||titles[0],400,18,13,COLORS.ink,'center','700');
 
-  // ── 8. Bracket (step ≥ 1) ──
+  // ── 8. Bracket (step >= 1) ──
   if(step>=1){
     const oBandL=redX(0.33),oBandR=redX(0.53);
     const annY2=B+4;
