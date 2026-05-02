@@ -621,66 +621,95 @@ function drawTkStep2(ctx){
   // Step 3: ANI species concept + lineage assignment
   _label(ctx,'Species = cluster of genomes with ANI > 95%',400,20,13,COLORS.ink2,'center','700');
 
-  // ── 1. ANI clustering diagram (left half) ──
+  // ── 1. ANI clustering diagram ──
   // Three species clusters as genome dot clouds + the MAG
   const clusters=[
-    {cx:150,cy:160,r:65,col:COLORS.gb,name:'Species A',
-     pts:[{dx:-20,dy:-25},{dx:15,dy:-18},{dx:-10,dy:10},{dx:22,dy:5},{dx:-5,dy:28},{dx:8,dy:-35}]},
-    {cx:370,cy:190,r:58,col:COLORS.gc,name:'Species B',
-     pts:[{dx:-15,dy:-20},{dx:18,dy:-10},{dx:-8,dy:15},{dx:12,dy:22},{dx:-22,dy:5}]},
-    {cx:570,cy:155,r:55,col:COLORS.gd,name:'Species C',
-     pts:[{dx:-12,dy:-18},{dx:16,dy:-8},{dx:-5,dy:12},{dx:20,dy:16},{dx:-18,dy:20}]},
+    {cx:140,cy:155,r:68,col:COLORS.gb,name:'Species A',
+     pts:[{dx:-25,dy:-22},{dx:12,dy:-30},{dx:-15,dy:8},{dx:20,dy:2},{dx:-3,dy:25},{dx:10,dy:-10},{dx:-30,dy:-5}]},
+    {cx:370,cy:170,r:62,col:COLORS.gc,name:'Species B',
+     pts:[{dx:-18,dy:-22},{dx:20,dy:-15},{dx:-10,dy:12},{dx:15,dy:20},{dx:-25,dy:-4},{dx:5,dy:-30}]},
+    {cx:590,cy:150,r:60,col:COLORS.gd,name:'Species C',
+     pts:[{dx:-15,dy:-20},{dx:18,dy:-12},{dx:-8,dy:10},{dx:22,dy:18},{dx:-20,dy:18},{dx:8,dy:-28}]},
   ];
 
-  // Draw 95% ANI radius circles
+  // Draw 95% ANI radius circles with soft gradient fill
   for(const cl of clusters){
+    const grad=ctx.createRadialGradient(cl.cx,cl.cy,0,cl.cx,cl.cy,cl.r);
+    grad.addColorStop(0,cl.col+'12');grad.addColorStop(1,cl.col+'04');
     ctx.beginPath();ctx.arc(cl.cx,cl.cy,cl.r,0,Math.PI*2);
-    ctx.fillStyle=cl.col+'0c';ctx.fill();
-    ctx.strokeStyle=cl.col+'44';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);ctx.stroke();
+    ctx.fillStyle=grad;ctx.fill();
+    ctx.strokeStyle=cl.col+'55';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);ctx.stroke();
     ctx.setLineDash([]);
-    // Cluster label
-    _label(ctx,cl.name,cl.cx,cl.cy-cl.r-10,10,cl.col,'center','700');
+    // Cluster label above
+    _label(ctx,cl.name,cl.cx,cl.cy-cl.r-12,11,cl.col,'center','700');
   }
 
-  // Draw genome dots
+  // Draw genome dots (larger for projection)
   for(const cl of clusters){
     for(const p of cl.pts){
-      ctx.beginPath();ctx.arc(cl.cx+p.dx,cl.cy+p.dy,5,0,Math.PI*2);
+      ctx.beginPath();ctx.arc(cl.cx+p.dx,cl.cy+p.dy,6,0,Math.PI*2);
       ctx.fillStyle=cl.col+'cc';ctx.fill();
-      ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();
+      ctx.strokeStyle='#fff';ctx.lineWidth=1.2;ctx.stroke();
     }
   }
 
-  // MAG: falls inside Species B cluster
-  const magX=355,magY=175;
-  ctx.shadowColor=COLORS.gd;ctx.shadowBlur=8;
-  ctx.beginPath();ctx.arc(magX,magY,8,0,Math.PI*2);
-  ctx.fillStyle=COLORS.bad+'33';ctx.fill();
-  ctx.strokeStyle=COLORS.bad;ctx.lineWidth=2;ctx.stroke();
+  // MAG: falls inside Species B cluster — prominent
+  const magX=348,magY=158;
+  ctx.shadowColor=COLORS.bad;ctx.shadowBlur=12;
+  ctx.beginPath();ctx.arc(magX,magY,10,0,Math.PI*2);
+  ctx.fillStyle=COLORS.bad+'44';ctx.fill();
+  ctx.strokeStyle=COLORS.bad;ctx.lineWidth=2.5;ctx.stroke();
   ctx.shadowBlur=0;
-  _label(ctx,'MAG',magX,magY,7,COLORS.bad,'center','700');
+  _label(ctx,'MAG',magX,magY+1,8,COLORS.bad,'center','700');
 
-  // ANI distance annotation between MAG and nearest Species B genome
-  const nearX=clusters[1].cx+18,nearY=clusters[1].cy-10;
-  ctx.strokeStyle=COLORS.ok;ctx.lineWidth=1;ctx.setLineDash([3,2]);
-  ctx.beginPath();ctx.moveTo(magX+9,magY);ctx.lineTo(nearX-5,nearY);ctx.stroke();
+  // ANI distance annotation: MAG → nearest Species B genome
+  const nearX=clusters[1].cx+20,nearY=clusters[1].cy-15;
+  ctx.strokeStyle=COLORS.ok;ctx.lineWidth=1.2;ctx.setLineDash([3,2]);
+  ctx.beginPath();ctx.moveTo(magX+11,magY+2);ctx.lineTo(nearX-6,nearY);ctx.stroke();
   ctx.setLineDash([]);
-  _label(ctx,'97.8%',((magX+nearX)/2)+12,((magY+nearY)/2)-8,9,COLORS.ok,'center','700');
+  _roundRect(ctx,((magX+nearX)/2)-2,((magY+nearY)/2)-18,50,16,4,COLORS.ok+'15',COLORS.ok+'44',1);
+  _label(ctx,'97.8%',((magX+nearX)/2)+23,((magY+nearY)/2)-10,9,COLORS.ok,'center','700');
 
-  // Inter-cluster distance (between A and B)
-  ctx.strokeStyle=COLORS.ink4+'88';ctx.lineWidth=0.8;ctx.setLineDash([2,3]);
-  ctx.beginPath();ctx.moveTo(clusters[0].cx+clusters[0].r+2,clusters[0].cy);
-  ctx.lineTo(clusters[1].cx-clusters[1].r-2,clusters[1].cy);ctx.stroke();
-  ctx.setLineDash([]);
-  _label(ctx,'< 80%',260,((clusters[0].cy+clusters[1].cy)/2)-10,8,COLORS.ink4,'center','500');
+  // Inter-cluster gaps (A↔B and B↔C)
+  const gaps=[
+    {from:clusters[0],to:clusters[1]},
+    {from:clusters[1],to:clusters[2]},
+  ];
+  for(const g of gaps){
+    const x1=g.from.cx+g.from.r+4,x2=g.to.cx-g.to.r-4;
+    const y=(g.from.cy+g.to.cy)/2;
+    ctx.strokeStyle=COLORS.ink4+'66';ctx.lineWidth=0.8;ctx.setLineDash([2,3]);
+    ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x2,y);ctx.stroke();
+    ctx.setLineDash([]);
+    _label(ctx,'< 80%',(x1+x2)/2,y-8,8,COLORS.ink4,'center','500');
+  }
 
-  // 95% ANI radius label on Species A
-  const rlx=clusters[0].cx+clusters[0].r+3,rly=clusters[0].cy-clusters[0].r+15;
-  ctx.strokeStyle=clusters[0].col+'88';ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(clusters[0].cx+10,clusters[0].cy-clusters[0].r);
-  ctx.lineTo(rlx+5,rly-12);ctx.stroke();
-  _label(ctx,'95% ANI',rlx+5,rly-4,8,clusters[0].col,'left','600');
-  _label(ctx,'radius',rlx+5,rly+6,7,clusters[0].col,'left','500');
+  // Centroids + 95% ANI radius arrow on Species A
+  for(const cl of clusters){
+    // Centroid cross
+    ctx.strokeStyle=cl.col;ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(cl.cx-4,cl.cy);ctx.lineTo(cl.cx+4,cl.cy);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cl.cx,cl.cy-4);ctx.lineTo(cl.cx,cl.cy+4);ctx.stroke();
+  }
+  // Radius arrow on Species A (centroid → edge)
+  const aCl=clusters[0];
+  const arrowAngle=-0.4; // slight upward angle
+  const edgeX=aCl.cx+Math.cos(arrowAngle)*aCl.r;
+  const edgeY=aCl.cy+Math.sin(arrowAngle)*aCl.r;
+  ctx.strokeStyle=aCl.col;ctx.lineWidth=1.2;
+  ctx.beginPath();ctx.moveTo(aCl.cx,aCl.cy);ctx.lineTo(edgeX,edgeY);ctx.stroke();
+  // Arrowhead
+  const aLen=8,aAng=0.5;
+  ctx.beginPath();
+  ctx.moveTo(edgeX,edgeY);
+  ctx.lineTo(edgeX-aLen*Math.cos(arrowAngle-aAng),edgeY-aLen*Math.sin(arrowAngle-aAng));
+  ctx.moveTo(edgeX,edgeY);
+  ctx.lineTo(edgeX-aLen*Math.cos(arrowAngle+aAng),edgeY-aLen*Math.sin(arrowAngle+aAng));
+  ctx.stroke();
+  // Label along arrow
+  const midAX=(aCl.cx+edgeX)/2,midAY=(aCl.cy+edgeY)/2;
+  _roundRect(ctx,midAX-28,midAY-18,56,14,3,'#fff',aCl.col+'44',1);
+  _label(ctx,'95% ANI',midAX,midAY-11,8,aCl.col,'center','700');
 
   // ── 2. Lineage result (bottom) ──
   const by=265;
@@ -707,18 +736,21 @@ function drawTkStep2(ctx){
     }
   }
 
-  // ── 3. Key points ──
+  // ── 3. Key points — equal-width cards ──
   const ky=by+78;
+  const cardW=230,cardGap=15,totalW=cardW*3+cardGap*2;
+  const startX=(800-totalW)/2;
   const points=[
     {icon:'Within species:',val:'ANI > 95%',col:COLORS.ok},
-    {icon:'Between species:',val:'ANI < 80–90%',col:COLORS.ink4},
+    {icon:'Between species:',val:'ANI < 80-90%',col:COLORS.ink3},
     {icon:'Your MAG:',val:'97.8% → s__Bacteroides_A',col:COLORS.bad},
   ];
   for(let i=0;i<points.length;i++){
-    const px=55+i*260,p=points[i];
-    _roundRect(ctx,px-10,ky,240,38,6,'#fff',p.col+'44',1);
-    _label(ctx,p.icon,px,ky+14,9,p.col,'left','600');
-    _label(ctx,p.val,px,ky+28,10,p.col,'left','700');
+    const px=startX+i*(cardW+cardGap);
+    const p=points[i];
+    _roundRect(ctx,px,ky,cardW,38,6,p.col+'08',p.col+'44',1);
+    _label(ctx,p.icon,px+cardW/2,ky+13,9,p.col,'center','600');
+    _label(ctx,p.val,px+cardW/2,ky+28,10,p.col,'center','700');
   }
 
   // ── 4. Bottom note ──
