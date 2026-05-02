@@ -618,60 +618,111 @@ function drawTkStep1(ctx){
 }
 
 function drawTkStep2(ctx){
-  // Step 3: Assign lineage + ANI
-  _label(ctx,'Taxonomic assignment',400,25,14,COLORS.ink2,'center','700');
+  // Step 3: Assign lineage + ANI — clean top-to-bottom flow
+  _label(ctx,'From tree placement to taxonomic label',400,22,13,COLORS.ink2,'center','700');
 
-  // Show MAG with assigned lineage
-  const lx=60,ly=60;
-
-  // MAG box
-  _roundRect(ctx,lx,ly,160,60,10,COLORS.gd+'11',COLORS.gd,2);
-  _label(ctx,'Your MAG',lx+80,ly+20,13,COLORS.gd,'center','700');
-  _label(ctx,'92% complete, 2% cont.',lx+80,ly+42,9,COLORS.ink3,'center','500');
-
-  // Arrow down
-  _arrow(ctx,lx+80,ly+62,lx+80,ly+100,COLORS.gd,2);
-
-  // Lineage box
-  _roundRect(ctx,lx-20,ly+105,730,55,10,'#fff',COLORS.border,1.5);
-  const lineage='d__Bacteria; p__Bacteroidota; c__Bacteroidia; o__Bacteroidales; f__Bacteroidaceae; g__Bacteroides; s__Bacteroides_A sp003456789';
-  _monoLabel(ctx,lineage,lx+345,ly+132,10.5,COLORS.ink2,'center');
-
-  // Rank color underlines
-  const rankParts=[
-    {text:'d__Bacteria',col:COLORS.ink3,x:58},
-    {text:'p__Bacteroidota',col:COLORS.bad,x:175},
-    {text:'g__Bacteroides',col:COLORS.gc,x:530},
-    {text:'s__Bacteroides_A',col:COLORS.ga,x:660}
-  ];
-  for(const rp of rankParts){
-    ctx.fillStyle=rp.col;ctx.fillRect(rp.x,ly+148,60,2);
+  // ── 1. Lineage string with colored rank prefixes ──
+  const ly=50;
+  _roundRect(ctx,30,ly,740,80,10,'#fff',COLORS.border,1.5);
+  // Two-line lineage with colored rank prefixes
+  ctx.font='500 10px "DM Mono",Consolas,monospace';
+  const line1='d__Bacteria; p__Bacteroidota; c__Bacteroidia; o__Bacteroidales;';
+  const line2='f__Bacteroidaceae; g__Bacteroides; s__Bacteroides_A sp003456789';
+  // Colour map: prefix → colour
+  const pCols={d:COLORS.ink3,p:COLORS.bad,c:COLORS.warn,o:COLORS.gd,f:COLORS.gb,g:COLORS.gc,s:COLORS.ga};
+  function drawLineage(str,y){
+    ctx.font='500 10px "DM Mono",Consolas,monospace';
+    let x=55;
+    // Split by semicolons preserving them
+    const parts=str.split(/(;\s*)/);
+    for(const part of parts){
+      const m=part.match(/^([a-z])__/);
+      if(m){
+        // Rank prefix in colour
+        const pre=m[0];
+        const rest=part.slice(pre.length);
+        ctx.fillStyle=pCols[m[1]]||COLORS.ink3;ctx.textAlign='left';ctx.textBaseline='middle';
+        ctx.fillText(pre,x,y);x+=ctx.measureText(pre).width;
+        ctx.fillStyle=COLORS.ink;
+        ctx.fillText(rest,x,y);x+=ctx.measureText(rest).width;
+      } else {
+        ctx.fillStyle=COLORS.ink4;ctx.textAlign='left';ctx.textBaseline='middle';
+        ctx.fillText(part,x,y);x+=ctx.measureText(part).width;
+      }
+    }
   }
+  drawLineage(line1,ly+28);
+  drawLineage(line2,ly+55);
 
-  // ANI box
-  _roundRect(ctx,lx+250,ly+185,260,50,10,'#ecfdf5',COLORS.ok,1.5);
-  _label(ctx,'ANI to closest reference: 97.8%',lx+380,ly+200,12,COLORS.ok,'center','700');
-  _label(ctx,'Above 95% threshold → species-level call',lx+380,ly+220,10,COLORS.ink3,'center','500');
+  // ── 2. Two-column: ANI check + Confidence ──
+  const row2y=ly+100;
 
-  // Confidence indicators
-  const confY=ly+270;
-  _label(ctx,'Confidence depends on:',400,confY,12,COLORS.ink2,'center','700');
+  // Left: ANI verification — focused gauge (80-100%)
+  _roundRect(ctx,30,row2y,360,130,10,'#ecfdf5',COLORS.ok+'66',1.5);
+  _label(ctx,'ANI verification',210,row2y+20,12,COLORS.ok,'center','700');
+
+  // Gauge: 80%→100% range for clarity
+  const gaugeX=70,gaugeY=row2y+52,gaugeW=280;
+  const gMin=80,gMax=100;
+  const gPos=v=>gaugeX+((v-gMin)/(gMax-gMin))*gaugeW;
+
+  // Background track
+  ctx.fillStyle=COLORS.border+'33';
+  _roundRect(ctx,gaugeX,gaugeY,gaugeW,14,4,COLORS.border+'22','transparent',0);
+  ctx.fillStyle=COLORS.border+'22';ctx.fill();
+
+  // Fill to 97.8%
+  const fillEnd=gPos(97.8);
+  ctx.fillStyle=COLORS.ok+'44';
+  ctx.fillRect(gaugeX,gaugeY,fillEnd-gaugeX,14);
+
+  // 95% threshold line
+  const threshX=gPos(95);
+  ctx.strokeStyle=COLORS.warn;ctx.lineWidth=2;ctx.setLineDash([4,3]);
+  ctx.beginPath();ctx.moveTo(threshX,gaugeY-6);ctx.lineTo(threshX,gaugeY+20);ctx.stroke();
+  ctx.setLineDash([]);
+  _label(ctx,'95% species',threshX,gaugeY-12,8,COLORS.warn,'center','600');
+  _label(ctx,'threshold',threshX,gaugeY-3,7,COLORS.warn,'center','500');
+
+  // Value marker
+  ctx.beginPath();ctx.arc(fillEnd,gaugeY+7,6,0,Math.PI*2);
+  ctx.fillStyle=COLORS.ok;ctx.fill();
+  ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+  _label(ctx,'97.8%',fillEnd,gaugeY+28,11,COLORS.ok,'center','700');
+
+  // Scale labels
+  _label(ctx,'80%',gaugeX,gaugeY+28,8,COLORS.ink4,'center','500');
+  _label(ctx,'100%',gaugeX+gaugeW,gaugeY+28,8,COLORS.ink4,'center','500');
+
+  // Verdict
+  _label(ctx,'Above threshold → species-level call',210,row2y+110,10,COLORS.ok,'center','600');
+  _label(ctx,'s__Bacteroides_A sp003456789',210,row2y+122,9,COLORS.ink3,'center','500');
+
+  // Right: Confidence factors
+  _roundRect(ctx,410,row2y,360,130,10,'#fff',COLORS.border,1);
+  _label(ctx,'Confidence factors',590,row2y+20,12,COLORS.ink2,'center','700');
 
   const factors=[
-    {label:'Marker recovery',sub:'118/120 found',col:COLORS.ok,x:120},
-    {label:'ANI to reference',sub:'97.8% → strong',col:COLORS.ok,x:310},
-    {label:'MAG quality',sub:'92% / 2%',col:COLORS.ok,x:500},
-    {label:'Novelty',sub:'Known lineage',col:COLORS.ok,x:680}
+    {label:'Markers found',val:'118 / 120',pct:0.98},
+    {label:'ANI to reference',val:'97.8%',pct:0.978},
+    {label:'MAG completeness',val:'92%',pct:0.92},
+    {label:'Contamination',val:'2%',pct:0.98},
   ];
-  for(const f of factors){
-    _roundRect(ctx,f.x-70,confY+20,140,55,8,'#fff',COLORS.border,1);
-    _label(ctx,f.label,f.x,confY+38,11,f.col,'center','700');
-    _label(ctx,f.sub,f.x,confY+56,9,COLORS.ink3,'center','500');
+  for(let i=0;i<factors.length;i++){
+    const fy=row2y+42+i*22;
+    const f=factors[i];
+    _label(ctx,f.label,430,fy,9.5,COLORS.ink3,'left','500');
+    // Mini bar
+    const bx=560,bw=100;
+    ctx.fillStyle=COLORS.border+'33';ctx.fillRect(bx,fy-5,bw,8);
+    ctx.fillStyle=f.pct>0.9?COLORS.ok+'88':COLORS.warn+'88';
+    ctx.fillRect(bx,fy-5,bw*f.pct,8);
+    _label(ctx,f.val,bx+bw+8,fy,9,f.pct>0.9?COLORS.ok:COLORS.warn,'left','600');
   }
 
-  // Bottom note
-  _roundRect(ctx,100,confY+95,600,30,6,'#fffbeb',COLORS.gd+'44',1);
-  _label(ctx,'Always report GTDB version, ANI, and number of markers recovered',400,confY+110,10,COLORS.gd,'center','600');
+  // ── 3. Bottom note ──
+  _roundRect(ctx,80,row2y+148,640,28,6,'#fffbeb',COLORS.gd+'44',1);
+  _label(ctx,'Always report: GTDB version, ANI value, and number of markers recovered',400,row2y+162,10,COLORS.gd,'center','600');
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2487,11 +2538,11 @@ Reveal.initialize({
     const i=Reveal.getState().indexh;
 
     if(i===SID('error-bridge')){setTimeout(()=>drawErrorBridge(),300)}
-    if(i===SID('illumina-sbs')){setTimeout(()=>{drawSbsCanvas(0);sbsHighlight(0)},300)}
-    if(i===SID('illumina-quality')){setTimeout(()=>drawIlluCanvas(0),300)}
-    if(i===SID('why-not-16s')){setTimeout(()=>drawTaxCanvas(0),300)}
-    if(i===SID('gtdb')){setTimeout(()=>drawGtdbCanvas(0),300)}
-    if(i===SID('gtdb-tk')){setTimeout(()=>{drawTkCanvas(0);tkHighlight(0)},300)}
+    if(i===SID('illumina-sbs')){setTimeout(()=>{const f=Reveal.getState().indexf;const s=f>=0?f+1:0;drawSbsCanvas(s);sbsHighlight(s)},300)}
+    if(i===SID('illumina-quality')){setTimeout(()=>{const f=Reveal.getState().indexf;drawIlluCanvas(f>=0?f+1:0)},300)}
+    if(i===SID('why-not-16s')){setTimeout(()=>{const f=Reveal.getState().indexf;drawTaxCanvas(f>=0?1:0)},300)}
+    if(i===SID('gtdb')){setTimeout(()=>{const f=Reveal.getState().indexf;drawGtdbCanvas(f>=0?f+1:0)},300)}
+    if(i===SID('gtdb-tk')){setTimeout(()=>{const f=Reveal.getState().indexf;const s=f>=0?f+1:0;drawTkCanvas(s);tkHighlight(s)},300)}
     if(i===SID('gene-prediction')){setTimeout(()=>drawGpCanvas(),300)}
     if(i===SID('hmmer-concept')){setTimeout(()=>drawHmmerCanvas(),300)}
     if(i===SID('kegg')){setTimeout(()=>drawKeggCanvas(),300)}
