@@ -248,7 +248,8 @@ function drawTaxCanvas(step){
    2. GTDB-CANVAS — GTDB tree with standardized ranks
    ═══════════════════════════════════════════════════════════ */
 
-function drawGtdbCanvas(){
+function drawGtdbCanvas(step){
+  step=Math.min(step||0,2);
   const ctx=_c('gtdb-canvas');if(!ctx)return;
   ctx.clearRect(0,0,800,440);
 
@@ -270,8 +271,8 @@ function drawGtdbCanvas(){
     {n:'Genus',    abbr:'g__', red:0.72, col:COLORS.gc},
   ];
 
-  // ── 1. Draw rank bands (±0.1 around median) ──
-  for(const rk of ranks){
+  // ── 1. Draw rank bands (±0.1 around median) — only from step 1 ──
+  if(step>=1) for(const rk of ranks){
     const x0=redX(rk.red-0.1), x1=redX(rk.red+0.1);
     ctx.fillStyle=rk.col+'10';
     ctx.fillRect(x0,T-10,x1-x0,B-T+20);
@@ -371,8 +372,8 @@ function drawGtdbCanvas(){
   // Let me redraw cleanly with a recursive approach
   ctx.clearRect(L-5,T-5,treeW+15,B-T+15);
 
-  // Re-draw rank bands (they got cleared)
-  for(const rk of ranks){
+  // Re-draw rank bands (they got cleared) — only from step 1
+  if(step>=1) for(const rk of ranks){
     const x0=redX(rk.red-0.1), x1=redX(rk.red+0.1);
     ctx.fillStyle=rk.col+'10';
     ctx.fillRect(x0,T-10,x1-x0,B-T+20);
@@ -467,29 +468,43 @@ function drawGtdbCanvas(){
   ctx.fillStyle=COLORS.ink;ctx.fill();
   _label(ctx,'Root',redX(0)-4,root.y-12,10,COLORS.ink,'center','700');
 
-  // ── 6. Node dots at key splits to show where ranks fall ──
-  const nodeDots=[
-    {red:0.17,y:pAy,col:ranks[0].col},{red:0.19,y:pBy,col:ranks[0].col},
-    {red:0.31,y:cA1y,col:ranks[1].col},{red:0.33,y:cA2y,col:ranks[1].col},
-    {red:0.30,y:cB1y,col:ranks[1].col},{red:0.32,y:cB2y,col:ranks[1].col},
-  ];
-  for(const nd of nodeDots){
-    ctx.beginPath();ctx.arc(redX(nd.red),nd.y,4,0,Math.PI*2);
-    ctx.fillStyle=nd.col;ctx.fill();
-    ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+  // ── 6. Node dots at key splits (step ≥ 2) ──
+  if(step>=2){
+    const nodeDots=[
+      {red:0.17,y:pAy,col:ranks[0].col},{red:0.19,y:pBy,col:ranks[0].col},
+      {red:0.31,y:cA1y,col:ranks[1].col},{red:0.33,y:cA2y,col:ranks[1].col},
+      {red:0.30,y:cB1y,col:ranks[1].col},{red:0.32,y:cB2y,col:ranks[1].col},
+      {red:0.55,y:tips[0].y,col:ranks[3].col},{red:0.54,y:tips[2].y,col:ranks[3].col},
+      {red:0.57,y:tips[4].y,col:ranks[3].col},{red:0.54,y:tips[6].y,col:ranks[3].col},
+    ];
+    for(const nd of nodeDots){
+      ctx.beginPath();ctx.arc(redX(nd.red),nd.y,5,0,Math.PI*2);
+      ctx.fillStyle=nd.col;ctx.fill();
+      ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+    }
+    // Callout
+    _roundRect(ctx,L+2,B-32,220,26,4,'#fff8f0',ranks[0].col+'44',1);
+    _label(ctx,'Every split lands in its rank\'s band',L+112,B-19,8,ranks[0].col,'center','600');
   }
 
-  // ── 7. Title ──
-  _label(ctx,'Phylogenetic tree with RED rank boundaries',400,18,13,COLORS.ink,'center','700');
+  // ── 7. Title (changes with step) ──
+  const titles=[
+    'Phylogenetic tree built from 120 marker proteins',
+    'RED defines where each rank falls on the tree',
+    'Same RED depth = same rank, regardless of lineage'
+  ];
+  _label(ctx,titles[step]||titles[0],400,18,13,COLORS.ink,'center','700');
 
-  // ── 8. Annotation: bracket showing ±0.1 on the Order band ──
-  const oBandL=redX(0.33),oBandR=redX(0.53);
-  const annY=B+4;
-  ctx.strokeStyle=COLORS.ink3;ctx.lineWidth=1;
-  ctx.beginPath();
-  ctx.moveTo(oBandL,annY);ctx.lineTo(oBandL,annY+5);
-  ctx.lineTo(oBandR,annY+5);ctx.lineTo(oBandR,annY);ctx.stroke();
-  _label(ctx,'median ± 0.1',redX(0.43),annY+14,8,COLORS.ink3,'center','600');
+  // ── 8. Bracket (step ≥ 1) ──
+  if(step>=1){
+    const oBandL=redX(0.33),oBandR=redX(0.53);
+    const annY2=B+4;
+    ctx.strokeStyle=COLORS.ink3;ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(oBandL,annY2);ctx.lineTo(oBandL,annY2+5);
+    ctx.lineTo(oBandR,annY2+5);ctx.lineTo(oBandR,annY2);ctx.stroke();
+    _label(ctx,'median \xb1 0.1',redX(0.43),annY2+14,8,COLORS.ink3,'center','600');
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2490,7 +2505,7 @@ Reveal.initialize({
     if(i===SID('illumina-sbs')){setTimeout(()=>{drawSbsCanvas(0);sbsHighlight(0)},300)}
     if(i===SID('illumina-quality')){setTimeout(()=>drawIlluCanvas(0),300)}
     if(i===SID('why-not-16s')){setTimeout(()=>drawTaxCanvas(0),300)}
-    if(i===SID('gtdb')){setTimeout(()=>drawGtdbCanvas(),300)}
+    if(i===SID('gtdb')){setTimeout(()=>drawGtdbCanvas(0),300)}
     if(i===SID('gtdb-tk')){setTimeout(()=>{drawTkCanvas(0);tkHighlight(0)},300)}
     if(i===SID('gene-prediction')){setTimeout(()=>drawGpCanvas(),300)}
     if(i===SID('hmmer-concept')){setTimeout(()=>drawHmmerCanvas(),300)}
@@ -2511,6 +2526,10 @@ Reveal.initialize({
       const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
       drawTkCanvas(idx+1);tkHighlight(idx+1);
     }
+    if(si===SID('gtdb')){
+      const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
+      drawGtdbCanvas(idx+1);
+    }
     if(si===SID('illumina-sbs')){
       const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
       drawSbsCanvas(idx+1);sbsHighlight(idx+1);
@@ -2529,6 +2548,10 @@ Reveal.initialize({
     if(si===SID('gtdb-tk')){
       const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
       drawTkCanvas(idx);tkHighlight(idx);
+    }
+    if(si===SID('gtdb')){
+      const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
+      drawGtdbCanvas(idx);
     }
     if(si===SID('illumina-sbs')){
       const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
