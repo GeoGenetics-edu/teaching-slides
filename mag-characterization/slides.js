@@ -1480,141 +1480,95 @@ function drawSbs4(ctx){
    ═══════════════════════════════════════════════════════════ */
 function drawSbs5(ctx){
 
-  /* ── Title: bridge from previous steps ── */
-  _label(ctx,'One read covers ~150 bp, but the fragment is 300-500 bp',400,20,14,COLORS.ink,'center','700');
-  _label(ctx,'The sequencer reads from both ends to cover more of the insert',400,40,12,COLORS.ga,'center','600');
+  /* ── Title ── */
+  _label(ctx,'One read covers ~150 bp, but the fragment is 300–500 bp',400,18,15,COLORS.ink,'center','700');
+  _label(ctx,'The sequencer reads from both ends to cover more of the insert',400,38,11,COLORS.ga,'center','600');
 
   /* ════════════════════════════════════════════════════════════
-     Visual: 3-panel diagram showing what happens on the flow cell
+     Single horizontal fragment shown 3 times, one per step.
+     Each row: numbered label | flat fragment bar with arrows.
+     Clean, spacious, no cramped flow-cell diagrams.
      ════════════════════════════════════════════════════════════ */
-  const py=58; // panel top
-  const pw=232,ph=120,pg=12; // panel width, height, gap
-  const px0=(800-pw*3-pg*2)/2; // center 3 panels
 
-  // Clean flow cell surface line
-  function _surface(x,y,w){
-    ctx.strokeStyle=COLORS.ink4+'55';ctx.lineWidth=2;
-    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+w,y);ctx.stroke();
+  const bx=140, bw=520, bh=28, r=4;       // bar geometry
+  const adW=40;                            // adapter width inside bar
+
+  /* -- draw one fragment bar (adapters + insert) -- */
+  function _fbar(y){
+    // P5 adapter
+    _roundRect(ctx,bx,y,adW,bh,r,COLORS.gd+'cc',COLORS.gd,1);
+    _label(ctx,'P5',bx+adW/2,y+bh/2,10,'#fff','center','700');
+    // insert
+    const ix=bx+adW, iw=bw-adW*2;
+    const ig=ctx.createLinearGradient(ix,0,ix+iw,0);
+    ig.addColorStop(0,'#dbeafe');ig.addColorStop(0.5,'#f0f7ff');ig.addColorStop(1,'#dbeafe');
+    ctx.fillStyle=ig; ctx.fillRect(ix,y,iw,bh);
+    ctx.strokeStyle=COLORS.gb+'33'; ctx.lineWidth=1; ctx.strokeRect(ix,y,iw,bh);
+    // P7 adapter
+    _roundRect(ctx,bx+bw-adW,y,adW,bh,r,COLORS.gc+'cc',COLORS.gc,1);
+    _label(ctx,'P7',bx+bw-adW/2,y+bh/2,10,'#fff','center','700');
   }
 
-  // ── Panel 1: Read R1 ──
-  const p1x=px0;
-  _roundRect(ctx,p1x,py,pw,ph,8,COLORS.gb+'08',COLORS.gb+'44',1);
-  _label(ctx,'1. Sequence R1',p1x+pw/2,py+16,12,COLORS.gb,'center','700');
+  /* ── Step 1: Sequence R1 ── */
+  const y1=56;
+  _roundRect(ctx,28,y1-2,104,bh+4,6,COLORS.gb+'0a',COLORS.gb+'44',1);
+  _label(ctx,'1. Read R1',80,y1+bh/2,12,COLORS.gb,'center','700');
+  _fbar(y1);
+  // R1 arrow overlay — left to ~40% of insert
+  const r1end=bx+adW+(bw-adW*2)*0.42;
+  ctx.fillStyle=COLORS.gb+'18'; ctx.fillRect(bx+adW+1,y1+1,r1end-bx-adW-1,bh-2);
+  // R1 annotation directly below bar
+  _arrow(ctx,bx+adW+6,y1+bh+10,r1end,y1+bh+10,COLORS.gb,2.5);
+  _label(ctx,'R1 — 150 bp',bx+adW+6+(r1end-bx-adW-6)/2,y1+bh+22,10,COLORS.gb,'center','700');
 
-  const sy1=py+ph-18;
-  _surface(p1x+12,sy1,pw-24);
+  /* ── Turnaround annotation (between steps 1 and 2) ── */
+  const tay=y1+bh+38;
+  _label(ctx,'Wash R1 products, strand re-bridges to P7 oligo',400,tay,9,COLORS.gd,'center','600');
 
-  // P5 anchor on surface left
-  _roundRect(ctx,p1x+20,sy1-16,22,14,3,COLORS.gd,null);
-  _label(ctx,'P5',p1x+31,sy1-9,7,'#fff','center','700');
-  // Strand curving up and right
-  ctx.strokeStyle=COLORS.gb;ctx.lineWidth=2.5;
-  ctx.beginPath();ctx.moveTo(p1x+42,sy1-10);
-  ctx.quadraticCurveTo(p1x+60,sy1-52,p1x+pw-30,sy1-52);ctx.stroke();
-  _label(ctx,'insert DNA',p1x+pw/2+10,sy1-60,8,COLORS.ink3,'center','400');
-  // P7 dangling at end
-  _roundRect(ctx,p1x+pw-42,sy1-58,22,14,3,COLORS.gc+'88',null);
-  _label(ctx,'P7',p1x+pw-31,sy1-51,7,'#fff','center','700');
-  // R1 arrow
-  _arrow(ctx,p1x+46,sy1-36,p1x+pw-46,sy1-36,COLORS.gb,2);
-  _label(ctx,'R1 →',p1x+pw/2+10,sy1-26,10,COLORS.gb,'center','700');
+  /* ── Step 2: Turnaround ── */
+  const y2=tay+16;
+  _roundRect(ctx,28,y2-2,104,bh+4,6,COLORS.gd+'0a',COLORS.gd+'44',1);
+  _label(ctx,'2. Flip',80,y2+bh/2,12,COLORS.gd,'center','700');
+  _fbar(y2);
 
-  // ── Panel 2: Turnaround ──
-  const p2x=px0+pw+pg;
-  _roundRect(ctx,p2x,py,pw,ph,8,COLORS.gd+'08',COLORS.gd+'44',1);
-  _label(ctx,'2. Turnaround',p2x+pw/2,py+16,12,COLORS.gd,'center','700');
-
-  const sy2=py+ph-18;
-  _surface(p2x+12,sy2,pw-24);
-
-  // P5 anchor left
-  _roundRect(ctx,p2x+20,sy2-16,22,14,3,COLORS.gd,null);
-  _label(ctx,'P5',p2x+31,sy2-9,7,'#fff','center','700');
-  // Arch (strand re-bridges to P7)
-  ctx.strokeStyle=COLORS.ink3+'88';ctx.lineWidth=2;ctx.setLineDash([4,3]);
-  ctx.beginPath();ctx.moveTo(p2x+42,sy2-10);
-  ctx.quadraticCurveTo(p2x+pw/2,sy2-75,p2x+pw-42,sy2-10);ctx.stroke();
-  ctx.setLineDash([]);
-  // P7 anchor right
-  _roundRect(ctx,p2x+pw-42,sy2-16,22,14,3,COLORS.gc,null);
-  _label(ctx,'P7',p2x+pw-31,sy2-9,7,'#fff','center','700');
-  // Labels
-  _label(ctx,'Wash off R1 products',p2x+pw/2,sy2-50,9,COLORS.gd,'center','600');
-  _label(ctx,'Strand re-bridges to P7',p2x+pw/2,sy2-38,9,COLORS.gd,'center','600');
-
-  // ── Panel 3: Read R2 ──
-  const p3x=px0+2*(pw+pg);
-  _roundRect(ctx,p3x,py,pw,ph,8,COLORS.gc+'08',COLORS.gc+'44',1);
-  _label(ctx,'3. Sequence R2',p3x+pw/2,py+16,12,COLORS.gc,'center','700');
-
-  const sy3=py+ph-18;
-  _surface(p3x+12,sy3,pw-24);
-
-  // P7 anchor on surface right
-  _roundRect(ctx,p3x+pw-42,sy3-16,22,14,3,COLORS.gc,null);
-  _label(ctx,'P7',p3x+pw-31,sy3-9,7,'#fff','center','700');
-  // Strand curving up and left from P7
-  ctx.strokeStyle=COLORS.gc;ctx.lineWidth=2.5;
-  ctx.beginPath();ctx.moveTo(p3x+pw-42,sy3-10);
-  ctx.quadraticCurveTo(p3x+pw-60,sy3-52,p3x+30,sy3-52);ctx.stroke();
-  _label(ctx,'insert DNA',p3x+pw/2-10,sy3-60,8,COLORS.ink3,'center','400');
-  // P5 dangling at far end
-  _roundRect(ctx,p3x+14,sy3-58,22,14,3,COLORS.gd+'88',null);
-  _label(ctx,'P5',p3x+25,sy3-51,7,'#fff','center','700');
-  // R2 arrow (reversed)
-  _arrow(ctx,p3x+pw-46,sy3-36,p3x+46,sy3-36,COLORS.gc,2);
-  _label(ctx,'← R2',p3x+pw/2-10,sy3-26,10,COLORS.gc,'center','700');
-
-  // Arrows between panels
-  _arrow(ctx,p1x+pw+2,py+ph/2,p2x-2,py+ph/2,COLORS.ink4+'88',1.5);
-  _arrow(ctx,p2x+pw+2,py+ph/2,p3x-2,py+ph/2,COLORS.ink4+'88',1.5);
+  /* ── Step 3: Sequence R2 ── */
+  const y3=y2+bh+16;
+  _roundRect(ctx,28,y3-2,104,bh+4,6,COLORS.gc+'0a',COLORS.gc+'44',1);
+  _label(ctx,'3. Read R2',80,y3+bh/2,12,COLORS.gc,'center','700');
+  _fbar(y3);
+  // R2 arrow overlay — right ~40% of insert, reading leftward
+  const r2st=bx+bw-adW-(bw-adW*2)*0.42;
+  ctx.fillStyle=COLORS.gc+'18'; ctx.fillRect(r2st,y3+1,bx+bw-adW-r2st,bh-2);
+  _arrow(ctx,bx+bw-adW-6,y3+bh+10,r2st,y3+bh+10,COLORS.gc,2.5);
+  _label(ctx,'R2 — 150 bp',r2st+(bx+bw-adW-6-r2st)/2,y3+bh+22,10,COLORS.gc,'center','700');
 
   /* ════════════════════════════════════════════════════════════
-     Result: what the two reads cover on the original fragment
+     Result summary bar
      ════════════════════════════════════════════════════════════ */
-  const ry=py+ph+24;
-  _label(ctx,'What you get: two reads from opposite ends of the same fragment',400,ry,12,COLORS.ink,'center','700');
+  const ry=y3+bh+40;
+  _label(ctx,'Result: two reads from opposite ends of the same fragment',400,ry,12,COLORS.ink,'center','700');
+  const sy=ry+14;
+  _fbar(sy);
+  // R1 highlight
+  ctx.fillStyle=COLORS.gb+'22'; ctx.fillRect(bx+adW+1,sy+1,r1end-bx-adW-1,bh-2);
+  _arrow(ctx,bx+adW+6,sy+bh+10,r1end,sy+bh+10,COLORS.gb,2);
+  _label(ctx,'R1',bx+adW+6+(r1end-bx-adW-6)/2,sy+bh+22,10,COLORS.gb,'center','700');
+  // R2 highlight
+  ctx.fillStyle=COLORS.gc+'22'; ctx.fillRect(r2st,sy+1,bx+bw-adW-r2st,bh-2);
+  _arrow(ctx,bx+bw-adW-6,sy+bh+10,r2st,sy+bh+10,COLORS.gc,2);
+  _label(ctx,'R2',r2st+(bx+bw-adW-6-r2st)/2,sy+bh+22,10,COLORS.gc,'center','700');
 
-  const ffy=ry+18,ffx=100,ffw=600,ffh=26;
-  // P5
-  _roundRect(ctx,ffx,ffy,50,ffh,4,COLORS.gd+'dd',COLORS.gd,1.5);
-  _label(ctx,'P5',ffx+25,ffy+ffh/2,10,'#fff','center','700');
-  // Insert
-  const ig2=ctx.createLinearGradient(ffx+50,0,ffx+ffw-50,0);
-  ig2.addColorStop(0,'#dbeafe');ig2.addColorStop(0.5,'#eff6ff');ig2.addColorStop(1,'#dbeafe');
-  ctx.fillStyle=ig2;ctx.beginPath();ctx.rect(ffx+50,ffy,ffw-100,ffh);ctx.fill();
-  ctx.strokeStyle=COLORS.gb+'44';ctx.lineWidth=1;ctx.stroke();
-  // P7
-  _roundRect(ctx,ffx+ffw-50,ffy,50,ffh,4,COLORS.gc+'dd',COLORS.gc,1.5);
-  _label(ctx,'P7',ffx+ffw-25,ffy+ffh/2,10,'#fff','center','700');
+  /* ── R2 quality + output ── */
+  const qy=sy+bh+36;
+  _label(ctx,'R2 quality is lower than R1:',290,qy,10,COLORS.bad,'center','700');
+  _label(ctx,'reagents depleted · strands lose sync (phasing) · clusters decay',290,qy+14,9,COLORS.ink3,'center','400');
 
-  // R1 coverage highlight
-  const r1w=ffw*0.36;
-  ctx.fillStyle=COLORS.gb+'22';ctx.fillRect(ffx+52,ffy+2,r1w,ffh-4);
-  _arrow(ctx,ffx+54,ffy+ffh+12,ffx+52+r1w,ffy+ffh+12,COLORS.gb,3);
-  _label(ctx,'R1 — 150 bp',ffx+54+r1w/2,ffy+ffh+26,11,COLORS.gb,'center','700');
-
-  // R2 coverage highlight
-  const r2w=ffw*0.36;
-  ctx.fillStyle=COLORS.gc+'22';ctx.fillRect(ffx+ffw-52-r2w,ffy+2,r2w,ffh-4);
-  _arrow(ctx,ffx+ffw-54,ffy+ffh+12,ffx+ffw-52-r2w,ffy+ffh+12,COLORS.gc,3);
-  _label(ctx,'R2 — 150 bp',ffx+ffw-54-r2w/2,ffy+ffh+26,11,COLORS.gc,'center','700');
-
-  /* ── Why R2 < R1 — single line ── */
-  const qy=ffy+ffh+46;
-  _label(ctx,'R2 quality is lower than R1 because:',400,qy,11,COLORS.bad,'center','700');
-  _label(ctx,'reagents depleted  ·  strands lose sync (phasing)  ·  clusters decay over 300+ cycles',
-    400,qy+16,10,COLORS.ink3,'center','400');
-
-  /* ── Output files ── */
-  const oy=qy+36;
-  _roundRect(ctx,200,oy,400,40,8,'#f8fafc',COLORS.border,1);
-  _label(ctx,'You get two FASTQ files per sample:',230,oy+20,10,COLORS.ink2,'left','600');
-  _roundRect(ctx,440,oy+4,145,13,3,COLORS.gb+'11',COLORS.gb+'66',1);
-  _monoLabel(ctx,'sample_R1.fastq.gz',512,oy+10,8,COLORS.gb,'center');
-  _roundRect(ctx,440,oy+22,145,13,3,COLORS.gc+'11',COLORS.gc+'66',1);
-  _monoLabel(ctx,'sample_R2.fastq.gz',512,oy+28,8,COLORS.gc,'center');
+  _roundRect(ctx,540,qy-10,230,42,8,'#f8fafc',COLORS.border,1);
+  _label(ctx,'Output per sample:',560,qy+2,9,COLORS.ink2,'left','600');
+  _roundRect(ctx,560,qy+12,130,12,3,COLORS.gb+'11',COLORS.gb+'66',1);
+  _monoLabel(ctx,'sample_R1.fastq.gz',625,qy+18,7,COLORS.gb,'center');
+  _roundRect(ctx,560,qy+26,130,12,3,COLORS.gc+'11',COLORS.gc+'66',1);
+  _monoLabel(ctx,'sample_R2.fastq.gz',625,qy+32,7,COLORS.gc,'center');
 }
 
 /* ═══════════════════════════════════════════════════════════
