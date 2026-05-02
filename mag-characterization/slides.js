@@ -1112,8 +1112,8 @@ function drawSynthCanvas(){
   ctx.clearRect(0,0,800,440);
 
   // Triangle with three corners: Taxonomy, Function, Quality
-  const cx=400,cy=200;
-  const triR=160;
+  const cx=400,cy=215;
+  const triR=150;
   const pts=[
     {x:cx,y:cy-triR,label:'Taxonomy',sub:'Who is it?',col:COLORS.gd},
     {x:cx-triR*0.87,y:cy+triR*0.5,label:'Function',sub:'What can it do?',col:COLORS.ga},
