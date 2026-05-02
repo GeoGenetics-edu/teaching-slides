@@ -399,23 +399,23 @@ function drawGtdbCanvas(step){
   ctx.fillStyle=COLORS.ink;ctx.fill();
   _label(ctx,'Root',redX(0)-4,tree.y-12,10,COLORS.ink,'center','700');
 
-  // ── 6. Node dots at key splits (step >= 2) ──
+  // ── 6. Node dots at every split ──
+  // Map each internal node to its rank colour by RED value
+  function rankCol(red){
+    if(red<0.25) return ranks[0].col; // phylum
+    if(red<0.38) return ranks[1].col; // class
+    if(red<0.50) return ranks[2].col; // order
+    if(red<0.64) return ranks[3].col; // family
+    return ranks[4].col;              // genus
+  }
+  for(const nd of internals){
+    if(nd.red===0)continue; // skip root
+    const col=step>=2?rankCol(nd.red):COLORS.ink3;
+    ctx.beginPath();ctx.arc(redX(nd.red),nd.y,4.5,0,Math.PI*2);
+    ctx.fillStyle=step>=2?col:col+'88';ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=1.2;ctx.stroke();
+  }
   if(step>=2){
-    // Map each internal node to its rank colour by RED value
-    function rankCol(red){
-      if(red<0.25) return ranks[0].col; // phylum
-      if(red<0.38) return ranks[1].col; // class
-      if(red<0.50) return ranks[2].col; // order
-      if(red<0.64) return ranks[3].col; // family
-      return ranks[4].col;              // genus
-    }
-    for(const nd of internals){
-      if(nd.red===0)continue; // skip root
-      const col=rankCol(nd.red);
-      ctx.beginPath();ctx.arc(redX(nd.red),nd.y,5,0,Math.PI*2);
-      ctx.fillStyle=col;ctx.fill();
-      ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
-    }
     // Callout
     _roundRect(ctx,L+2,B-32,230,26,4,'#fff8f0',ranks[0].col+'44',1);
     _label(ctx,'Every split lands in its rank\'s band',L+117,B-19,9,ranks[0].col,'center','600');
