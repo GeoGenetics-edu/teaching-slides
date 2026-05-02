@@ -503,80 +503,118 @@ function drawTkStep0(ctx){
 }
 
 function drawTkStep1(ctx){
-  // Step 2: Place MAG on reference tree
+  // Step 2: Place MAG on reference tree — proper rectangular dendrogram
   _label(ctx,'GTDB reference tree',400,25,14,COLORS.ink2,'center','700');
 
-  // Simplified tree with MAG insertion point
-  const tx=80,ty=60;
-  ctx.strokeStyle=COLORS.ink4;ctx.lineWidth=2;ctx.lineCap='round';
+  // Declarative tree: {x: depth level, ch:[...]} or leaf {x, lbl}
+  // x = horizontal position (depth), y assigned by layout
+  const L=60, R=420, T=50, B=370;
+  const depths=[L, L+90, L+180, L+270, R]; // root, d1, d2, d3, tips
 
-  // Tree backbone
-  const branches=[
-    [tx,ty+180,tx+80,ty+180],
-    [tx+80,ty+80,tx+80,ty+280],
-    [tx+80,ty+80,tx+200,ty+50],[tx+80,ty+140,tx+200,ty+110],
-    [tx+80,ty+220,tx+200,ty+190],[tx+80,ty+280,tx+200,ty+310],
-    [tx+200,ty+50,tx+350,ty+30],[tx+200,ty+50,tx+350,ty+70],
-    [tx+200,ty+110,tx+350,ty+110],
-    [tx+200,ty+190,tx+350,ty+170],[tx+200,ty+190,tx+350,ty+210],
-    [tx+200,ty+310,tx+350,ty+290],[tx+200,ty+310,tx+350,ty+330]
-  ];
-  for(const[x1,y1,x2,y2] of branches){
-    ctx.strokeStyle=COLORS.border;ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  const tree={x:0,ch:[
+    {x:1,ch:[                               // clade A
+      {x:2,ch:[
+        {x:3,ch:[{x:4,lbl:'Ref 1'},{x:4,lbl:'Ref 2'}]},
+        {x:3,lbl:'Ref 3'},
+      ]},
+      {x:2,ch:[{x:3,ch:[{x:4,lbl:'Ref 4'},{x:4,lbl:'Ref 5'}]}]},
+    ]},
+    {x:1,ch:[                               // clade B
+      {x:2,ch:[{x:3,ch:[{x:4,lbl:'Ref 6'},{x:4,lbl:'Ref 7'}]}]},
+    ]},
+  ]};
+
+  // Layout: assign y-positions
+  const tipCount=7;
+  const tipSpacing=(B-T)/(tipCount-1);
+  let tipIdx=0;
+  function layoutY(node){
+    if(node.lbl!==undefined){node.y=T+tipIdx*tipSpacing;tipIdx++;return;}
+    for(const c of node.ch) layoutY(c);
+    const ys=node.ch.map(c=>c.y);
+    node.y=(Math.min(...ys)+Math.max(...ys))/2;
   }
+  layoutY(tree);
 
-  // Internal nodes (branch points)
-  const intNodes=[
-    {x:tx,y:ty+180},         // root
-    {x:tx+80,y:ty+80},{x:tx+80,y:ty+140},{x:tx+80,y:ty+220},{x:tx+80,y:ty+280},
-    {x:tx+200,y:ty+50},{x:tx+200,y:ty+110},{x:tx+200,y:ty+190},{x:tx+200,y:ty+310}
-  ];
-  for(const n of intNodes){
-    ctx.beginPath();ctx.arc(n.x,n.y,4,0,Math.PI*2);
+  // Draw: elbow connectors
+  const lc=COLORS.border;
+  function drawElbow(node){
+    if(!node.ch)return;
+    const nx=depths[node.x];
+    const ys=node.ch.map(c=>c.y);
+    // Vertical span
+    ctx.strokeStyle=lc;ctx.lineWidth=1.5;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(nx,Math.min(...ys));ctx.lineTo(nx,Math.max(...ys));ctx.stroke();
+    // Horizontal to each child
+    for(const c of node.ch){
+      ctx.beginPath();ctx.moveTo(nx,c.y);ctx.lineTo(depths[c.x],c.y);ctx.stroke();
+      drawElbow(c);
+    }
+  }
+  // Root horizontal
+  ctx.strokeStyle=lc;ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(depths[0]-20,tree.y);ctx.lineTo(depths[0],tree.y);ctx.stroke();
+  drawElbow(tree);
+
+  // Collect all nodes
+  const tips=[], internals=[];
+  function collect(node){
+    if(node.lbl!==undefined){tips.push(node);return;}
+    internals.push(node);
+    for(const c of node.ch) collect(c);
+  }
+  collect(tree);
+
+  // Internal node dots
+  for(const nd of internals){
+    ctx.beginPath();ctx.arc(depths[nd.x],nd.y,3.5,0,Math.PI*2);
     ctx.fillStyle=COLORS.ink4;ctx.fill();
     ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();
   }
 
-  // Reference tips
-  const refTips=[
-    {x:350,y:ty+30},{x:350,y:ty+70},{x:350,y:ty+110},
-    {x:350,y:ty+170},{x:350,y:ty+210},
-    {x:350,y:ty+290},{x:350,y:ty+330}
-  ];
-  for(const t of refTips){
-    ctx.beginPath();ctx.arc(t.x,t.y,5,0,Math.PI*2);
-    ctx.fillStyle=COLORS.ink4+'88';ctx.fill();
+  // Tip dots + labels
+  for(const t of tips){
+    ctx.beginPath();ctx.arc(depths[t.x],t.y,4,0,Math.PI*2);
+    ctx.fillStyle=COLORS.ink3+'99';ctx.fill();
+    _label(ctx,t.lbl,depths[t.x]+10,t.y+1,9.5,COLORS.ink3,'left','500');
   }
 
-  // MAG insertion (highlighted, with dashed line and glow)
-  const magX=350,magY=ty+145;
-  // Insertion branch
+  // Root marker
+  ctx.beginPath();ctx.arc(depths[0]-20,tree.y,4,0,Math.PI*2);
+  ctx.fillStyle=COLORS.ink;ctx.fill();
+
+  // ── MAG insertion: between Ref 3 and clade with Ref 4/5 ──
+  // Insert MAG as a new branch off the depth-2 node of clade A, second child
+  const insertNode=tree.ch[0].ch[1]; // {x:2, ch:[...]} — parent of Ref 4/5
+  const insertX=depths[insertNode.x];
+  const insertY=insertNode.y;
+  const magX=depths[3]+30, magY=insertY+38;
+
+  // Dashed insertion branch
   ctx.strokeStyle=COLORS.gd;ctx.lineWidth=2;ctx.setLineDash([4,3]);
-  ctx.beginPath();ctx.moveTo(tx+200,ty+110);ctx.lineTo(magX,magY);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(insertX,insertY);ctx.lineTo(insertX,magY);
+  ctx.lineTo(magX,magY);ctx.stroke();
   ctx.setLineDash([]);
 
   // MAG node with glow
-  ctx.shadowColor=COLORS.gd;ctx.shadowBlur=12;
-  ctx.beginPath();ctx.arc(magX,magY,12,0,Math.PI*2);
-  ctx.fillStyle=COLORS.gd+'33';ctx.fill();
+  ctx.shadowColor=COLORS.gd;ctx.shadowBlur=10;
+  ctx.beginPath();ctx.arc(magX,magY,11,0,Math.PI*2);
+  ctx.fillStyle=COLORS.gd+'22';ctx.fill();
   ctx.strokeStyle=COLORS.gd;ctx.lineWidth=2;ctx.stroke();
   ctx.shadowBlur=0;
   _label(ctx,'MAG',magX,magY,9,COLORS.gd,'center','700');
 
-  // pplacer / EPA-ng label
-  _roundRect(ctx,440,magY-18,220,36,8,COLORS.gb+'11',COLORS.gb+'88',1);
-  _label(ctx,'pplacer placement',550,magY,11,COLORS.gb,'center','600');
-
-  // Arrow from MAG to placement
-  _arrow(ctx,magX+14,magY,438,magY,COLORS.gb,1.5);
+  // pplacer label box
+  _roundRect(ctx,490,magY-18,250,36,8,COLORS.gb+'11',COLORS.gb+'88',1);
+  _label(ctx,'pplacer placement',615,magY,11,COLORS.gb,'center','600');
+  _arrow(ctx,magX+13,magY,488,magY,COLORS.gb,1.5);
 
   // Legend
-  _roundRect(ctx,100,ty+310,520,40,8,'#eff6ff',COLORS.gb+'44',1);
-  _label(ctx,'MAG is inserted into the reference tree based on concatenated marker alignment',360,ty+330,11,COLORS.gb,'center','600');
+  _roundRect(ctx,80,B+16,520,36,8,'#eff6ff',COLORS.gb+'44',1);
+  _label(ctx,'MAG is inserted into the reference tree based on concatenated marker alignment',340,B+34,10,COLORS.gb,'center','600');
 
   // Ref label
-  _label(ctx,'Reference genomes',350,ty+360,10,COLORS.ink4,'center','500');
+  _label(ctx,'Reference genomes',R+10,B+60,9,COLORS.ink4,'center','500');
 }
 
 function drawTkStep2(ctx){
