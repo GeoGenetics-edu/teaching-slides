@@ -1895,12 +1895,19 @@ function drawIlluCanvas(step){
     const xStart=px+dropStart*bw;
     const yStart=pts[dropStart].yMed;
     const yEnd=pts[nPos-1].yMed;
-    // Curly arrow from high to low
+    // Dashed trend line from high to low
     ctx.strokeStyle=COLORS.bad;ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
     ctx.beginPath();ctx.moveTo(xStart,yStart-6);ctx.lineTo(px+pw-60,yEnd-6);ctx.stroke();
     ctx.setLineDash([]);
     _arrow(ctx,px+pw-80,yEnd-6,px+pw-55,yEnd-6,COLORS.bad,1.5);
-    _label(ctx,'quality drops toward 3′ end',px+pw/2+60,yStart-18,10,COLORS.bad,'center','600');
+    _label(ctx,'quality drops toward 3′ end',px+pw/2+60,yStart-18,11,COLORS.bad,'center','700');
+
+    // Why? — explanation below the plot
+    const wy=py+ph-60;
+    _roundRect(ctx,px+80,wy,pw-160,50,6,COLORS.bad+'08',COLORS.bad+'33',1);
+    _label(ctx,'Why?  Each cycle adds a small error:',px+pw/2,wy+16,10,COLORS.bad,'center','700');
+    _label(ctx,'phasing (strands lose sync)  ·  signal decay (fluorescence fades)  ·  incomplete cleavage',
+      px+pw/2,wy+34,9,COLORS.ink3,'center','400');
   }
   else if(illuStep===1){
     // Both R1 and R2 — R2 is visibly lower
