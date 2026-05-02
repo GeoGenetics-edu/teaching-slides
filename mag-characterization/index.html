@@ -356,28 +356,8 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
   <h2 class="stitle">MAG taxonomy is genome-based</h2>
   <p class="sub">Not every MAG has a 16S gene, but every MAG has many conserved marker genes.</p>
 
-  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
-    <div class="f0 col g-10 sidebar sidebar-wide">
-      <div class="card info-card" style="border-left:3px solid var(--gd)">
-        <div class="info-card-title">MAG A: has 16S</div>
-        <div class="info-card-text">Full-length 16S rRNA gene assembled. Can be placed on a 16S tree, but single-gene placement has limited resolution.</div>
-      </div>
-      <div class="card info-card" style="border-left:3px solid var(--gb)">
-        <div class="info-card-title">MAG B: no 16S, but markers</div>
-        <div class="info-card-text">16S gene is missing or fragmented. However, 118 of 120 universal marker genes are present. Genome-based taxonomy still works.</div>
-      </div>
-      <div class="card info-card" style="border-left:3px solid var(--gc)">
-        <div class="info-card-title">MAG C: fragmented 16S</div>
-        <div class="info-card-text">Partial 16S on a contig edge. Too short for reliable phylogeny. Marker gene approach is the only option.</div>
-      </div>
-    </div>
-
-    <div class="f1 col" style="min-height:0;">
-      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
-        <div class="card-header">Genome-based vs single-gene taxonomy</div>
-        <div class="canvas-wrap"><canvas id="tax-canvas" class="canvas-fill"></canvas></div>
-      </div>
-    </div>
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;min-height:0;">
+    <canvas id="tax-canvas" width="800" height="440" style="width:100%;max-width:960px;border-radius:12px;background:var(--surface);border:1px solid var(--border)"></canvas>
   </div>
 
   <div class="takeaways" style="margin-top:8px">

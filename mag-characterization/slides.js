@@ -86,82 +86,155 @@ function drawTaxCanvas(){
   const ctx=_c('tax-canvas');if(!ctx)return;
   ctx.clearRect(0,0,800,440);
 
-  // Draw a simplified phylogenetic tree with marker genes highlighted
-  const treeX=120,treeY=40,treeW=560,treeH=280;
-  const R=rng(77);
+  /* ── Two-panel comparison: 16S vs genome-based ── */
+  const pw=370,ph=280,py=10,gapX=16;
+  const p1x=20,p2x=p1x+pw+gapX;
 
-  // Tree trunk
-  ctx.strokeStyle=COLORS.ink4;ctx.lineWidth=2;ctx.lineCap='round';
-  ctx.beginPath();ctx.moveTo(treeX,treeY+treeH/2);ctx.lineTo(treeX+100,treeY+treeH/2);ctx.stroke();
+  /* ── Panel headers ── */
+  _roundRect(ctx,p1x,py,pw,ph,10,'#fef2f2'+'44',COLORS.bad+'33',1);
+  _label(ctx,'16S rRNA approach',p1x+pw/2,py+18,13,COLORS.bad,'center','700');
+  _label(ctx,'Single gene, often missing from MAGs',p1x+pw/2,py+34,9,COLORS.ink4,'center','400');
 
-  // Branch structure: 5 tips (3 MAGs + 2 references)
-  const tips=[
-    {x:treeX+treeW-80,y:treeY+20,label:'MAG A',col:COLORS.gd,has16s:true},
-    {x:treeX+treeW-80,y:treeY+90,label:'MAG B',col:COLORS.gb,has16s:false},
-    {x:treeX+treeW-80,y:treeY+160,label:'Ref 1',col:COLORS.ink4,has16s:true},
-    {x:treeX+treeW-80,y:treeY+210,label:'MAG C',col:COLORS.gc,has16s:false},
-    {x:treeX+treeW-80,y:treeY+270,label:'Ref 2',col:COLORS.ink4,has16s:true}
+  _roundRect(ctx,p2x,py,pw,ph,10,'#f0fdf4'+'44',COLORS.ok+'33',1);
+  _label(ctx,'Genome-based approach',p2x+pw/2,py+18,13,COLORS.ok,'center','700');
+  _label(ctx,'120+ universal marker genes',p2x+pw/2,py+34,9,COLORS.ink4,'center','400');
+
+  /* ── Shared tree structure (rectangular cladogram) ── */
+  // Tips: 8 taxa with spacing
+  const taxa=[
+    {label:'MAG-01',isMag:true,col:COLORS.gd,has16s:true,markers:118},
+    {label:'MAG-02',isMag:true,col:COLORS.gb,has16s:false,markers:115},
+    {label:'Ref genome 1',isMag:false,col:COLORS.ink4,has16s:true,markers:120},
+    {label:'MAG-03',isMag:true,col:COLORS.gc,has16s:false,markers:112},
+    {label:'Ref genome 2',isMag:false,col:COLORS.ink4,has16s:true,markers:120},
+    {label:'MAG-04',isMag:true,col:COLORS.warn,has16s:false,markers:108},
+    {label:'Ref genome 3',isMag:false,col:COLORS.ink4,has16s:true,markers:120},
+    {label:'MAG-05',isMag:true,col:'#6366f1',has16s:true,markers:119}
   ];
+  const tipCount=taxa.length;
 
-  // Internal nodes
-  const n1x=treeX+100,n1y=treeY+treeH/2;
-  const n2x=treeX+200,n2y=treeY+55;
-  const n3x=treeX+200,n3y=treeY+210;
-  const n4x=treeX+310,n4y=treeY+55;
-  const n5x=treeX+310,n5y=treeY+160;
+  function drawTree(ox,oy,w,h,showAll){
+    const tipSpacing=h/(tipCount+1);
+    const tipX=ox+w-4;
+    const rootX=ox+10;
 
-  // Draw branches
-  ctx.strokeStyle=COLORS.border;ctx.lineWidth=2;
-  const lines=[
-    [n1x,n1y,n2x,n2y],[n1x,n1y,n3x,n3y],
-    [n2x,n2y,tips[0].x,tips[0].y],[n2x,n2y,tips[1].x,tips[1].y],
-    [n4x,n4y,tips[2].x,tips[2].y],
-    [n3x,n3y,tips[3].x,tips[3].y],[n3x,n3y,tips[4].x,tips[4].y]
-  ];
-  for(const[x1,y1,x2,y2] of lines){
-    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
-  }
+    // Compute tip Y positions
+    const tipYs=[];
+    for(let i=0;i<tipCount;i++) tipYs.push(oy+tipSpacing*(i+1));
 
-  // Draw tips
-  for(const t of tips){
-    const isMag=t.label.startsWith('MAG');
-    ctx.beginPath();ctx.arc(t.x,t.y,isMag?10:7,0,Math.PI*2);
-    ctx.fillStyle=t.col+(isMag?'':'66');ctx.fill();
-    if(isMag){ctx.strokeStyle=t.col;ctx.lineWidth=2;ctx.stroke();}
+    // Internal node structure (rectangular cladogram)
+    // Clades: ((0,1),(2,(3,4))),((5,6),7)
+    ctx.strokeStyle=COLORS.ink4+'66';ctx.lineWidth=1.5;ctx.lineCap='round';
 
-    _label(ctx,t.label,t.x+22,t.y,isMag?13:11,t.col,'left',isMag?'700':'500');
+    function hLine(x1,x2,y){ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x2,y);ctx.stroke()}
+    function vLine(x,y1,y2){ctx.beginPath();ctx.moveTo(x,y1);ctx.lineTo(x,y2);ctx.stroke()}
 
-    // 16S indicator
-    if(t.has16s){
-      const bx=t.x+85,by=t.y-8;
-      _roundRect(ctx,bx,by,38,16,4,'#dcfce7',COLORS.ok,1);
-      _label(ctx,'16S',bx+19,by+8,8,COLORS.ok,'center','700');
-    } else if(isMag){
-      const bx=t.x+85,by=t.y-8;
-      _roundRect(ctx,bx,by,38,16,4,'#fef2f2',COLORS.bad,1);
-      _label(ctx,'no 16S',bx+19,by+8,7,COLORS.bad,'center','600');
+    // Depths (x positions for internal nodes)
+    const d1=rootX, d2=rootX+w*0.2, d3=rootX+w*0.4, d4=rootX+w*0.55, d5=rootX+w*0.7;
+
+    // Clade A: taxa 0,1
+    const cAy=(tipYs[0]+tipYs[1])/2;
+    hLine(d5,tipX,tipYs[0]); hLine(d5,tipX,tipYs[1]);
+    vLine(d5,tipYs[0],tipYs[1]);
+
+    // Clade B: taxa 3,4
+    const cBy=(tipYs[3]+tipYs[4])/2;
+    hLine(d5,tipX,tipYs[3]); hLine(d5,tipX,tipYs[4]);
+    vLine(d5,tipYs[3],tipYs[4]);
+
+    // Clade C: taxa 2 + clade B
+    const cCy=(tipYs[2]+cBy)/2;
+    hLine(d4,tipX,tipYs[2]); hLine(d4,d5,cBy);
+    vLine(d4,tipYs[2],cBy);
+
+    // Clade D: clade A + clade C
+    const cDy=(cAy+cCy)/2;
+    hLine(d3,d5,cAy); hLine(d3,d4,cCy);
+    vLine(d3,cAy,cCy);
+
+    // Clade E: taxa 5,6
+    const cEy=(tipYs[5]+tipYs[6])/2;
+    hLine(d5,tipX,tipYs[5]); hLine(d5,tipX,tipYs[6]);
+    vLine(d5,tipYs[5],tipYs[6]);
+
+    // Clade F: clade E + taxon 7
+    const cFy=(cEy+tipYs[7])/2;
+    hLine(d4,d5,cEy); hLine(d4,tipX,tipYs[7]);
+    vLine(d4,cEy,tipYs[7]);
+
+    // Root: clade D + clade F
+    const rootY=(cDy+cFy)/2;
+    hLine(d1,d3,cDy); hLine(d1,d4,cFy);
+    vLine(d1,cDy,cFy);
+
+    // Draw tips
+    for(let i=0;i<tipCount;i++){
+      const t=taxa[i];
+      const ty=tipYs[i];
+      const canPlace=showAll||t.has16s;
+
+      // Tip dot
+      const r=t.isMag?5:3.5;
+      ctx.beginPath();ctx.arc(tipX,ty,r,0,Math.PI*2);
+      ctx.fillStyle=canPlace?t.col:(COLORS.ink4+'33');ctx.fill();
+      if(t.isMag&&canPlace){ctx.strokeStyle=t.col;ctx.lineWidth=1.5;ctx.stroke()}
+
+      // Label
+      const labelCol=canPlace?(t.isMag?t.col:COLORS.ink4):(COLORS.ink4+'55');
+      _label(ctx,t.label,tipX+10,ty,t.isMag?9:8,labelCol,'left',t.isMag?'700':'400');
+
+      // Faded branch for missing taxa in 16S panel
+      if(!showAll&&!t.has16s){
+        // Draw X or question mark
+        _label(ctx,'?',tipX-15,ty,11,COLORS.bad+'88','center','700');
+      }
+
+      // In genome panel: show marker count bar
+      if(showAll&&t.isMag){
+        const barX=tipX+70,barW=Math.round(t.markers/120*50),barH=6;
+        _roundRect(ctx,barX,ty-barH/2,barW,barH,2,t.col+'44',t.col,0.5);
+        _label(ctx,t.markers+'/120',barX+barW+4,ty,7,t.col,'left','600');
+      }
+    }
+
+    // 16S panel: show which have 16S
+    if(!showAll){
+      for(let i=0;i<tipCount;i++){
+        const t=taxa[i];
+        if(!t.isMag) continue;
+        const ty=tipYs[i];
+        if(t.has16s){
+          _roundRect(ctx,tipX+70,ty-7,28,14,3,'#dcfce7',COLORS.ok,1);
+          _label(ctx,'16S',tipX+84,ty,7,COLORS.ok,'center','700');
+        } else {
+          _roundRect(ctx,tipX+70,ty-7,28,14,3,'#fef2f2',COLORS.bad,1);
+          _label(ctx,'✗',tipX+84,ty,8,COLORS.bad,'center','700');
+        }
+      }
     }
   }
 
-  // Marker gene dots along branches for MAGs
-  const markerPositions=[
-    {x:n2x+40,y:tips[0].y-5},{x:n2x+80,y:tips[0].y+3},{x:n2x+120,y:tips[0].y-3},
-    {x:n2x+40,y:tips[1].y+4},{x:n2x+80,y:tips[1].y-3},{x:n2x+120,y:tips[1].y+2},
-    {x:n3x+40,y:tips[3].y-4},{x:n3x+80,y:tips[3].y+3}
-  ];
-  for(const m of markerPositions){
-    ctx.beginPath();ctx.arc(m.x,m.y,3,0,Math.PI*2);
-    ctx.fillStyle=COLORS.gd+'55';ctx.fill();
-  }
+  /* ── Draw both trees ── */
+  drawTree(p1x+8,py+44,pw*0.5,ph-56,false);
+  drawTree(p2x+8,py+44,pw*0.5,ph-56,true);
 
-  // Legend at bottom
-  _roundRect(ctx,treeX,treeY+treeH+10,treeW,30,6,'#f8fafc',COLORS.border,1);
-  ctx.beginPath();ctx.arc(treeX+20,treeY+treeH+25,3,0,Math.PI*2);ctx.fillStyle=COLORS.gd+'55';ctx.fill();
-  _label(ctx,'Marker genes (120+)',treeX+30,treeY+treeH+25,10,COLORS.ink3,'left','500');
-  _roundRect(ctx,treeX+200,treeY+treeH+17,30,14,4,'#dcfce7',COLORS.ok,1);
-  _label(ctx,'16S',treeX+215,treeY+treeH+24,7,COLORS.ok,'center','700');
-  _label(ctx,'= 16S present',treeX+240,treeY+treeH+25,10,COLORS.ink3,'left','500');
-  _label(ctx,'Genome-based placement works even without 16S',treeX+420,treeY+treeH+25,10,COLORS.gd,'left','600');
+  /* ── Panel verdict labels (inside panel, bottom) ── */
+  _label(ctx,'3 of 5 MAGs cannot be placed',p1x+pw/2,py+ph-12,11,COLORS.bad,'center','700');
+  _label(ctx,'All 5 MAGs placed with confidence',p2x+pw/2,py+ph-12,11,COLORS.ok,'center','700');
+
+  /* ── Bottom comparison summary ── */
+  const by=py+ph+14;
+  _roundRect(ctx,40,by,340,70,8,'#fef2f2'+'44',COLORS.bad+'33',1);
+  _label(ctx,'16S rRNA',60,by+16,11,COLORS.bad,'left','700');
+  _label(ctx,'Only ~40% of MAGs have 16S assembled',60,by+34,9,COLORS.ink3,'left','400');
+  _label(ctx,'Limited resolution below family level',60,by+50,9,COLORS.ink3,'left','400');
+  _label(ctx,'1 gene',60,by+64,8,COLORS.bad,'left','600');
+
+  _roundRect(ctx,420,by,340,70,8,'#f0fdf4'+'44',COLORS.ok+'33',1);
+  _label(ctx,'Genome-based (e.g. GTDB-Tk)',440,by+16,11,COLORS.ok,'left','700');
+  _label(ctx,'Works for every MAG with enough completeness',440,by+34,9,COLORS.ink3,'left','400');
+  _label(ctx,'Species-level resolution using 120 markers',440,by+50,9,COLORS.ink3,'left','400');
+  _label(ctx,'120 genes',440,by+64,8,COLORS.ok,'left','600');
 }
 
 /* ═══════════════════════════════════════════════════════════
