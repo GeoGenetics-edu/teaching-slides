@@ -1479,72 +1479,83 @@ function drawSbs4(ctx){
    STEP 5 — Paired-end reads (R1 & R2)
    ═══════════════════════════════════════════════════════════ */
 function drawSbs5(ctx){
-  _label(ctx,'Paired-end sequencing',400,24,18,COLORS.ink,'center','700');
-  _label(ctx,'Read both ends of each fragment to capture the full insert',400,46,11,COLORS.ink3,'center','400');
 
-  /* ── Big fragment diagram (hero visual) ── */
-  const fy=80,fx=60,fw=680,fh=36;
+  /* ── Narrative bridge: connect to what the student just learned ── */
+  _label(ctx,'One read only covers ~150 bp of a 300-500 bp fragment',400,20,14,COLORS.ink,'center','700');
+  _label(ctx,'Solution: read from both ends',400,40,13,COLORS.ga,'center','600');
+
+  /* ── Fragment with problem highlighted ── */
+  const fy=62,fx=60,fw=680,fh=32;
 
   // P5 adapter
-  _roundRect(ctx,fx,fy,70,fh,6,COLORS.gd+'dd',COLORS.gd,2);
-  _label(ctx,'P5',fx+35,fy+fh/2,13,'#fff','center','700');
+  _roundRect(ctx,fx,fy,60,fh,5,COLORS.gd+'dd',COLORS.gd,2);
+  _label(ctx,'P5',fx+30,fy+fh/2,12,'#fff','center','700');
 
   // Insert DNA
-  const ig=ctx.createLinearGradient(fx+70,0,fx+fw-70,0);
+  const ig=ctx.createLinearGradient(fx+60,0,fx+fw-60,0);
   ig.addColorStop(0,'#dbeafe');ig.addColorStop(0.5,'#eff6ff');ig.addColorStop(1,'#dbeafe');
-  ctx.fillStyle=ig;ctx.beginPath();ctx.rect(fx+70,fy,fw-140,fh);ctx.fill();
+  ctx.fillStyle=ig;ctx.beginPath();ctx.rect(fx+60,fy,fw-120,fh);ctx.fill();
   ctx.strokeStyle=COLORS.gb+'66';ctx.lineWidth=1;ctx.stroke();
-  _label(ctx,'Insert DNA (~300–500 bp)',fx+fw/2,fy+fh/2,13,COLORS.gb,'center','600');
+  _label(ctx,'Insert DNA (~300–500 bp)',fx+fw/2,fy+fh/2,12,COLORS.gb,'center','600');
 
   // P7 adapter
-  _roundRect(ctx,fx+fw-70,fy,70,fh,6,COLORS.gc+'dd',COLORS.gc,2);
-  _label(ctx,'P7',fx+fw-35,fy+fh/2,13,'#fff','center','700');
+  _roundRect(ctx,fx+fw-60,fy,60,fh,5,COLORS.gc+'dd',COLORS.gc,2);
+  _label(ctx,'P7',fx+fw-30,fy+fh/2,12,'#fff','center','700');
 
-  // R1 arrow — big and prominent
-  const ry=fy+fh+28;
-  _arrow(ctx,fx+72,ry,fx+72+260,ry,COLORS.gb,4);
-  _label(ctx,'Read 1 (R1) — 150 bp',fx+72+130,ry-16,13,COLORS.gb,'center','700');
+  // R1 arrow
+  const ry=fy+fh+22;
+  _arrow(ctx,fx+62,ry,fx+62+240,ry,COLORS.gb,3.5);
+  _label(ctx,'Read 1 (R1) — 150 bp',fx+62+120,ry-14,12,COLORS.gb,'center','700');
+
+  // Unsequenced gap — dashed bracket with question mark
+  ctx.strokeStyle=COLORS.ink4+'66';ctx.lineWidth=1;ctx.setLineDash([4,3]);
+  ctx.beginPath();ctx.moveTo(fx+62+244,ry-6);ctx.lineTo(fx+62+244,ry+6);
+  ctx.moveTo(fx+62+244,ry);ctx.lineTo(fx+fw-62-244,ry);
+  ctx.moveTo(fx+fw-62-244,ry-6);ctx.lineTo(fx+fw-62-244,ry+6);ctx.stroke();
+  ctx.setLineDash([]);
+  _label(ctx,'unsequenced gap?',fx+fw/2,ry+14,9,COLORS.ink4,'center','500');
 
   // R2 arrow (reverse)
-  _arrow(ctx,fx+fw-72,ry,fx+fw-72-260,ry,COLORS.gc,4);
-  _label(ctx,'Read 2 (R2) — 150 bp',fx+fw-72-130,ry-16,13,COLORS.gc,'center','700');
+  _arrow(ctx,fx+fw-62,ry,fx+fw-62-240,ry,COLORS.gc,3.5);
+  _label(ctx,'Read 2 (R2) — 150 bp',fx+fw-62-120,ry-14,12,COLORS.gc,'center','700');
 
   // Insert size bracket
+  const bry=ry+24;
   ctx.strokeStyle=COLORS.ink4;ctx.lineWidth=1;
   ctx.beginPath();
-  ctx.moveTo(fx+72,ry+14);ctx.lineTo(fx+72,ry+22);
-  ctx.lineTo(fx+fw-72,ry+22);ctx.lineTo(fx+fw-72,ry+14);ctx.stroke();
-  _label(ctx,'Insert size',fx+fw/2,ry+34,10,COLORS.ink4,'center','500');
+  ctx.moveTo(fx+62,bry);ctx.lineTo(fx+62,bry+8);
+  ctx.lineTo(fx+fw-62,bry+8);ctx.lineTo(fx+fw-62,bry);ctx.stroke();
+  _label(ctx,'Insert size (known from library prep)',fx+fw/2,bry+20,10,COLORS.ink4,'center','500');
 
-  /* ── Workflow: 4 numbered steps in a clean row ── */
-  const wy=ry+60;
-  _label(ctx,'Paired-end workflow on each cluster:',400,wy,13,COLORS.gd,'center','700');
+  /* ── How the machine does it: 4-step workflow ── */
+  const wy=bry+40;
+  _label(ctx,'How the sequencer reads both ends:',400,wy,13,COLORS.gd,'center','700');
 
   const peSteps=[
-    {title:'Sequence R1',desc:'Read from P5 end',col:COLORS.gb},
-    {title:'Block + wash',desc:'Strip R1 primer',col:COLORS.ink3},
-    {title:'Index read',desc:'Identify sample',col:COLORS.gd},
-    {title:'Sequence R2',desc:'Read from P7 end',col:COLORS.gc}
+    {title:'Sequence R1',desc:'150 cycles from P5 end',col:COLORS.gb},
+    {title:'Block + wash',desc:'Strip primer, keep cluster',col:COLORS.ink3},
+    {title:'Index read',desc:'Read barcode for sample ID',col:COLORS.gd},
+    {title:'Sequence R2',desc:'150 cycles from P7 end',col:COLORS.gc}
   ];
 
-  const sw=145,sg=12,sTotal=sw*4+sg*3;
+  const sw=150,sg=10,sTotal=sw*4+sg*3;
   const sx0=(800-sTotal)/2;
-  const sy=wy+18;
+  const sy=wy+16;
 
   for(let i=0;i<4;i++){
     const s=peSteps[i];
     const bx=sx0+i*(sw+sg);
-    _roundRect(ctx,bx,sy,sw,52,6,s.col+'0c',s.col+'44',1);
-    _label(ctx,(i+1)+'. '+s.title,bx+sw/2,sy+18,11,s.col,'center','700');
-    _label(ctx,s.desc,bx+sw/2,sy+36,10,COLORS.ink3,'center','400');
+    _roundRect(ctx,bx,sy,sw,48,6,s.col+'0c',s.col+'44',1);
+    _label(ctx,(i+1)+'. '+s.title,bx+sw/2,sy+16,11,s.col,'center','700');
+    _label(ctx,s.desc,bx+sw/2,sy+34,9,COLORS.ink3,'center','400');
     if(i<3){
-      _arrow(ctx,bx+sw+2,sy+26,bx+sw+sg-2,sy+26,COLORS.ink4+'88',1.5);
+      _arrow(ctx,bx+sw+1,sy+24,bx+sw+sg-1,sy+24,COLORS.ink4+'88',1.5);
     }
   }
 
-  /* ── Why R2 < R1 — compact row with bigger text ── */
-  const qy=sy+74;
-  _label(ctx,'Why R2 quality is always lower than R1:',400,qy,13,COLORS.bad,'center','700');
+  /* ── Why R2 < R1 ── */
+  const qy=sy+68;
+  _label(ctx,'Why R2 quality is always lower than R1:',400,qy,12,COLORS.bad,'center','700');
 
   const reasons=[
     {title:'Reagent depletion',desc:'Consumed during R1',col:COLORS.ok},
@@ -1554,28 +1565,26 @@ function drawSbs5(ctx){
 
   const rw=200,rg=20,rTotal=rw*3+rg*2;
   const rx0=(800-rTotal)/2;
-  const rsy=qy+14;
+  const rsy=qy+12;
 
   for(let i=0;i<3;i++){
     const r=reasons[i];
     const bx=rx0+i*(rw+rg);
-    // Numbered circle
-    ctx.beginPath();ctx.arc(bx+16,rsy+16,11,0,Math.PI*2);
+    ctx.beginPath();ctx.arc(bx+14,rsy+14,10,0,Math.PI*2);
     ctx.fillStyle=r.col+'22';ctx.fill();ctx.strokeStyle=r.col;ctx.lineWidth=1.5;ctx.stroke();
-    _label(ctx,''+(i+1),bx+16,rsy+16,11,r.col,'center','700');
-    // Text to the right
-    _label(ctx,r.title,bx+34,rsy+10,11,r.col,'left','700');
-    _label(ctx,r.desc,bx+34,rsy+26,9,COLORS.ink3,'left','400');
+    _label(ctx,''+(i+1),bx+14,rsy+14,10,r.col,'center','700');
+    _label(ctx,r.title,bx+30,rsy+8,10,r.col,'left','700');
+    _label(ctx,r.desc,bx+30,rsy+24,9,COLORS.ink3,'left','400');
   }
 
-  /* ── Output files — small, clean ── */
-  const oy=rsy+48;
-  _roundRect(ctx,240,oy,320,44,8,'#f8fafc',COLORS.border,1);
-  _label(ctx,'Output files:',310,oy+22,11,COLORS.ink2,'center','700');
-  _roundRect(ctx,380,oy+6,160,13,3,COLORS.gb+'11',COLORS.gb+'66',1);
-  _monoLabel(ctx,'sample_R1.fastq.gz',460,oy+12,9,COLORS.gb,'center');
-  _roundRect(ctx,380,oy+24,160,13,3,COLORS.gc+'11',COLORS.gc+'66',1);
-  _monoLabel(ctx,'sample_R2.fastq.gz',460,oy+30,9,COLORS.gc,'center');
+  /* ── Output: what the student gets ── */
+  const oy=rsy+46;
+  _roundRect(ctx,180,oy,440,44,8,'#f8fafc',COLORS.border,1);
+  _label(ctx,'You get two files per sample:',210,oy+22,10,COLORS.ink2,'left','600');
+  _roundRect(ctx,420,oy+4,180,14,3,COLORS.gb+'11',COLORS.gb+'66',1);
+  _monoLabel(ctx,'sample_R1.fastq.gz',510,oy+11,9,COLORS.gb,'center');
+  _roundRect(ctx,420,oy+24,180,14,3,COLORS.gc+'11',COLORS.gc+'66',1);
+  _monoLabel(ctx,'sample_R2.fastq.gz',510,oy+31,9,COLORS.gc,'center');
 }
 
 /* ═══════════════════════════════════════════════════════════
