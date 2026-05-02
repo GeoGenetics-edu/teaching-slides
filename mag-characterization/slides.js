@@ -553,7 +553,7 @@ function drawTkStep1(ctx){
 
   // pplacer / EPA-ng label
   _roundRect(ctx,440,magY-18,220,36,8,COLORS.gb+'11',COLORS.gb+'88',1);
-  _label(ctx,'pplacer / EPA-ng placement',550,magY,11,COLORS.gb,'center','600');
+  _label(ctx,'pplacer placement',550,magY,11,COLORS.gb,'center','600');
 
   // Arrow from MAG to placement
   _arrow(ctx,magX+14,magY,438,magY,COLORS.gb,1.5);
