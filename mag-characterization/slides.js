@@ -1090,8 +1090,8 @@ function drawSbs0(ctx){
   _roundRect(ctx,120,dy,560,110,10,'#f8fafc',COLORS.border,1);
   _label(ctx,'Adapter structure',400,dy+16,13,COLORS.ink2,'center','700');
 
-  // Zoomed adapter diagram
-  const zx=160,zy=dy+32;
+  // Zoomed adapter diagram — centred in box (box 120..680, pills 530px wide)
+  const zx=135,zy=dy+32;
   _roundRect(ctx,zx,zy,80,30,5,COLORS.gd+'33',COLORS.gd,1.5);
   _label(ctx,'P5 adapter',zx+40,zy+15,9,COLORS.gd,'center','700');
 
@@ -1115,9 +1115,9 @@ function drawSbs0(ctx){
   _label(ctx,'P7 adapter',zx+490,zy+15,9,COLORS.gc,'center','700');
 
   // Labels below
-  _label(ctx,'Sequencing primer sites',zx+220,zy+44,9,COLORS.ink4,'center','500');
-  _label(ctx,'Barcodes for multiplexing',zx+220,zy+58,9,COLORS.ink4,'center','500');
-  _label(ctx,'P5/P7 bind to flow cell surface oligos',zx+220,zy+72,9,COLORS.ink4,'center','500');
+  _label(ctx,'Sequencing primer sites',zx+265,zy+44,9,COLORS.ink4,'center','500');
+  _label(ctx,'Barcodes for multiplexing',zx+265,zy+58,9,COLORS.ink4,'center','500');
+  _label(ctx,'P5/P7 bind to flow cell surface oligos',zx+265,zy+72,9,COLORS.ink4,'center','500');
 }
 
 /* ═══════════════════════════════════════════════════════════
