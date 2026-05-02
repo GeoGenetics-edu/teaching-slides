@@ -1528,7 +1528,7 @@ function drawSbs5(ctx){
   /* ── Step 2: Turnaround ── */
   const y2=tay+16;
   _roundRect(ctx,28,y2-2,104,bh+4,6,COLORS.gd+'0a',COLORS.gd+'44',1);
-  _label(ctx,'2. Flip',80,y2+bh/2,12,COLORS.gd,'center','700');
+  _label(ctx,'2. Turnaround',80,y2+bh/2,11,COLORS.gd,'center','700');
   _fbar(y2);
 
   /* ── Step 3: Sequence R2 ── */
@@ -1563,12 +1563,12 @@ function drawSbs5(ctx){
   _label(ctx,'R2 quality is lower than R1:',290,qy,10,COLORS.bad,'center','700');
   _label(ctx,'reagents depleted · strands lose sync (phasing) · clusters decay',290,qy+14,9,COLORS.ink3,'center','400');
 
-  _roundRect(ctx,540,qy-10,230,42,8,'#f8fafc',COLORS.border,1);
-  _label(ctx,'Output per sample:',560,qy+2,9,COLORS.ink2,'left','600');
-  _roundRect(ctx,560,qy+12,130,12,3,COLORS.gb+'11',COLORS.gb+'66',1);
-  _monoLabel(ctx,'sample_R1.fastq.gz',625,qy+18,7,COLORS.gb,'center');
-  _roundRect(ctx,560,qy+26,130,12,3,COLORS.gc+'11',COLORS.gc+'66',1);
-  _monoLabel(ctx,'sample_R2.fastq.gz',625,qy+32,7,COLORS.gc,'center');
+  _roundRect(ctx,540,qy-10,230,52,8,'#f8fafc',COLORS.border,1);
+  _label(ctx,'Output per sample:',560,qy+4,9,COLORS.ink2,'left','600');
+  _roundRect(ctx,560,qy+14,130,12,3,COLORS.gb+'11',COLORS.gb+'66',1);
+  _monoLabel(ctx,'sample_R1.fastq.gz',625,qy+20,7,COLORS.gb,'center');
+  _roundRect(ctx,560,qy+30,130,12,3,COLORS.gc+'11',COLORS.gc+'66',1);
+  _monoLabel(ctx,'sample_R2.fastq.gz',625,qy+36,7,COLORS.gc,'center');
 }
 
 /* ═══════════════════════════════════════════════════════════
