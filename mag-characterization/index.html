@@ -490,28 +490,28 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
 
   <div style="flex:1;display:flex;align-items:center;">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%">
-      <div class="card" style="border-left:4px solid var(--warn);padding:18px 20px">
+      <div class="card fragment" data-fragment-index="0" style="border-left:4px solid var(--warn);padding:18px 20px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 3v7M9 13v1" stroke="var(--warn)" stroke-width="2" stroke-linecap="round"/></svg>
           <span style="font-size:13px;font-weight:700;color:var(--warn)">Missing markers</span>
         </div>
         <div style="font-size:11.5px;color:var(--ink-2);line-height:1.55">Few marker genes found in the MAG. Placement on the tree is uncertain. Confidence at deeper ranks drops.</div>
       </div>
-      <div class="card" style="border-left:4px solid var(--bad);padding:18px 20px">
+      <div class="card fragment" data-fragment-index="1" style="border-left:4px solid var(--bad);padding:18px 20px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M5 5l8 8M13 5l-8 8" stroke="var(--bad)" stroke-width="2" stroke-linecap="round"/></svg>
           <span style="font-size:13px;font-weight:700;color:var(--bad)">Contaminating markers</span>
         </div>
         <div style="font-size:11.5px;color:var(--ink-2);line-height:1.55">Markers from multiple organisms create a mixed signal. The MAG may be placed between clades or assigned to a wrong lineage.</div>
       </div>
-      <div class="card" style="border-left:4px solid var(--gb);padding:18px 20px">
+      <div class="card fragment" data-fragment-index="2" style="border-left:4px solid var(--gb);padding:18px 20px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="7" cy="9" r="4" fill="none" stroke="var(--gb)" stroke-width="1.5"/><circle cx="11" cy="9" r="4" fill="none" stroke="var(--gb)" stroke-width="1.5"/></svg>
           <span style="font-size:13px;font-weight:700;color:var(--gb)">Close strains</span>
         </div>
         <div style="font-size:11.5px;color:var(--ink-2);line-height:1.55">When multiple reference genomes are nearly identical, the species-level call may be ambiguous. ANI values near the 95% threshold are borderline.</div>
       </div>
-      <div class="card" style="border-left:4px solid var(--gc);padding:18px 20px">
+      <div class="card fragment" data-fragment-index="3" style="border-left:4px solid var(--gc);padding:18px 20px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6" fill="none" stroke="var(--gc)" stroke-width="1.5" stroke-dasharray="3 2"/><text x="9" y="12" text-anchor="middle" font-size="9" fill="var(--gc)" font-weight="700">?</text></svg>
           <span style="font-size:13px;font-weight:700;color:var(--gc)">Novel lineage</span>
@@ -533,7 +533,7 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
   <p class="sub">For each MAG, assess how much you trust the GTDB-Tk result.</p>
 
   <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
-    <div class="col g-12 f1">
+    <div class="col g-12 f1 fragment" data-fragment-index="0">
       <div class="card" style="flex:1;padding:20px;border-left:3px solid var(--gd)">
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--gd);margin-bottom:10px">MAG A</div>
         <table style="width:100%;font-size:13px;line-height:1.8;color:var(--ink-2)">
@@ -543,10 +543,10 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
           <tr><td style="font-weight:500">GTDB result</td><td style="text-align:right;font-family:var(--mono)">genus + species</td></tr>
           <tr><td style="font-weight:500">ANI to reference</td><td style="text-align:right;font-family:var(--mono)">97.8%</td></tr>
         </table>
-        <div class="fragment" style="margin-top:10px;padding:8px 12px;background:#ecfdf5;border-radius:6px;font-size:11.5px;color:var(--ga);font-weight:500">High confidence. Nearly all markers, low contamination, strong ANI match. Trust the species call.</div>
+        <div class="fragment" data-fragment-index="3" style="margin-top:10px;padding:8px 12px;background:#ecfdf5;border-radius:6px;font-size:11.5px;color:var(--ga);font-weight:500">High confidence. Nearly all markers, low contamination, strong ANI match. Trust the species call.</div>
       </div>
     </div>
-    <div class="col g-12 f1">
+    <div class="col g-12 f1 fragment" data-fragment-index="1">
       <div class="card" style="flex:1;padding:20px;border-left:3px solid var(--gb)">
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--gb);margin-bottom:10px">MAG B</div>
         <table style="width:100%;font-size:13px;line-height:1.8;color:var(--ink-2)">
@@ -556,10 +556,10 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
           <tr><td style="font-weight:500">GTDB result</td><td style="text-align:right;font-family:var(--mono)">family only</td></tr>
           <tr><td style="font-weight:500">ANI to reference</td><td style="text-align:right;font-family:var(--mono)">82%</td></tr>
         </table>
-        <div class="fragment" style="margin-top:10px;padding:8px 12px;background:#fffbeb;border-radius:6px;font-size:11.5px;color:var(--gd);font-weight:500">Moderate confidence. Clean but incomplete. Family is likely correct. Species and genus are unknown (novel lineage).</div>
+        <div class="fragment" data-fragment-index="4" style="margin-top:10px;padding:8px 12px;background:#fffbeb;border-radius:6px;font-size:11.5px;color:var(--gd);font-weight:500">Moderate confidence. Clean but incomplete. Family is likely correct. Species and genus are unknown (novel lineage).</div>
       </div>
     </div>
-    <div class="col g-12 f1">
+    <div class="col g-12 f1 fragment" data-fragment-index="2">
       <div class="card" style="flex:1;padding:20px;border-left:3px solid var(--gc)">
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--gc);margin-bottom:10px">MAG C</div>
         <table style="width:100%;font-size:13px;line-height:1.8;color:var(--ink-2)">
@@ -569,7 +569,7 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
           <tr><td style="font-weight:500">GTDB result</td><td style="text-align:right;font-family:var(--mono)">conflicting</td></tr>
           <tr><td style="font-weight:500">ANI to reference</td><td style="text-align:right;font-family:var(--mono)">n/a</td></tr>
         </table>
-        <div class="fragment" style="margin-top:10px;padding:8px 12px;background:#fef2f2;border-radius:6px;font-size:11.5px;color:var(--bad);font-weight:500">Do not trust. More markers than expected = contamination. Mixed signal means the taxonomy is unreliable. Decontaminate first.</div>
+        <div class="fragment" data-fragment-index="5" style="margin-top:10px;padding:8px 12px;background:#fef2f2;border-radius:6px;font-size:11.5px;color:var(--bad);font-weight:500">Do not trust. More markers than expected = contamination. Mixed signal means the taxonomy is unreliable. Decontaminate first.</div>
       </div>
     </div>
   </div>
@@ -636,28 +636,28 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
 
   <div style="flex:1;display:flex;align-items:center;">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%">
-      <div class="card" style="border-left:4px solid var(--warn);padding:18px 20px">
+      <div class="card fragment" data-fragment-index="0" style="border-left:4px solid var(--warn);padding:18px 20px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="7" width="14" height="4" rx="2" fill="var(--warn)" opacity=".5"/><line x1="14" y1="5" x2="14" y2="13" stroke="var(--warn)" stroke-width="1.5" stroke-dasharray="2 1.5"/></svg>
           <span style="font-size:13px;font-weight:700;color:var(--warn)">Contig edge cuts gene</span>
         </div>
         <div style="font-size:11.5px;color:var(--ink-2);line-height:1.55">A gene at the end of a contig is truncated. Prodigal marks it as partial, but the protein product is incomplete.</div>
       </div>
-      <div class="card" style="border-left:4px solid var(--gd);padding:18px 20px">
+      <div class="card fragment" data-fragment-index="1" style="border-left:4px solid var(--gd);padding:18px 20px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="4" y="7" width="10" height="4" rx="2" fill="var(--gd)" opacity=".5"/></svg>
           <span style="font-size:13px;font-weight:700;color:var(--gd)">Short contig, weak context</span>
         </div>
         <div style="font-size:11.5px;color:var(--ink-2);line-height:1.55">On very short contigs, Prodigal has too little sequence to learn coding patterns. Gene calls are less reliable.</div>
       </div>
-      <div class="card" style="border-left:4px solid var(--bad);padding:18px 20px">
+      <div class="card fragment" data-fragment-index="2" style="border-left:4px solid var(--bad);padding:18px 20px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="6" cy="9" r="3" fill="var(--bad)" opacity=".3"/><circle cx="12" cy="9" r="3" fill="var(--gb)" opacity=".3"/></svg>
           <span style="font-size:13px;font-weight:700;color:var(--bad)">Contamination</span>
         </div>
         <div style="font-size:11.5px;color:var(--ink-2);line-height:1.55">Genes from another organism are predicted correctly, but they do not belong to this MAG. They add noise to annotation.</div>
       </div>
-      <div class="card" style="border-left:4px solid var(--gc);padding:18px 20px">
+      <div class="card fragment" data-fragment-index="3" style="border-left:4px solid var(--gc);padding:18px 20px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="7" width="14" height="4" rx="2" fill="var(--gc)" opacity=".3"/><line x1="9" y1="5" x2="9" y2="13" stroke="var(--gc)" stroke-width="2" stroke-linecap="round"/></svg>
           <span style="font-size:13px;font-weight:700;color:var(--gc)">Frameshift or error</span>
@@ -781,27 +781,27 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
 
   <div style="flex:1;display:flex;align-items:center;">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%">
-      <div class="card" style="border-left:4px solid var(--gd);padding:16px 20px">
+      <div class="card fragment" data-fragment-index="0" style="border-left:4px solid var(--gd);padding:16px 20px">
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink-4);margin-bottom:6px">Question</div>
         <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">What pathway is present?</div>
         <div style="font-size:11px;color:var(--ink-3)">KEGG orthology (KOfam, KO modules)</div>
       </div>
-      <div class="card" style="border-left:4px solid var(--gb);padding:16px 20px">
+      <div class="card fragment" data-fragment-index="1" style="border-left:4px solid var(--gb);padding:16px 20px">
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink-4);margin-bottom:6px">Question</div>
         <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">What domain does this protein contain?</div>
         <div style="font-size:11px;color:var(--ink-3)">Pfam (protein domain families)</div>
       </div>
-      <div class="card" style="border-left:4px solid var(--ga);padding:16px 20px">
+      <div class="card fragment" data-fragment-index="2" style="border-left:4px solid var(--ga);padding:16px 20px">
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink-4);margin-bottom:6px">Question</div>
         <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">Can it degrade carbohydrates?</div>
         <div style="font-size:11px;color:var(--ink-3)">CAZy / dbCAN (carbohydrate-active enzymes)</div>
       </div>
-      <div class="card" style="border-left:4px solid var(--gc);padding:16px 20px">
+      <div class="card fragment" data-fragment-index="3" style="border-left:4px solid var(--gc);padding:16px 20px">
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink-4);margin-bottom:6px">Question</div>
         <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">Can it produce specialized metabolites?</div>
         <div style="font-size:11px;color:var(--ink-3)">antiSMASH / MIBiG (biosynthetic gene clusters)</div>
       </div>
-      <div class="card" style="border-left:4px solid var(--ink-4);padding:16px 20px;grid-column:span 2">
+      <div class="card fragment" data-fragment-index="4" style="border-left:4px solid var(--ink-4);padding:16px 20px;grid-column:span 2">
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink-4);margin-bottom:6px">Question</div>
         <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">What broad ortholog group does this protein belong to?</div>
         <div style="font-size:11px;color:var(--ink-3)">eggNOG / COG (clusters of orthologous groups)</div>
@@ -1010,7 +1010,7 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
   <p class="sub">For each MAG: what biological hypothesis would you make, what evidence supports it, and what would make you distrust it?</p>
 
   <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
-    <div class="col g-12 f1">
+    <div class="col g-12 f1 fragment" data-fragment-index="0">
       <div class="card" style="flex:1;padding:18px;border-left:3px solid var(--ga)">
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--ga);margin-bottom:8px">MAG 1</div>
         <table style="width:100%;font-size:12px;line-height:1.7;color:var(--ink-2)">
@@ -1020,10 +1020,10 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
           <tr><td style="font-weight:500">KEGG</td><td style="text-align:right;font-family:var(--mono);font-size:11px">Glycolysis complete, TCA partial</td></tr>
           <tr><td style="font-weight:500">BGCs</td><td style="text-align:right;font-family:var(--mono);font-size:11px">None</td></tr>
         </table>
-        <div class="fragment" style="margin-top:8px;padding:8px 12px;background:#ecfdf5;border-radius:6px;font-size:11px;color:var(--ga);font-weight:500">Likely plant-polysaccharide degrader. Good quality, coherent CAZyme evidence.</div>
+        <div class="fragment" data-fragment-index="3" style="margin-top:8px;padding:8px 12px;background:#ecfdf5;border-radius:6px;font-size:11px;color:var(--ga);font-weight:500">Likely plant-polysaccharide degrader. Good quality, coherent CAZyme evidence.</div>
       </div>
     </div>
-    <div class="col g-12 f1">
+    <div class="col g-12 f1 fragment" data-fragment-index="1">
       <div class="card" style="flex:1;padding:18px;border-left:3px solid var(--gc)">
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--gc);margin-bottom:8px">MAG 2</div>
         <table style="width:100%;font-size:12px;line-height:1.7;color:var(--ink-2)">
@@ -1033,10 +1033,10 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
           <tr><td style="font-weight:500">KEGG</td><td style="text-align:right;font-family:var(--mono);font-size:11px">Many regulatory domains</td></tr>
           <tr><td style="font-weight:500">BGCs</td><td style="text-align:right;font-family:var(--mono);font-size:11px">NRPS, terpene, siderophore</td></tr>
         </table>
-        <div class="fragment" style="margin-top:8px;padding:8px 12px;background:#f5f3ff;border-radius:6px;font-size:11px;color:var(--gc);font-weight:500">Likely biosynthetic potential. Investigate BGCs, but not proof of production.</div>
+        <div class="fragment" data-fragment-index="4" style="margin-top:8px;padding:8px 12px;background:#f5f3ff;border-radius:6px;font-size:11px;color:var(--gc);font-weight:500">Likely biosynthetic potential. Investigate BGCs, but not proof of production.</div>
       </div>
     </div>
-    <div class="col g-12 f1">
+    <div class="col g-12 f1 fragment" data-fragment-index="2">
       <div class="card" style="flex:1;padding:18px;border-left:3px solid var(--bad)">
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--bad);margin-bottom:8px">MAG 3</div>
         <table style="width:100%;font-size:12px;line-height:1.7;color:var(--ink-2)">
@@ -1046,7 +1046,7 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
           <tr><td style="font-weight:500">KEGG</td><td style="text-align:right;font-family:var(--mono);font-size:11px">Denitrification + methanogenesis</td></tr>
           <tr><td style="font-weight:500">BGCs</td><td style="text-align:right;font-family:var(--mono);font-size:11px">Partial cluster</td></tr>
         </table>
-        <div class="fragment" style="margin-top:8px;padding:8px 12px;background:#fef2f2;border-radius:6px;font-size:11px;color:var(--bad);font-weight:500">Do not trust. High contamination likely explains conflicting metabolisms.</div>
+        <div class="fragment" data-fragment-index="5" style="margin-top:8px;padding:8px 12px;background:#fef2f2;border-radius:6px;font-size:11px;color:var(--bad);font-weight:500">Do not trust. High contamination likely explains conflicting metabolisms.</div>
       </div>
     </div>
   </div>
@@ -1065,7 +1065,7 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
 
   <div style="flex:1;display:flex;align-items:center;">
     <div class="row g-20" style="width:100%">
-      <div class="card f1" style="padding:22px 24px;border-left:4px solid var(--ok)">
+      <div class="card f1 fragment" data-fragment-index="0" style="padding:22px 24px;border-left:4px solid var(--ok)">
         <div style="font-size:12px;font-weight:700;color:var(--ok);margin-bottom:14px;text-transform:uppercase;letter-spacing:1px">Report</div>
         <div style="display:flex;flex-direction:column;gap:10px">
           <div style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--ink-2);line-height:1.5">
@@ -1091,7 +1091,7 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
         </div>
       </div>
 
-      <div class="card f1" style="padding:22px 24px;border-left:4px solid var(--bad)">
+      <div class="card f1 fragment" data-fragment-index="1" style="padding:22px 24px;border-left:4px solid var(--bad)">
         <div style="font-size:12px;font-weight:700;color:var(--bad);margin-bottom:14px;text-transform:uppercase;letter-spacing:1px">Avoid</div>
         <div style="display:flex;flex-direction:column;gap:10px">
           <div style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--ink-2);line-height:1.5">
