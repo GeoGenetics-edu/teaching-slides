@@ -2495,214 +2495,168 @@ function drawHmBlast(ctx){
   _label(ctx,'Lower E-value = more significant hit',cx,sY+38,11,COLORS.ink4,'center','500');
 }
 
-/* ── Step 1: Profile HMM — guided: MSA columns → HMM states → emissions ── */
+/* ── Step 1: Profile HMM — how a family alignment becomes a model ── */
 function drawHmProfile(ctx){
-  const cx=400;
 
-  /* ── TOP: MSA (centred) ── */
+  /* ── LEFT: MSA (big, readable) ── */
   const seqs=[
-    {name:'Seq A',aa:['M','K','T','-','V','G']},
-    {name:'Seq B',aa:['M','K','T','A','V','G']},
-    {name:'Seq C',aa:['M','R','T','-','I','G']},
-    {name:'Seq D',aa:['M','K','S','-','V','G']},
+    ['M','K','T','V','G'],
+    ['M','K','T','V','G'],
+    ['M','R','T','I','G'],
+    ['M','K','S','V','G'],
   ];
-  const nC=6, cW=44, cH=26, msaW=nC*cW;
-  const seqX=cx-msaW/2, seqY=14;
+  const nC=5, cW=52, cH=40;
+  const msaX=20, msaY=10;
+  _label(ctx,'Family alignment',msaX+nC*cW/2,msaY,14,COLORS.gc,'center','700');
 
-  // Conservation per column
-  const cons=[];
-  for(let c=0;c<nC;c++){
-    const aa=seqs.map(s=>s.aa[c]).filter(a=>a!=='-');
-    cons.push(new Set(aa).size===1?1:new Set(aa).size===2?0.7:0.3);
-  }
+  // Conservation: col 0,4 = identical; col 1,2,3 = variable
+  const consCol=[COLORS.gc,COLORS.gb,COLORS.gb,COLORS.gb,COLORS.gc];
 
-  _label(ctx,'Family alignment',cx,seqY,13,COLORS.gc,'center','700');
   for(let r=0;r<4;r++){
     for(let c=0;c<nC;c++){
-      const x=seqX+c*cW, y=seqY+14+r*cH;
-      const aa=seqs[r].aa[c], isGap=aa==='-', cv=cons[c];
-      ctx.fillStyle=isGap?'#f1f5f9':cv>=1?COLORS.gc+'30':cv>=0.7?COLORS.gc+'15':'#f8fafc';
-      ctx.fillRect(x,y,cW-2,cH-2);
-      ctx.strokeStyle=cv>=1?COLORS.gc+'55':COLORS.border;ctx.lineWidth=0.8;ctx.strokeRect(x,y,cW-2,cH-2);
-      _monoLabel(ctx,aa,x+cW/2-1,y+cH/2,13,isGap?COLORS.ink4:cv>=1?COLORS.gc:COLORS.ink3,'center');
+      const x=msaX+c*cW, y=msaY+18+r*cH;
+      const cons=c===0||c===4;
+      ctx.fillStyle=cons?COLORS.gc+'25':'#f8fafc';
+      ctx.fillRect(x,y,cW-3,cH-3);
+      ctx.strokeStyle=cons?COLORS.gc+'66':COLORS.border;ctx.lineWidth=1;
+      ctx.strokeRect(x,y,cW-3,cH-3);
+      _monoLabel(ctx,seqs[r][c],x+cW/2-1,y+cH/2,18,cons?COLORS.gc:COLORS.ink2,'center');
     }
   }
-  // Column type labels below MSA
-  const colType=['conserved','variable','variable','gaps','variable','conserved'];
-  const msaBtm=seqY+14+4*cH;
-  for(let c=0;c<nC;c++){
-    const xm=seqX+c*cW+cW/2-1;
-    _label(ctx,colType[c],xm,msaBtm+10,8,cons[c]>=1?COLORS.gc:c===3?COLORS.bad:COLORS.ink4,'center','600');
-  }
 
-  /* ── HMM MATCH STATES ── */
-  const stY=msaBtm+82;                           // HMM state y-centre
-  const sR=18, stGap=96;
-  const stX0=cx-2*stGap;                         // centre 5 states
+  /* ── BIG ARROW ── */
+  const arrowX1=msaX+nC*cW+14, arrowX2=arrowX1+70;
+  const arrowY=msaY+18+2*cH;
+  _arrow(ctx,arrowX1,arrowY,arrowX2,arrowY,COLORS.gc,3);
+  _label(ctx,'build',arrowX1+35,arrowY-16,13,COLORS.gc,'center','700');
+  _label(ctx,'model',arrowX1+35,arrowY+18,13,COLORS.gc,'center','700');
 
-  _label(ctx,'Profile HMM',cx,msaBtm+34,12,COLORS.gc,'center','700');
+  /* ── RIGHT: HMM chain (5 big states) ── */
+  const hmX=arrowX2+20, sR=24, gap=80;
+  _label(ctx,'Profile HMM',hmX+2*gap,msaY,14,COLORS.gc,'center','700');
 
   for(let i=0;i<5;i++){
-    const x=stX0+i*stGap;
-    const cv=[1,0.7,0.7,0.7,1][i];
-    const mCol=cv>=1?COLORS.gc:COLORS.gb;
-    _roundRect(ctx,x-sR,stY-sR,sR*2,sR*2,5,mCol+'22',mCol,2.5);
-    _label(ctx,'M'+(i+1),x,stY,11,mCol,'center','700');
-    if(i<4) _arrow(ctx,x+sR+4,stY,x+stGap-sR-4,stY,mCol+'55',1.8);
+    const x=hmX+i*gap;
+    const cons=i===0||i===4;
+    const col=cons?COLORS.gc:COLORS.gb;
+    _roundRect(ctx,x-sR,arrowY-sR,sR*2,sR*2,6,col+'22',col,2.5);
+    _label(ctx,'M'+(i+1),x,arrowY,13,col,'center','700');
+    if(i<4) _arrow(ctx,x+sR+4,arrowY,x+gap-sR-4,arrowY,col+'55',2);
   }
 
-  /* ── DASHED LINES: MSA columns → HMM states ── */
-  const colToState=[0,1,2,-1,3,4]; // col 3 (gaps) → no match state
-  for(let c=0;c<nC;c++){
-    const xm=seqX+c*cW+cW/2-1;
-    const si=colToState[c];
-    ctx.save();
-    ctx.setLineDash([4,4]);ctx.lineWidth=1.2;
-    if(si>=0){
-      const sx=stX0+si*stGap;
-      ctx.strokeStyle=COLORS.gc+'55';
-      ctx.beginPath();ctx.moveTo(xm,msaBtm+14);ctx.lineTo(sx,stY-sR-4);ctx.stroke();
-    } else {
-      // Gap column → red dashed to midpoint between M3 and M4, then label
-      const gapMidX=stX0+2*stGap+stGap/2;        // between M3 and M4
-      ctx.strokeStyle=COLORS.bad+'55';
-      ctx.beginPath();ctx.moveTo(xm,msaBtm+14);ctx.lineTo(gapMidX,stY+sR+6);ctx.stroke();
-      _label(ctx,'insert / delete',gapMidX,stY+sR+18,9,COLORS.bad,'center','600');
-    }
-    ctx.setLineDash([]);ctx.restore();
+  /* ── BELOW: two callout boxes explaining conserved vs variable ── */
+  const boxY=arrowY+sR+50;
+
+  // Conserved callout (left)
+  _roundRect(ctx,20,boxY,360,140,10,COLORS.gc+'0a',COLORS.gc+'44',1.5);
+  _label(ctx,'Conserved position (M1)',200,boxY+20,13,COLORS.gc,'center','700');
+  // Big M with 95% label
+  _roundRect(ctx,80,boxY+36,56,56,6,COLORS.gc+'30',COLORS.gc,2);
+  _monoLabel(ctx,'M',108,boxY+64,28,COLORS.gc,'center');
+  _label(ctx,'95%',108,boxY+100,12,COLORS.gc,'center','700');
+  // Small others
+  const others=['K','R','T','S'];
+  for(let i=0;i<others.length;i++){
+    const ox=170+i*44;
+    _roundRect(ctx,ox,boxY+50,32,32,4,COLORS.gc+'0c',COLORS.gc+'33',1);
+    _monoLabel(ctx,others[i],ox+16,boxY+66,13,COLORS.gc+'88','center');
+    _label(ctx,'~1%',ox+16,boxY+90,9,COLORS.ink4,'center','500');
   }
+  _label(ctx,'The model "expects" M here',200,boxY+126,11,COLORS.ink3,'center','500');
 
-  /* ── BOTTOM: Emission probability comparison ── */
-  const emY=stY+sR+34;
-  _label(ctx,'What does each state "expect"?',cx,emY,12,COLORS.gc,'center','700');
-
-  // Helper: draw a mini bar chart
-  function drawEmBars(x0,y0,title,aas,probs,highlight){
-    _label(ctx,title,x0+100,y0,11,COLORS.gc,'center','600');
-    const bW=22,bMax=56,bGap=3;
-    for(let a=0;a<aas.length;a++){
-      const bx=x0+a*(bW+bGap), h=probs[a]*bMax;
-      ctx.fillStyle=probs[a]>=highlight?COLORS.gc+'66':COLORS.gc+'18';
-      ctx.fillRect(bx,y0+14+bMax-h,bW,h);
-      ctx.strokeStyle=COLORS.gc+'33';ctx.lineWidth=0.6;ctx.strokeRect(bx,y0+14+bMax-h,bW,h);
-      _monoLabel(ctx,aas[a],bx+bW/2,y0+14+bMax+10,10,probs[a]>=highlight?COLORS.gc:COLORS.ink4,'center');
-      if(probs[a]>=0.1) _label(ctx,Math.round(probs[a]*100)+'%',bx+bW/2,y0+14+bMax-h-7,8,COLORS.gc,'center','700');
-    }
-    return y0+14+bMax+10; // return bottom y for placing summary below
+  // Variable callout (right)
+  _roundRect(ctx,410,boxY,370,140,10,COLORS.gb+'0a',COLORS.gb+'44',1.5);
+  _label(ctx,'Variable position (M2)',595,boxY+20,13,COLORS.gb,'center','700');
+  // Multiple AAs with spread
+  const varAA=[{a:'K',p:'60%',sz:44},{a:'R',p:'25%',sz:34},{a:'S',p:'10%',sz:26},{a:'T',p:'5%',sz:22}];
+  let vx=450;
+  for(const v of varAA){
+    _roundRect(ctx,vx,boxY+40+(50-v.sz)/2,v.sz,v.sz,4,COLORS.gb+'22',COLORS.gb,1.5);
+    _monoLabel(ctx,v.a,vx+v.sz/2,boxY+40+25,v.sz>30?20:14,COLORS.gb,'center');
+    _label(ctx,v.p,vx+v.sz/2,boxY+40+50+6,10,COLORS.gb,'center','600');
+    vx+=v.sz+14;
   }
-
-  const emAAs=['M','K','R','T','S','V','I','G'];
-
-  // M1 — conserved (all M)
-  const em1btm=drawEmBars(40,emY+14,'M1 (conserved)',emAAs,
-    [0.95,0.01,0.01,0.01,0.01,0.00,0.00,0.01],0.10);
-  _label(ctx,'One AA dominates',40+100,em1btm+14,10,COLORS.gc,'center','600');
-
-  // M2 — variable (K,K,R,K)
-  const em2btm=drawEmBars(440,emY+14,'M2 (variable)',emAAs,
-    [0.02,0.60,0.25,0.03,0.02,0.03,0.03,0.02],0.10);
-  _label(ctx,'Spread across AAs',440+100,em2btm+14,10,COLORS.ink3,'center','600');
+  _label(ctx,'Several AAs are plausible here',595,boxY+126,11,COLORS.ink3,'center','500');
 }
 
-/* ── Step 2: Score & compare — guided: emission bars show HOW scoring works ── */
+/* ── Step 2: Score a query — does it fit the family model? ── */
 function drawHmScore(ctx){
   const cx=400;
 
-  /* ── 1. HMM chain (compact, across top) ── */
-  const nSt=5, sR=15, gap=80, stX0=cx-((nSt-1)*gap)/2, stY=30;
+  /* ── HMM chain ── */
+  const nSt=5, sR=18, gap=90, stX0=cx-((nSt-1)*gap)/2, stY=30;
   _label(ctx,'Profile HMM',cx,8,13,COLORS.gc,'center','700');
-
   for(let i=0;i<nSt;i++){
     const x=stX0+i*gap;
     _roundRect(ctx,x-sR,stY-sR,sR*2,sR*2,4,COLORS.gc+'22',COLORS.gc,2);
-    _label(ctx,'M'+(i+1),x,stY,10,COLORS.gc,'center','700');
+    _label(ctx,'M'+(i+1),x,stY,11,COLORS.gc,'center','700');
     if(i<nSt-1) _arrow(ctx,x+sR+3,stY,x+gap-sR-3,stY,COLORS.gc+'55',1.5);
   }
 
-  /* ── Arrow: Viterbi ── */
-  _arrow(ctx,cx,stY+sR+6,cx,stY+sR+28,COLORS.gb,2);
-  _label(ctx,'Viterbi algorithm: find best state path',cx+14,stY+sR+18,10,COLORS.gb,'left','600');
+  /* ── Arrow ── */
+  _arrow(ctx,cx,stY+sR+6,cx,stY+sR+30,COLORS.gb,2);
+  _label(ctx,'Score each position: does the AA fit the state?',cx+14,stY+sR+18,11,COLORS.gb,'left','600');
 
-  /* ── 2. Query threaded through states with emission scoring ── */
-  const qY=stY+sR+38;
-  const query=['M','K','T','V','G'];
-  const states=['M1','M2','M3','M4','M5'];
-  const emProbs=[0.95,0.60,0.55,0.30,0.92]; // how well each AA fits its state
-  const emLabels=['95%','60%','55%','30%','92%'];
-  const cW=70, cH=38;
-  const qX=cx-(query.length*cW)/2;
+  /* ── Query scored through model ── */
+  const qY=stY+sR+42;
+  const data=[
+    {aa:'M',st:'M1',fit:true, pct:'95%', note:'expected'},
+    {aa:'K',st:'M2',fit:true, pct:'60%', note:'common'},
+    {aa:'T',st:'M3',fit:true, pct:'55%', note:'common'},
+    {aa:'V',st:'M4',fit:false,pct:'30%', note:'unusual'},
+    {aa:'G',st:'M5',fit:true, pct:'92%', note:'expected'},
+  ];
+  const cW=80, cH=44;
+  const qX=cx-(data.length*cW)/2;
 
-  _label(ctx,'Query',qX-14,qY+cH/2,12,COLORS.gb,'right','700');
+  _label(ctx,'Query',qX-16,qY+cH/2,13,COLORS.gb,'right','700');
 
-  for(let i=0;i<query.length;i++){
-    const x=qX+i*cW;
-    const p=emProbs[i];
-    const good=p>=0.5;
+  for(let i=0;i<data.length;i++){
+    const d=data[i], x=qX+i*cW;
+    const col=d.fit?COLORS.gc:COLORS.gd;
 
-    // Amino acid cell — colour intensity reflects fit
-    ctx.fillStyle=good?COLORS.gc+(Math.round(p*40).toString(16).padStart(2,'0')):COLORS.gd+'18';
-    ctx.fillRect(x,qY,cW-4,cH);
-    ctx.strokeStyle=good?COLORS.gc:COLORS.gd;ctx.lineWidth=1.5;ctx.strokeRect(x,qY,cW-4,cH);
-    _monoLabel(ctx,query[i],x+cW/2-2,qY+cH/2,18,good?COLORS.gc:COLORS.gd,'center');
+    // AA cell
+    ctx.fillStyle=col+'15';
+    ctx.fillRect(x,qY,cW-5,cH);
+    ctx.strokeStyle=col;ctx.lineWidth=2;ctx.strokeRect(x,qY,cW-5,cH);
+    _monoLabel(ctx,d.aa,x+cW/2-2,qY+cH/2,22,col,'center');
 
-    // State label
-    _label(ctx,states[i],x+cW/2-2,qY+cH+14,11,COLORS.gc,'center','600');
+    // State + fit underneath
+    _label(ctx,d.st,x+cW/2-2,qY+cH+16,11,COLORS.gc,'center','600');
+    _label(ctx,d.pct,x+cW/2-2,qY+cH+34,14,col,'center','700');
+    _label(ctx,d.note,x+cW/2-2,qY+cH+50,10,col,'center','500');
 
-    // Emission probability bar
-    const barY=qY+cH+26, barH=50, barW=30;
-    const h=p*barH;
-    const barX=x+cW/2-2-barW/2;
-    ctx.fillStyle=good?COLORS.gc+'44':COLORS.gd+'33';
-    ctx.fillRect(barX,barY+barH-h,barW,h);
-    ctx.strokeStyle=good?COLORS.gc+'66':COLORS.gd+'55';ctx.lineWidth=0.8;
-    ctx.strokeRect(barX,barY+barH-h,barW,h);
-    // Percentage label
-    _label(ctx,emLabels[i],x+cW/2-2,barY+barH-h-8,10,good?COLORS.gc:COLORS.gd,'center','700');
-
-    // Arrow between cells
-    if(i<query.length-1) _arrow(ctx,x+cW-4,qY+cH/2,x+cW-1,qY+cH/2,COLORS.gc+'44',1);
+    // Arrow between
+    if(i<data.length-1) _arrow(ctx,x+cW-5,qY+cH/2,x+cW-2,qY+cH/2,COLORS.gc+'33',1);
   }
-  _label(ctx,'State',qX-14,qY+cH+14,10,COLORS.gc,'right','600');
-  _label(ctx,'Emission',qX-14,qY+cH+52,9,COLORS.ink4,'right','500');
-  _label(ctx,'prob.',qX-14,qY+cH+64,9,COLORS.ink4,'right','500');
 
-  // Annotation: good vs poor fit
-  const annY=qY+cH+26+50+14;
-  _roundRect(ctx,qX-10,annY,qX+2*cW-qX+10,28,5,COLORS.gc+'0c',COLORS.gc+'33',1);
-  _label(ctx,'High P(aa|state) = good fit',qX+cW-2,annY+14,10,COLORS.gc,'center','600');
-  _roundRect(ctx,qX+3*cW-14,annY,cW+12,28,5,COLORS.gd+'0c',COLORS.gd+'33',1);
-  _label(ctx,'Low P = poor fit',qX+3*cW+cW/2-8,annY+14,10,COLORS.gd,'center','600');
+  /* ── Score ── */
+  const sY=qY+cH+68;
+  _roundRect(ctx,cx-190,sY,380,50,10,'#dcfce7',COLORS.ok,2);
+  _label(ctx,'Score: 124.3 bits    E-value: 8.1e-34',cx,sY+18,15,COLORS.ok,'center','700');
+  _label(ctx,'High-scoring positions outweigh the one poor fit',cx,sY+38,11,COLORS.ink4,'center','500');
 
-  /* ── 3. Score result ── */
-  const sY=annY+44;
-  _roundRect(ctx,cx-170,sY,340,44,10,'#dcfce7',COLORS.ok,2);
-  _label(ctx,'Score: 124.3 bits    E-value: 8.1e-34',cx,sY+16,13,COLORS.ok,'center','700');
-  _label(ctx,'Sum of log-odds emission + transition probabilities',cx,sY+34,9,COLORS.ink4,'center','500');
-
-  /* ── 4. Comparison table ── */
-  const tY=sY+58;
-  _label(ctx,'BLAST vs HMMER',cx,tY,12,COLORS.ink2,'center','700');
-
+  /* ── Comparison table ── */
+  const tY=sY+66;
+  _label(ctx,'BLAST vs HMMER',cx,tY,13,COLORS.ink2,'center','700');
   const rows=[
     ['','BLAST','HMMER'],
     ['Searches','Sequence vs sequence','Sequence vs family model'],
     ['Best for','Close homologs','Remote / divergent homologs'],
     ['Tools','Diamond, BLAST+','hmmsearch, hmmscan'],
   ];
-  const tCW=[130,240,240], tCH=26;
+  const tCW=[140,240,240], tCH=28;
   const tX=cx-(tCW[0]+tCW[1]+tCW[2])/2;
-
   for(let r=0;r<rows.length;r++){
     for(let c=0;c<3;c++){
       const x=tX+tCW.slice(0,c).reduce((a,b)=>a+b,0);
       const y=tY+14+r*tCH;
-      const isHeader=r===0;
-      ctx.fillStyle=isHeader?COLORS.ink+'08':r%2===0?'#f8fafc':'#fff';
+      const isHd=r===0;
+      ctx.fillStyle=isHd?COLORS.ink+'08':r%2===0?'#f8fafc':'#fff';
       ctx.fillRect(x,y,tCW[c]-2,tCH-2);
       ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.5;ctx.strokeRect(x,y,tCW[c]-2,tCH-2);
-      const col=isHeader?COLORS.ink2:c===0?COLORS.ink3:c===1?COLORS.gb:COLORS.gc;
-      const wt=isHeader||c===0?'700':'500';
-      _label(ctx,rows[r][c],x+tCW[c]/2-1,y+tCH/2,isHeader?11:10,col,'center',wt);
+      _label(ctx,rows[r][c],x+tCW[c]/2-1,y+tCH/2,isHd?12:11,
+        isHd?COLORS.ink2:c===0?COLORS.ink3:c===1?COLORS.gb:COLORS.gc,'center',isHd||c===0?'700':'500');
     }
   }
 }
