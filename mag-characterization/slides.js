@@ -3118,44 +3118,66 @@ function drawHmExpect(ctx){
   _label(ctx,'This is how the model knows what "fits" at each position',cx,boxY+344,13,COLORS.gc,'center','600');
 }
 
-/* ── Step 8: Score a query + BLAST vs HMMER comparison ── */
+/* ── Step 8: Score the SAME query from Viterbi + BLAST vs HMMER comparison ── */
 function drawHmScoreCompare(ctx){
   const cx=400;
 
   /* ═══════════════════════════════════════════════════════════════
-     TOP: two-phase pipeline — SEARCH active
+     TOP: two-phase pipeline — SEARCH active (same query as Viterbi)
      ═══════════════════════════════════════════════════════════════ */
-  _hmPipeline(ctx,2,'MKTIG');
+  _hmPipeline(ctx,2,'MKVG');
 
-  /* Query cells */
+  /* Alignment from Viterbi: 5 positions, query MKVG has deletion at pos 3 */
   const data=[
-    {aa:'M',st:'M1',fit:true, pct:'100%',note:'dominant'},
-    {aa:'K',st:'M2',fit:true, pct:'75%', note:'common'},
-    {aa:'T',st:'M3',fit:true, pct:'75%', note:'common'},
-    {aa:'I',st:'M4',fit:false,pct:'25%', note:'rare variant'},
-    {aa:'G',st:'M5',fit:true, pct:'100%',note:'dominant'},
+    {query:'M', model:'M', st:'M1',fit:true, pct:'100%',note:'dominant',  type:'match'},
+    {query:'K', model:'K', st:'M2',fit:true, pct:'75%', note:'common',    type:'match'},
+    {query:'—', model:'T', st:'D3',fit:null, pct:'—',   note:'deletion',  type:'del'},
+    {query:'V', model:'V', st:'M4',fit:true, pct:'75%', note:'common',    type:'match'},
+    {query:'G', model:'G', st:'M5',fit:true, pct:'100%',note:'dominant',  type:'match'},
   ];
-  const cW=76, cH=42, qY=60;
+  const cW=76, cH=68, qY=54;
   const qX=cx-(data.length*cW)/2;
 
-  _label(ctx,'Query',qX-14,qY+cH/2,12,COLORS.gb,'right','700');
+  /* Column headers */
+  _label(ctx,'Query',qX-14,qY+16,10,COLORS.gb,'right','700');
+  _label(ctx,'Model',qX-14,qY+44,10,COLORS.gc,'right','700');
 
   for(let i=0;i<data.length;i++){
     const d=data[i], x=qX+i*cW;
-    const col=d.fit?COLORS.gc:COLORS.gd;
-    ctx.fillStyle=col+'12';ctx.fillRect(x,qY,cW-4,cH);
-    ctx.strokeStyle=col;ctx.lineWidth=2;ctx.strokeRect(x,qY,cW-4,cH);
-    _monoLabel(ctx,d.aa,x+cW/2-2,qY+cH/2,20,col,'center');
-    _label(ctx,d.st,x+cW/2-2,qY+cH+14,10,COLORS.gc,'center','600');
+    const isDel=d.type==='del';
+    const col=isDel?COLORS.gd:COLORS.gc;
+
+    /* Cell background */
+    ctx.fillStyle=isDel?COLORS.gd+'10':col+'10';
+    ctx.fillRect(x,qY,cW-4,cH);
+    ctx.strokeStyle=col+(isDel?'66':'');ctx.lineWidth=isDel?1.5:2;
+    if(isDel){ctx.save();ctx.setLineDash([4,3]);}
+    ctx.strokeRect(x,qY,cW-4,cH);
+    if(isDel){ctx.restore();}
+
+    /* Query AA (top) */
+    _monoLabel(ctx,d.query,x+cW/2-2,qY+18,18,isDel?COLORS.gd:COLORS.gb,'center');
+    /* Separator line */
+    ctx.beginPath();ctx.moveTo(x+6,qY+cH/2);ctx.lineTo(x+cW-10,qY+cH/2);
+    ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.5;ctx.setLineDash([]);ctx.stroke();
+    /* Model AA (bottom) */
+    _monoLabel(ctx,d.model,x+cW/2-2,qY+52,18,isDel?COLORS.gd:COLORS.gc,'center');
+
+    /* State label + score below cell */
+    _label(ctx,d.st,x+cW/2-2,qY+cH+14,10,col,'center','600');
     _label(ctx,d.pct,x+cW/2-2,qY+cH+30,13,col,'center','700');
     _label(ctx,d.note,x+cW/2-2,qY+cH+46,10,col,'center','500');
   }
 
+  /* Deletion explanation */
+  const delX=qX+2*cW+cW/2-2, delY=qY+cH+62;
+  _label(ctx,'↑ gap penalty',delX,delY,9,COLORS.gd,'center','600');
+
   /* Score */
-  const sY=qY+cH+62;
-  _roundRect(ctx,cx-170,sY,340,42,10,'#dcfce7',COLORS.ok,2);
-  _label(ctx,'Score: 124.3 bits    E-value: 8.1e-34',cx,sY+16,14,COLORS.ok,'center','700');
-  _label(ctx,'Weak matches still count — evidence adds up!',cx,sY+34,11,COLORS.ink4,'center','500');
+  const sY=qY+cH+76;
+  _roundRect(ctx,cx-200,sY,400,42,10,'#dcfce7',COLORS.ok,2);
+  _label(ctx,'Score: 118.7 bits    E-value: 2.4e-31',cx,sY+16,14,COLORS.ok,'center','700');
+  _label(ctx,'4 strong matches minus 1 deletion penalty — still a clear hit!',cx,sY+34,11,COLORS.ink4,'center','500');
 
   /* Comparison table */
   const tY=sY+56;
