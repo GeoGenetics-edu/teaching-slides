@@ -2731,15 +2731,15 @@ function drawHmArchitecture(ctx){
     ctx.strokeStyle=COLORS.gb;ctx.lineWidth=1.5;ctx.stroke();
     _label(ctx,'I'+(i+1),x,iY,11,COLORS.gb,'center','700');
 
-    /* Arrow M→I (up) */
-    _arrow(ctx,x-6,mY-sR-3,x-6,iY+17,COLORS.gb+'66',1);
-    /* Arrow I→M (back down, offset right) */
-    _arrow(ctx,x+6,iY+17,x+6,mY-sR-3,COLORS.gb+'66',1);
-    /* Self-loop arc */
-    ctx.beginPath();ctx.arc(x,iY-22,9,0.3*Math.PI,0.7*Math.PI);
-    ctx.strokeStyle=COLORS.gb+'88';ctx.lineWidth=1.5;ctx.stroke();
-    const aX2=x+9*Math.cos(0.7*Math.PI), aY2=iY-22+9*Math.sin(0.7*Math.PI);
-    ctx.beginPath();ctx.moveTo(aX2,aY2);ctx.lineTo(aX2+5,aY2-3);ctx.lineTo(aX2+2,aY2+4);ctx.fillStyle=COLORS.gb+'88';ctx.fill();
+    /* Arrow M→I (up, left side) */
+    _arrow(ctx,x-6,mY-sR-3,x-6,iY+17,COLORS.gb,1.5);
+    /* Arrow I→M (back down, right side) */
+    _arrow(ctx,x+6,iY+17,x+6,mY-sR-3,COLORS.gb,1.5);
+    /* Self-loop arc on I */
+    ctx.beginPath();ctx.arc(x,iY-22,10,0.25*Math.PI,0.75*Math.PI);
+    ctx.strokeStyle=COLORS.gb;ctx.lineWidth=2;ctx.stroke();
+    const aX2=x+10*Math.cos(0.75*Math.PI), aY2=iY-22+10*Math.sin(0.75*Math.PI);
+    ctx.beginPath();ctx.moveTo(aX2,aY2);ctx.lineTo(aX2+6,aY2-3);ctx.lineTo(aX2+2,aY2+5);ctx.fillStyle=COLORS.gb;ctx.fill();
 
     /* Delete state (diamond below, between this M and next M) */
     if(i<nSt-1){
@@ -2752,10 +2752,10 @@ function drawHmArchitecture(ctx){
       _label(ctx,'D'+(i+2),dX,dY,10,COLORS.gd,'center','700');
 
       /* M→D arrow (from bottom-right of M to top-left of D) */
-      _arrow(ctx,x+sR/2+4,mY+sR+4,dX-dR-2,dY-dR-2,COLORS.gd+'55',1.2);
+      _arrow(ctx,x+sR/2+4,mY+sR+4,dX-dR-2,dY-dR-2,COLORS.gd+'aa',1.5);
       /* D→next M arrow (from top-right of D to bottom-left of next M) */
       const nx=stX0+(i+1)*gap;
-      _arrow(ctx,dX+dR+2,dY-dR-2,nx-sR/2-4,mY+sR+4,COLORS.gd+'55',1.2);
+      _arrow(ctx,dX+dR+2,dY-dR-2,nx-sR/2-4,mY+sR+4,COLORS.gd+'aa',1.5);
     }
   }
 
