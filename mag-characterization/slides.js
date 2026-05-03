@@ -2417,387 +2417,271 @@ function drawHmmerCanvas(step){
   else drawHmScore(ctx);
 }
 
-/* ── Step 0: BLAST mechanics ── */
+/* ── Step 0: BLAST — seed-and-extend (ONE idea: find seed → extend → score) ── */
 function drawHmBlast(ctx){
-  /* --- LEFT COLUMN: algorithm flow (0-480) --- */
-  const L=20, cW=34, cH=26;
+  const cW=48, cH=36;                           // big cells, readable from back row
+  const cx=400;                                  // centre-x of canvas
 
-  // 1. Query protein
-  _label(ctx,'Query protein',L,16,12,COLORS.gb,'left','700');
-  const query='MKTVVIGAGFL';
-  const qX=L+80, qY=8;
+  /* ── 1. Query protein ── */
+  const query='MKTVVIG';                         // 7 AAs — enough to show the idea
+  const qW=query.length*cW;
+  const qX=cx-qW/2, qY=14;
+
+  _label(ctx,'Query protein',qX-8,qY+cH/2,13,COLORS.gb,'right','700');
   for(let i=0;i<query.length;i++){
     const x=qX+i*cW;
     const inSeed=i>=2&&i<5;
-    ctx.fillStyle=inSeed?COLORS.gb+'20':'#f8fafc';
-    ctx.fillRect(x,qY,cW-1,cH-1);
-    ctx.strokeStyle=inSeed?COLORS.gb+'88':COLORS.border;ctx.lineWidth=0.5;ctx.strokeRect(x,qY,cW-1,cH-1);
-    _monoLabel(ctx,query[i],x+cW/2,qY+cH/2,12,inSeed?COLORS.gb:COLORS.ink3,'center');
+    ctx.fillStyle=inSeed?COLORS.gb+'18':'#f8fafc';
+    ctx.fillRect(x,qY,cW-2,cH-2);
+    ctx.strokeStyle=inSeed?COLORS.gb:COLORS.border;ctx.lineWidth=inSeed?1.5:0.8;
+    ctx.strokeRect(x,qY,cW-2,cH-2);
+    _monoLabel(ctx,query[i],x+cW/2-1,qY+cH/2,16,inSeed?COLORS.gb:COLORS.ink2,'center');
   }
-  _roundRect(ctx,qX+2*cW-2,qY-3,3*cW+3,cH+5,4,null,COLORS.gb,2);
-  _label(ctx,'seed (k=3)',qX+3.5*cW,qY+cH+14,9,COLORS.gb,'center','600');
+  _roundRect(ctx,qX+2*cW-4,qY-4,3*cW+4,cH+6,5,null,COLORS.gb,2.5);
+  _label(ctx,'seed word (k = 3)',cx,qY+cH+16,11,COLORS.gb,'center','600');
 
-  // Arrow
-  const a1y=qY+cH+26;
-  _arrow(ctx,qX+5.5*cW,a1y,qX+5.5*cW,a1y+24,COLORS.ink3,1.5);
-  _label(ctx,'Scan database',qX+5.5*cW+8,a1y+12,9,COLORS.ink3,'left','500');
+  /* ── Arrow: scan ── */
+  const a1=qY+cH+30;
+  _arrow(ctx,cx,a1,cx,a1+30,COLORS.ink3,2);
+  _label(ctx,'scan database for seed matches',cx+14,a1+15,11,COLORS.ink3,'left','500');
 
-  // 2. Database hits
-  const dbY=a1y+32;
-  const dbSeqs=[
-    {name:'Ref 1',seq:'QRTVVIGAGFL',hit:true,seedPos:1},
-    {name:'Ref 2',seq:'YPMLKWDRAGT',hit:false,seedPos:-1},
-  ];
-  for(let r=0;r<dbSeqs.length;r++){
-    const s=dbSeqs[r],ry=dbY+r*32;
-    _monoLabel(ctx,s.name,qX-6,ry+cH/2,9,COLORS.ink4,'right');
-    for(let i=0;i<s.seq.length;i++){
-      const x=qX+i*cW;
-      const inSeed=s.hit&&i>=s.seedPos&&i<s.seedPos+3;
-      ctx.fillStyle=inSeed?COLORS.ok+'22':s.hit?'#f0fdf4':'#fef2f2';
-      ctx.fillRect(x,ry,cW-1,cH-1);
-      ctx.strokeStyle=inSeed?COLORS.ok+'88':COLORS.border;ctx.lineWidth=0.5;ctx.strokeRect(x,ry,cW-1,cH-1);
-      _monoLabel(ctx,s.seq[i],x+cW/2,ry+cH/2,11,s.hit?COLORS.ink2:COLORS.ink4,'center');
-    }
-    _label(ctx,s.hit?'seed hit':'no match',qX+s.seq.length*cW+10,ry+cH/2,9,s.hit?COLORS.ok:COLORS.ink4,'left',s.hit?'600':'500');
-  }
-
-  // Arrow
-  const a2y=dbY+2*32+6;
-  _arrow(ctx,qX+5.5*cW,a2y,qX+5.5*cW,a2y+24,COLORS.ok,1.5);
-  _label(ctx,'Extend best seed hit',qX+5.5*cW+8,a2y+12,9,COLORS.ok,'left','500');
-
-  // 3. HSP alignment
-  const hspY=a2y+32;
-  _label(ctx,'HSP',L,hspY+14,11,COLORS.ok,'left','700');
-  const extQ='MKTVVIGAGFL';
-  const extD='QRTVVIGAGFL';
-  _monoLabel(ctx,'Query:',qX-6,hspY+cH/2,9,COLORS.gb,'right');
-  _monoLabel(ctx,'Hit:',qX-6,hspY+cH+6+cH/2,9,COLORS.ok,'right');
-  for(let i=0;i<extQ.length;i++){
+  /* ── 2. Database hit ── */
+  const dbY=a1+42;
+  const dbSeq='QRTVVIG';
+  _label(ctx,'Database hit',qX-8,dbY+cH/2,13,COLORS.ok,'right','700');
+  for(let i=0;i<dbSeq.length;i++){
     const x=qX+i*cW;
-    const qAA=extQ[i],dAA=extD[i];
-    const match=qAA===dAA;
-    const bg=match?COLORS.ok+'18':'#f8fafc';
-    ctx.fillStyle=bg;ctx.fillRect(x,hspY,cW-1,cH-1);
-    ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.5;ctx.strokeRect(x,hspY,cW-1,cH-1);
-    _monoLabel(ctx,qAA,x+cW/2,hspY+cH/2,12,match?COLORS.ok:COLORS.ink2,'center');
-    ctx.fillStyle=bg;ctx.fillRect(x,hspY+cH+6,cW-1,cH-1);
-    ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.5;ctx.strokeRect(x,hspY+cH+6,cW-1,cH-1);
-    _monoLabel(ctx,dAA,x+cW/2,hspY+cH+6+cH/2,12,match?COLORS.ok:COLORS.ink3,'center');
-    _monoLabel(ctx,match?'|':' ',x+cW/2,hspY+cH+2,9,COLORS.ok,'center');
+    const inSeed=i>=1&&i<4;               // TVV matches at offset 1
+    ctx.fillStyle=inSeed?COLORS.ok+'18':'#f0fdf4';
+    ctx.fillRect(x,dbY,cW-2,cH-2);
+    ctx.strokeStyle=inSeed?COLORS.ok:COLORS.border;ctx.lineWidth=inSeed?1.5:0.8;
+    ctx.strokeRect(x,dbY,cW-2,cH-2);
+    _monoLabel(ctx,dbSeq[i],x+cW/2-1,dbY+cH/2,16,inSeed?COLORS.ok:COLORS.ink3,'center');
   }
+  _roundRect(ctx,qX+1*cW-4,dbY-4,3*cW+4,cH+6,5,null,COLORS.ok,2.5);
+  _label(ctx,'seed match found',cx,dbY+cH+16,11,COLORS.ok,'center','600');
 
-  // Score box (below HSP, left column)
-  const resY=hspY+cH+6+cH+14;
-  _roundRect(ctx,qX,resY,240,48,8,'#dcfce7',COLORS.ok,1.5);
-  _label(ctx,'Score: 89 bits',qX+70,resY+14,12,COLORS.ok,'center','700');
-  _label(ctx,'E-value: 3.2e-21',qX+70,resY+32,10,COLORS.ok,'center','600');
-  _label(ctx,'E = m·n · 2^(-S)',qX+190,resY+24,9,COLORS.ink4,'center','400');
+  /* ── Arrow: extend ── */
+  const a2=dbY+cH+30;
+  _arrow(ctx,cx,a2,cx,a2+30,COLORS.ok,2);
+  _label(ctx,'extend alignment in both directions',cx+14,a2+15,11,COLORS.ok,'left','500');
 
-  /* --- RIGHT COLUMN: BLOSUM62 matrix (500-780) --- */
-  const matX=510,matY=16;
-  _label(ctx,'BLOSUM62 matrix',matX+120,matY,12,COLORS.gd,'center','700');
-  _label(ctx,'(substitution scoring)',matX+120,matY+16,9,COLORS.ink4,'center','500');
-  const matAA=['A','V','I','G','F'];
-  const matData=[[ 4,-1,-1, 0,-3],[-1, 5, 4,-4,-1],[-1, 4, 5,-4, 0],[ 0,-4,-4, 8,-4],[-3,-1, 0,-4, 8]];
-  const mCW=36,mCH=28,mOX=matX+12,mOY=matY+30;
-  for(let c=0;c<matAA.length;c++) _monoLabel(ctx,matAA[c],mOX+36+c*mCW+mCW/2,mOY+mCH/2,11,COLORS.gd,'center');
-  for(let r=0;r<matAA.length;r++){
-    _monoLabel(ctx,matAA[r],mOX+mCW/2,mOY+(r+1)*mCH+mCH/2,11,COLORS.gd,'center');
-    for(let c=0;c<matAA.length;c++){
-      const x=mOX+36+c*mCW,y=mOY+(r+1)*mCH;
-      const v=matData[r][c];
-      ctx.fillStyle=v>=4?COLORS.ok+'22':v>0?COLORS.ok+'0c':v<0?COLORS.bad+'0c':'#f8fafc';
-      ctx.fillRect(x,y,mCW-1,mCH-1);
-      ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.5;ctx.strokeRect(x,y,mCW-1,mCH-1);
-      _monoLabel(ctx,v>0?'+'+v:''+v,x+mCW/2,y+mCH/2,11,v>=4?COLORS.ok:v>0?COLORS.ink2:v<0?COLORS.bad:COLORS.ink3,'center');
-    }
+  /* ── 3. HSP — pairwise alignment ── */
+  const hY=a2+44;
+  const hQ='MKTVVIG', hD='QRTVVIG';
+  _label(ctx,'HSP',qX-8,hY+cH/2+4,14,COLORS.ink2,'right','700');
+  for(let i=0;i<hQ.length;i++){
+    const x=qX+i*cW, match=hQ[i]===hD[i];
+    // Query row
+    ctx.fillStyle=match?COLORS.ok+'15':'#fef2f2';
+    ctx.fillRect(x,hY,cW-2,cH-2);
+    ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.8;ctx.strokeRect(x,hY,cW-2,cH-2);
+    _monoLabel(ctx,hQ[i],x+cW/2-1,hY+cH/2,16,match?COLORS.ok:COLORS.bad,'center');
+    // Match indicator
+    _monoLabel(ctx,match?'|':'x',x+cW/2-1,hY+cH+4,14,match?COLORS.ok:COLORS.bad+'77','center');
+    // Hit row
+    ctx.fillStyle=match?COLORS.ok+'15':'#fef2f2';
+    ctx.fillRect(x,hY+cH+14,cW-2,cH-2);
+    ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.8;ctx.strokeRect(x,hY+cH+14,cW-2,cH-2);
+    _monoLabel(ctx,hD[i],x+cW/2-1,hY+cH+14+cH/2,16,match?COLORS.ok:COLORS.bad,'center');
   }
-  _label(ctx,'+ favoured   − penalised',matX+120,mOY+(matAA.length+1)*mCH+12,9,COLORS.ink4,'center','500');
+  _label(ctx,'Query',qX+qW+12,hY+cH/2,11,COLORS.gb,'left','600');
+  _label(ctx,'Hit',qX+qW+12,hY+cH+14+cH/2,11,COLORS.ok,'left','600');
 
-  // Key BLAST concepts (right column, below matrix)
-  const kcY=mOY+(matAA.length+1)*mCH+34;
-  _roundRect(ctx,matX,kcY,240,110,6,'#eff6ff',COLORS.gb+'44',1);
-  _label(ctx,'BLAST algorithm',matX+120,kcY+16,10,COLORS.gb,'center','700');
-  _label(ctx,'1. Break query into k-mer seeds',matX+14,kcY+36,9,COLORS.ink2,'left','500');
-  _label(ctx,'2. Find seed matches in database',matX+14,kcY+52,9,COLORS.ink2,'left','500');
-  _label(ctx,'3. Extend into HSPs (local align)',matX+14,kcY+68,9,COLORS.ink2,'left','500');
-  _label(ctx,'4. Score with BLOSUM matrix',matX+14,kcY+84,9,COLORS.ink2,'left','500');
-  _label(ctx,'5. E-value from score + db size',matX+14,kcY+100,9,COLORS.ink2,'left','500');
+  /* ── 4. Score result ── */
+  const sY=hY+2*cH+30;
+  _roundRect(ctx,cx-160,sY,320,52,10,'#dcfce7',COLORS.ok,2);
+  _label(ctx,'Score: 89 bits    E-value: 3.2e-21',cx,sY+20,14,COLORS.ok,'center','700');
+  _label(ctx,'Lower E-value = more significant hit',cx,sY+38,11,COLORS.ink4,'center','500');
 }
 
-/* ── Step 1: Profile HMM architecture ── */
+/* ── Step 1: Profile HMM — MSA → model (ONE idea: alignment becomes state machine) ── */
 function drawHmProfile(ctx){
-  const L=20;
+  const cx=400;
 
-  /* ── TOP: MSA (left) → arrow → HMM chain heading ── */
-  _label(ctx,'1. Multiple sequence alignment',L,14,11,COLORS.gc,'left','700');
+  /* ── LEFT: MSA ── */
   const seqs=[
-    {name:'A',seq:['M','K','T','-','V','V','I','G']},
-    {name:'B',seq:['M','K','T','A','V','V','V','G']},
-    {name:'C',seq:['M','R','T','-','V','I','I','G']},
-    {name:'D',seq:['M','K','S','-','V','V','I','G']},
+    {name:'Seq A',aa:['M','K','T','-','V','G']},
+    {name:'Seq B',aa:['M','K','T','A','V','G']},
+    {name:'Seq C',aa:['M','R','T','-','I','G']},
+    {name:'Seq D',aa:['M','K','S','-','V','G']},
   ];
-  const nCols=8,cW=28,cH=20,seqX=L+28,seqY=26;
-  const conservation=[];
-  for(let c=0;c<nCols;c++){
-    const aas=seqs.map(s=>s.seq[c]).filter(a=>a!=='-');
-    conservation.push(new Set(aas).size===1?1:new Set(aas).size===2?0.7:0.3);
+  const nC=6, cW=38, cH=32, seqX=66, seqY=20;
+  const cons=[];
+  for(let c=0;c<nC;c++){
+    const aa=seqs.map(s=>s.aa[c]).filter(a=>a!=='-');
+    cons.push(new Set(aa).size===1?1:new Set(aa).size===2?0.7:0.3);
   }
+
+  _label(ctx,'Family alignment (MSA)',seqX+nC*cW/2,seqY-4,13,COLORS.gc,'center','700');
   for(let r=0;r<4;r++){
-    _monoLabel(ctx,seqs[r].name,L+20,seqY+r*cH+cH/2,8,COLORS.ink4,'right');
-    for(let c=0;c<nCols;c++){
-      const x=seqX+c*cW,y=seqY+r*cH;
-      const aa=seqs[r].seq[c],isGap=aa==='-',cons=conservation[c];
-      ctx.fillStyle=isGap?'#f1f5f9':cons>=1?COLORS.gc+'33':cons>=0.7?COLORS.gc+'18':'#f8fafc';
-      ctx.fillRect(x,y,cW-1,cH-1);ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.4;ctx.strokeRect(x,y,cW-1,cH-1);
-      _monoLabel(ctx,aa,x+cW/2,y+cH/2,10,isGap?COLORS.ink4:cons>=1?COLORS.gc:COLORS.ink3,'center');
+    _label(ctx,seqs[r].name,seqX-8,seqY+16+r*cH+cH/2,10,COLORS.ink4,'right','500');
+    for(let c=0;c<nC;c++){
+      const x=seqX+c*cW, y=seqY+16+r*cH;
+      const aa=seqs[r].aa[c], isGap=aa==='-', cv=cons[c];
+      ctx.fillStyle=isGap?'#f1f5f9':cv>=1?COLORS.gc+'30':cv>=0.7?COLORS.gc+'15':'#f8fafc';
+      ctx.fillRect(x,y,cW-2,cH-2);
+      ctx.strokeStyle=cv>=1?COLORS.gc+'66':COLORS.border;ctx.lineWidth=0.8;ctx.strokeRect(x,y,cW-2,cH-2);
+      _monoLabel(ctx,aa,x+cW/2-1,y+cH/2,14,isGap?COLORS.ink4:cv>=1?COLORS.gc:COLORS.ink3,'center');
     }
   }
-  // Arrow from MSA to HMM
-  const msaR=seqX+nCols*cW+6,msaMidY=seqY+2*cH;
-  _arrow(ctx,msaR,msaMidY,msaR+40,msaMidY,COLORS.gc,1.5);
-  _label(ctx,'build',msaR+20,msaMidY-10,9,COLORS.gc,'center','600');
-  _label(ctx,'model',msaR+20,msaMidY+12,9,COLORS.gc,'center','600');
+  // Column labels
+  const colLbl=['conserved','variable','variable','gaps','variable','conserved'];
+  for(let c=0;c<nC;c++){
+    _label(ctx,colLbl[c],seqX+c*cW+cW/2-1,seqY+16+4*cH+10,8,cons[c]>=1?COLORS.gc:COLORS.ink4,'center','500');
+  }
 
-  /* ── MIDDLE: HMM state chain (full width, y=130-260) ── */
-  const hmmY=130;
-  _label(ctx,'2. Profile HMM architecture',L,hmmY,11,COLORS.gc,'left','700');
-  const nSt=6,stGap=105,stY=hmmY+55,stX0=L+70,sR=17;
+  /* ── Big arrow ── */
+  const arrowX=seqX+nC*cW+20, arrowMid=seqY+16+2*cH;
+  _arrow(ctx,arrowX,arrowMid,arrowX+60,arrowMid,COLORS.gc,3);
+  _label(ctx,'build',arrowX+30,arrowMid-14,12,COLORS.gc,'center','700');
+  _label(ctx,'model',arrowX+30,arrowMid+16,12,COLORS.gc,'center','700');
 
-  // BEGIN
-  _roundRect(ctx,stX0-42,stY-12,28,24,6,COLORS.ink3+'22',COLORS.ink3,1.5);
-  _label(ctx,'B',stX0-28,stY,9,'#fff','center','700');
-  _arrow(ctx,stX0-14,stY,stX0+sR*0.5,stY,COLORS.ink3,1.2);
+  /* ── RIGHT: HMM chain (5 states, big) ── */
+  const hmX=arrowX+80, hmY=arrowMid, sR=22, gap=90;
 
-  for(let i=0;i<nSt;i++){
-    const x=stX0+sR+i*stGap;
-    const cons=i<conservation.length?conservation[i]:0.7;
-    const mCol=cons>=1?COLORS.gc:cons>=0.7?COLORS.gb:'#64748b';
+  // Column header
+  _label(ctx,'Profile HMM',hmX+2*gap,seqY-4,13,COLORS.gc,'center','700');
 
-    // Match state
-    _roundRect(ctx,x-sR,stY-sR,sR*2,sR*2,4,mCol+'22',mCol,2);
-    _label(ctx,'M'+(i+1),x,stY,10,mCol,'center','700');
+  for(let i=0;i<5;i++){
+    const x=hmX+i*gap;
+    const cv=cons[i<cons.length?i:0];
+    const mCol=cv>=1?COLORS.gc:cv>=0.7?COLORS.gb:'#64748b';
 
-    // Insert diamond above
-    if(i<nSt-1){
-      const iY=stY-50;
-      ctx.save();ctx.translate(x+stGap/2,iY);ctx.rotate(Math.PI/4);
-      _roundRect(ctx,-10,-10,20,20,2,COLORS.gd+'22',COLORS.gd,1.5);
-      ctx.restore();
-      _label(ctx,'I'+(i+1),x+stGap/2,iY,8,COLORS.gd,'center','600');
-      // Self-loop
-      ctx.save();ctx.strokeStyle=COLORS.gd+'55';ctx.lineWidth=1;ctx.setLineDash([2,2]);
-      ctx.beginPath();ctx.arc(x+stGap/2,iY-17,7,0.3*Math.PI,0.7*Math.PI);ctx.stroke();
-      ctx.setLineDash([]);ctx.restore();
-      // M→I
-      ctx.save();ctx.strokeStyle=COLORS.gd+'44';ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(x+sR,stY-sR);ctx.lineTo(x+stGap/2-8,iY+12);ctx.stroke();ctx.restore();
-      // I→M
-      ctx.save();ctx.strokeStyle=COLORS.gd+'44';ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(x+stGap/2+8,iY+12);ctx.lineTo(x+stGap-sR,stY-sR);ctx.stroke();ctx.restore();
-    }
-
-    // Delete circle below
-    if(i<nSt-1){
-      const dY=stY+50;
-      ctx.beginPath();ctx.arc(x+stGap/2,dY,11,0,Math.PI*2);
-      ctx.fillStyle=COLORS.bad+'12';ctx.fill();ctx.strokeStyle=COLORS.bad+'77';ctx.lineWidth=1.2;ctx.stroke();
-      _label(ctx,'D'+(i+1),x+stGap/2,dY,8,COLORS.bad,'center','600');
-      // M→D
-      ctx.save();ctx.strokeStyle=COLORS.bad+'33';ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(x+sR,stY+sR);ctx.lineTo(x+stGap/2-8,dY-12);ctx.stroke();ctx.restore();
-      // D→M
-      ctx.save();ctx.strokeStyle=COLORS.bad+'33';ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(x+stGap/2+8,dY-12);ctx.lineTo(x+stGap-sR,stY+sR);ctx.stroke();ctx.restore();
-    }
+    // Match state (square)
+    _roundRect(ctx,x-sR,hmY-sR,sR*2,sR*2,5,mCol+'22',mCol,2.5);
+    _label(ctx,'M'+(i+1),x,hmY,12,mCol,'center','700');
 
     // M→M arrow
-    if(i<nSt-1){
-      _arrow(ctx,x+sR+3,stY,x+stGap-sR-3,stY,mCol+'77',1.5);
-      const tp=['0.97','0.98','0.95','0.99','0.96'];
-      _label(ctx,tp[i]||'',x+stGap/2,stY+13,7,COLORS.ink4,'center','500');
+    if(i<4) _arrow(ctx,x+sR+4,hmY,x+gap-sR-4,hmY,mCol+'66',2);
+
+    // Insert diamond (above, between states)
+    if(i<4){
+      const iX=x+gap/2, iY=hmY-52;
+      ctx.save();ctx.translate(iX,iY);ctx.rotate(Math.PI/4);
+      _roundRect(ctx,-12,-12,24,24,3,COLORS.gd+'22',COLORS.gd,1.5);
+      ctx.restore();
+      _label(ctx,'I'+(i+1),iX,iY,10,COLORS.gd,'center','600');
+      // M→I, I→M lines
+      ctx.save();ctx.strokeStyle=COLORS.gd+'44';ctx.lineWidth=1.2;
+      ctx.beginPath();ctx.moveTo(x+sR-2,hmY-sR);ctx.lineTo(iX-10,iY+14);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(iX+10,iY+14);ctx.lineTo(x+gap-sR+2,hmY-sR);ctx.stroke();
+      ctx.restore();
+    }
+
+    // Delete circle (below, between states)
+    if(i<4){
+      const dX=x+gap/2, dY=hmY+52;
+      ctx.beginPath();ctx.arc(dX,dY,14,0,Math.PI*2);
+      ctx.fillStyle=COLORS.bad+'10';ctx.fill();ctx.strokeStyle=COLORS.bad+'66';ctx.lineWidth=1.5;ctx.stroke();
+      _label(ctx,'D'+(i+1),dX,dY,10,COLORS.bad,'center','600');
+      // M→D, D→M lines
+      ctx.save();ctx.strokeStyle=COLORS.bad+'33';ctx.lineWidth=1.2;
+      ctx.beginPath();ctx.moveTo(x+sR-2,hmY+sR);ctx.lineTo(dX-10,dY-14);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(dX+10,dY-14);ctx.lineTo(x+gap-sR+2,hmY+sR);ctx.stroke();
+      ctx.restore();
     }
   }
 
-  // END
-  const endX=stX0+sR+(nSt-1)*stGap+sR+8;
-  _arrow(ctx,endX,stY,endX+22,stY,COLORS.ink3,1.2);
-  _roundRect(ctx,endX+22,stY-12,28,24,6,COLORS.ink3+'22',COLORS.ink3,1.5);
-  _label(ctx,'E',endX+36,stY,9,'#fff','center','700');
+  /* ── Legend (bottom-left, big) ── */
+  const lgY=310;
+  _roundRect(ctx,30,lgY,260,110,8,'#f8fafc',COLORS.border,1);
+  _label(ctx,'State types',160,lgY+18,12,COLORS.ink2,'center','700');
 
-  // Legend (top right)
-  _roundRect(ctx,msaR+50,seqY,140,76,5,'#f8fafc',COLORS.border,0.8);
-  _label(ctx,'State types',msaR+120,seqY+12,9,COLORS.ink2,'center','700');
-  _roundRect(ctx,msaR+60,seqY+24,12,12,2,COLORS.gc+'22',COLORS.gc,1);
-  _label(ctx,'Match (emit AA)',msaR+78,seqY+30,8,COLORS.ink3,'left','500');
-  ctx.save();ctx.translate(msaR+66,seqY+46);ctx.rotate(Math.PI/4);
-  _roundRect(ctx,-5,-5,10,10,1,COLORS.gd+'22',COLORS.gd,0.8);
+  _roundRect(ctx,50,lgY+34,18,18,3,COLORS.gc+'22',COLORS.gc,1.5);
+  _label(ctx,'Match — emit an amino acid',76,lgY+43,11,COLORS.ink2,'left','500');
+
+  ctx.save();ctx.translate(59,lgY+66);ctx.rotate(Math.PI/4);
+  _roundRect(ctx,-8,-8,16,16,2,COLORS.gd+'22',COLORS.gd,1);
   ctx.restore();
-  _label(ctx,'Insert (extra AA)',msaR+78,seqY+46,8,COLORS.ink3,'left','500');
-  ctx.beginPath();ctx.arc(msaR+66,seqY+64,5,0,Math.PI*2);
-  ctx.fillStyle=COLORS.bad+'15';ctx.fill();ctx.strokeStyle=COLORS.bad+'77';ctx.lineWidth=0.8;ctx.stroke();
-  _label(ctx,'Delete (skip pos)',msaR+78,seqY+64,8,COLORS.ink3,'left','500');
+  _label(ctx,'Insert — extra amino acid',76,lgY+66,11,COLORS.ink2,'left','500');
 
-  /* ── BOTTOM: Emission bars + Transition table (y=280-430) ── */
-  const btmY=286;
+  ctx.beginPath();ctx.arc(59,lgY+90,8,0,Math.PI*2);
+  ctx.fillStyle=COLORS.bad+'12';ctx.fill();ctx.strokeStyle=COLORS.bad+'66';ctx.lineWidth=1.2;ctx.stroke();
+  _label(ctx,'Delete — skip this position',76,lgY+90,11,COLORS.ink2,'left','500');
 
-  // Emission bars
-  _label(ctx,'Emission probabilities',L,btmY,11,COLORS.gc,'left','700');
-  const emAA=['A','V','I','G','F','L','M','K','T','S'];
-  const emProbs=[[0.02,0.25,0.20,0.28,0.05,0.10,0.03,0.02,0.03,0.02],[0.08,0.02,0.02,0.68,0.02,0.02,0.02,0.02,0.02,0.10]];
-  const emLabels=['M1 (variable)','M5 (conserved G)'];
-  const eBarW=16,eBarMax=52,eX0=L+110;
-  for(let m=0;m<2;m++){
-    const ey=btmY+14+m*72;
-    _label(ctx,emLabels[m],L+80,ey+eBarMax/2,9,COLORS.gc,'right','600');
-    for(let a=0;a<emAA.length;a++){
-      const x=eX0+a*(eBarW+5);
-      const h=emProbs[m][a]*eBarMax;
-      ctx.fillStyle=emProbs[m][a]>0.2?COLORS.gc+'55':COLORS.gc+'22';
-      ctx.fillRect(x,ey+eBarMax-h,eBarW,h);
-      ctx.strokeStyle=COLORS.gc+'33';ctx.lineWidth=0.5;ctx.strokeRect(x,ey+eBarMax-h,eBarW,h);
-      _monoLabel(ctx,emAA[a],x+eBarW/2,ey+eBarMax+10,8,COLORS.ink3,'center');
-    }
-  }
-
-  // Transition table
-  const tmX=440,tmY=btmY;
-  _label(ctx,'Transition probabilities',tmX,tmY,11,COLORS.gc,'left','700');
-  const tmL=['M→M','M→I','M→D','I→M','I→I','D→M','D→D'];
-  const tmV=['0.97','0.02','0.01','0.85','0.15','0.90','0.10'];
-  const tmC=[COLORS.gc,COLORS.gd,COLORS.bad,COLORS.gd,COLORS.gd,COLORS.bad,COLORS.bad];
-  for(let i=0;i<tmL.length;i++){
-    const row=Math.floor(i/3),col=i%3;
-    const x=tmX+col*115,y=tmY+16+row*28;
-    _roundRect(ctx,x,y,108,24,4,tmC[i]+'0c',tmC[i]+'44',1);
-    _monoLabel(ctx,tmL[i],x+36,y+12,9,tmC[i],'center');
-    _monoLabel(ctx,tmV[i],x+85,y+12,10,COLORS.ink2,'center');
-  }
+  /* ── Key insight (bottom-right) ── */
+  _roundRect(ctx,340,lgY,440,110,8,COLORS.gc+'08',COLORS.gc+'33',1);
+  _label(ctx,'Each column in the MSA becomes one match state.',360,lgY+24,12,COLORS.ink2,'left','600');
+  _label(ctx,'Conserved columns → strong emission (e.g. 95% M).',360,lgY+50,11,COLORS.ink3,'left','500');
+  _label(ctx,'Variable columns → spread emission probabilities.',360,lgY+72,11,COLORS.ink3,'left','500');
+  _label(ctx,'Gaps in the alignment → delete states.',360,lgY+94,11,COLORS.ink3,'left','500');
 }
 
-/* ── Step 2: Score query against HMM ── */
+/* ── Step 2: Score & compare (ONE idea: thread query → score → compare tools) ── */
 function drawHmScore(ctx){
-  const mx=25,my=8;
+  const cx=400;
 
-  // Show HMM states at top (compact chain)
-  _label(ctx,'Profile HMM model (8 match positions)',mx,my+10,11,COLORS.gc,'left','700');
-  const nSt=8,stGap=62,stX0=mx+50,stY=my+40,sR=14;
+  /* ── 1. HMM chain (compact, across top) ── */
+  const nSt=6, sR=16, gap=80, stX0=cx-((nSt-1)*gap)/2, stY=36;
+  _label(ctx,'Profile HMM',cx,10,13,COLORS.gc,'center','700');
 
   for(let i=0;i<nSt;i++){
-    const x=stX0+i*stGap;
-    const cons=[1,0.7,0.7,0.3,1,1,0.7,1];
-    const mCol=cons[i]>=1?COLORS.gc:cons[i]>=0.7?COLORS.gb:'#64748b';
-    _roundRect(ctx,x-sR,stY-sR,sR*2,sR*2,3,mCol+'22',mCol,1.5);
-    _label(ctx,'M'+(i+1),x,stY,8,mCol,'center','700');
-    if(i<nSt-1) _arrow(ctx,x+sR+2,stY,x+stGap-sR-2,stY,mCol+'66',1);
+    const x=stX0+i*gap;
+    const mCol=COLORS.gc;
+    _roundRect(ctx,x-sR,stY-sR,sR*2,sR*2,4,mCol+'22',mCol,2);
+    _label(ctx,'M'+(i+1),x,stY,10,mCol,'center','700');
+    if(i<nSt-1) _arrow(ctx,x+sR+3,stY,x+gap-sR-3,stY,mCol+'55',1.5);
+  }
 
-    // Insert above (small)
-    const iY=stY-32;
-    ctx.save();ctx.translate(x+stGap/2,iY);ctx.rotate(Math.PI/4);
-    _roundRect(ctx,-6,-6,12,12,1,COLORS.gd+'15',COLORS.gd+'66',1);
-    ctx.restore();
+  /* ── Arrow: Viterbi ── */
+  _arrow(ctx,cx,stY+sR+8,cx,stY+sR+36,COLORS.gb,2);
+  _label(ctx,'Viterbi: find best path through states',cx+14,stY+sR+22,11,COLORS.gb,'left','600');
 
-    // Delete below (small)
-    if(i<nSt-1){
-      const dY=stY+32;
-      ctx.beginPath();ctx.arc(x+stGap/2,dY,7,0,Math.PI*2);
-      ctx.fillStyle=COLORS.bad+'0c';ctx.fill();ctx.strokeStyle=COLORS.bad+'44';ctx.lineWidth=1;ctx.stroke();
+  /* ── 2. Query threaded through states ── */
+  const qY=stY+sR+50;
+  const query=['M','K','T','V','V','G'];
+  const states=['M1','M2','M3','M4','M5','M6'];
+  const cW=60, cH=38;
+  const qX=cx-(query.length*cW)/2;
+
+  for(let i=0;i<query.length;i++){
+    const x=qX+i*cW;
+    // Amino acid cell
+    ctx.fillStyle=COLORS.gc+'12';
+    ctx.fillRect(x,qY,cW-3,cH);
+    ctx.strokeStyle=COLORS.gc+'66';ctx.lineWidth=1.5;ctx.strokeRect(x,qY,cW-3,cH);
+    _monoLabel(ctx,query[i],x+cW/2-1,qY+cH/2,18,COLORS.gc,'center');
+    // State label below
+    _label(ctx,states[i],x+cW/2-1,qY+cH+16,11,COLORS.gc,'center','600');
+    // Arrow between
+    if(i<query.length-1){
+      _arrow(ctx,x+cW-3,qY+cH/2,x+cW,qY+cH/2,COLORS.gc+'44',1);
     }
   }
+  _label(ctx,'Query',qX-12,qY+cH/2,12,COLORS.gb,'right','700');
+  _label(ctx,'State',qX-12,qY+cH+16,10,COLORS.gc,'right','600');
 
-  // Arrow down: "score query"
-  const midX=stX0+4*stGap;
-  _arrow(ctx,midX,stY+sR+6,midX,stY+sR+36,COLORS.gb,1.5);
-  _label(ctx,'Viterbi algorithm: find best state path',midX+10,stY+sR+22,9,COLORS.gb,'left','600');
+  /* ── 3. Score result ── */
+  const sY=qY+cH+46;
+  _roundRect(ctx,cx-170,sY,340,52,10,'#dcfce7',COLORS.ok,2);
+  _label(ctx,'Score: 124.3 bits    E-value: 8.1e-34',cx,sY+20,14,COLORS.ok,'center','700');
+  _label(ctx,'Each residue scored by emission probability of its state',cx,sY+38,10,COLORS.ink4,'center','500');
 
-  // Query sequence
-  const qY=stY+sR+48;
-  _label(ctx,'Query protein',mx,qY+8,10,COLORS.gb,'left','700');
-  const query= ['M','K','T','A','V','V','I','G','A','G','F','L','A','S'];
-  // Viterbi path: M M M I M M M M M M M M D M  (simplified)
-  const path=  ['M1','M2','M3','I3','M4','M5','M6','M7','M8',null,null,null,null,null];
-  const states= [0,1,2,'i',3,4,5,6,7]; // indices into query that map to states
-  const qX=mx+30,cW=40,cH=24;
+  /* ── 4. Comparison table — big, readable ── */
+  const tY=sY+72;
+  _label(ctx,'BLAST vs HMMER at a glance',cx,tY,13,COLORS.ink2,'center','700');
 
-  // Draw state assignment
-  const saY=qY+20;
-  _label(ctx,'Pos:',mx+16,saY+cH/2,8,COLORS.ink4,'right','500');
-  for(let i=0;i<9;i++){
-    const x=qX+70+i*cW;
-    const qIdx=states[i];
-    const isInsert=qIdx==='i';
-    const aa=isInsert?'A':query[typeof qIdx==='number'?qIdx:0];
-    const stLabel=isInsert?'I3':'M'+(isInsert?0:(typeof qIdx==='number'?qIdx+1:0));
-
-    // Cell
-    const bg=isInsert?COLORS.gd+'15':COLORS.gc+'15';
-    const col=isInsert?COLORS.gd:COLORS.gc;
-    ctx.fillStyle=bg;ctx.fillRect(x,saY,cW-2,cH);
-    ctx.strokeStyle=col+'66';ctx.lineWidth=1;ctx.strokeRect(x,saY,cW-2,cH);
-    _monoLabel(ctx,aa,x+cW/2-1,saY+cH/2,12,col,'center');
-
-    // State label below
-    _label(ctx,stLabel,x+cW/2-1,saY+cH+12,8,col,'center','600');
-
-    // Emission probability below state
-    const emProbs=[0.95,0.75,0.60,0.15,0.88,0.98,0.70,0.92,0.80];
-    const p=emProbs[i];
-    _label(ctx,'P='+p.toFixed(2),x+cW/2-1,saY+cH+26,7,p>0.5?COLORS.gc:COLORS.gd,'center','500');
-  }
-
-  // Transition path arrows
-  for(let i=0;i<8;i++){
-    const x1=qX+70+i*cW+cW-2,x2=qX+70+(i+1)*cW;
-    ctx.save();ctx.strokeStyle=COLORS.gc+'44';ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(x1,saY+cH+12);ctx.lineTo(x2,saY+cH+12);ctx.stroke();
-    ctx.restore();
-    // Transition prob
-    const tProbs=[0.97,0.98,0.02,0.85,0.96,0.98,0.97,0.99];
-    _label(ctx,tProbs[i].toFixed(2),x1+(x2-x1)/2,saY+cH+6,6,COLORS.ink4,'center','400');
-  }
-
-  // Score calculation
-  const scY=saY+cH+52;
-  _label(ctx,'Score calculation',mx,scY+8,11,COLORS.gb,'left','700');
-
-  // Log-odds formula
-  _roundRect(ctx,mx+20,scY+22,360,50,6,COLORS.gb+'08',COLORS.gb+'44',1);
-  _label(ctx,'log-odds score = Σ log( P(aᵢ|model) / P(aᵢ|null) )',mx+200,scY+38,10,COLORS.ink2,'center','600');
-  _label(ctx,'+ Σ log( transition probs )',mx+200,scY+56,9,COLORS.ink3,'center','500');
-
-  // Bit score conversion
-  _arrow(ctx,mx+400,scY+47,mx+440,scY+47,COLORS.gb,1.5);
-
-  // Result
-  _roundRect(ctx,mx+450,scY+22,130,50,8,'#dcfce7',COLORS.ok,1.5);
-  _label(ctx,'Score: 124.3 bits',mx+515,scY+38,11,COLORS.ok,'center','700');
-  _label(ctx,'E-value: 8.1e-34',mx+515,scY+56,10,COLORS.ok,'center','600');
-
-  // Comparison table at bottom
-  const tY=scY+90;
-  _label(ctx,'BLAST vs HMMER at a glance',mx+200,tY,11,COLORS.ink2,'center','700');
   const rows=[
     ['','BLAST','HMMER'],
-    ['Search type','Pairwise (seq vs seq)','Profile (seq vs model)'],
-    ['Scoring','BLOSUM62 matrix','Emission + transition probs'],
-    ['Sensitivity','Close homologs','Remote homologs'],
-    ['Speed','Very fast (Diamond)','Moderate'],
-    ['Key tool','Diamond, BLAST+','hmmsearch, hmmscan'],
+    ['Searches','Sequence vs sequence','Sequence vs family model'],
+    ['Best for','Close homologs','Remote / divergent homologs'],
+    ['Tools','Diamond, BLAST+','hmmsearch, hmmscan'],
   ];
-  const tX=mx+20,tCW=[110,200,220],tCH=20;
+  const tCW=[140,240,240], tCH=30;
+  const tX=cx-(tCW[0]+tCW[1]+tCW[2])/2;
+
   for(let r=0;r<rows.length;r++){
     for(let c=0;c<3;c++){
       const x=tX+tCW.slice(0,c).reduce((a,b)=>a+b,0);
-      const y=tY+12+r*tCH;
+      const y=tY+16+r*tCH;
       const isHeader=r===0;
       ctx.fillStyle=isHeader?COLORS.ink+'08':r%2===0?'#f8fafc':'#fff';
-      ctx.fillRect(x,y,tCW[c]-2,tCH-1);
-      ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.4;ctx.strokeRect(x,y,tCW[c]-2,tCH-1);
+      ctx.fillRect(x,y,tCW[c]-2,tCH-2);
+      ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.6;ctx.strokeRect(x,y,tCW[c]-2,tCH-2);
       const col=isHeader?COLORS.ink2:c===0?COLORS.ink3:c===1?COLORS.gb:COLORS.gc;
       const wt=isHeader||c===0?'700':'500';
-      _label(ctx,rows[r][c],x+tCW[c]/2-1,y+tCH/2,isHeader?9:8,col,'center',wt);
+      _label(ctx,rows[r][c],x+tCW[c]/2-1,y+tCH/2,isHeader?12:11,col,'center',wt);
     }
   }
 }
