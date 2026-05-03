@@ -1005,7 +1005,7 @@ const keggHeaders=[
   'Step 4: Complete module — all enzymes found',
   'Step 5: Incomplete module — gaps in the pathway',
   'Step 6: Missing gene does not equal missing function',
-  'Step 7: KEGG-decoder — the deliverable',
+  'Step 7: anvi-estimate-metabolism — the deliverable',
 ];
 const keggCanvasHeaders=[
   'KEGG hierarchy: Gene → KO → Module → Pathway',
@@ -1014,7 +1014,7 @@ const keggCanvasHeaders=[
   'All enzymes present: module is complete',
   'Gaps in the pathway: module is incomplete',
   'Why genes can appear missing',
-  'KEGG-decoder heatmap across MAGs',
+  'anvi-estimate-metabolism: module completeness',
 ];
 const keggCardMap=[0,0,0,1,1,2,2];
 
@@ -1365,29 +1365,41 @@ function drawKeggStep5(ctx){
 function drawKeggStep6(ctx){
   const cx=400;
 
-  _label(ctx,'KEGG-decoder: module completeness across all your MAGs',cx,28,14,COLORS.ink,'center','700');
+  _label(ctx,'anvi-estimate-metabolism: module completeness across MAGs',cx,20,14,COLORS.ink,'center','700');
 
   /* CLI box */
-  _roundRect(ctx,140,48,520,32,6,'#1e293b',null,0);
-  _monoLabel(ctx,'$ KEGG-decoder -i kofam_results.tsv -o heatmap.html',cx,64,10,'#a5f3fc','center');
+  _roundRect(ctx,120,36,560,36,6,'#1e293b',null,0);
+  _monoLabel(ctx,'$ anvi-estimate-metabolism -c contigs-db -p profile-db -C collection',cx,54,9,'#a5f3fc','center');
 
-  /* Heatmap grid */
-  const hx=100,hy=100,cellW=62,cellH=28,gap=2;
-  const mags=['MAG-01','MAG-02','MAG-03','MAG-04','MAG-05','MAG-06','MAG-07','MAG-08'];
-  const modules=['Glycolysis','TCA cycle','Pentose P.','Oxidative P.','N fixation','Denitrif.'];
+  /* Two-algorithm explanation */
+  const alY=82;
+  _label(ctx,'Dual completeness algorithms:',cx,alY,11,COLORS.ink2,'center','700');
 
-  /* Completeness values (0-1) */
+  /* Pathwise box */
+  _roundRect(ctx,80,alY+12,310,50,8,COLORS.ga+'0c',COLORS.ga,1.5);
+  _label(ctx,'Pathwise completeness',235,alY+26,11,COLORS.ga,'center','700');
+  _label(ctx,'Best path through alternative KOs; report max fraction',235,alY+42,9,COLORS.ink3,'center','400');
+
+  /* Stepwise box */
+  _roundRect(ctx,410,alY+12,310,50,8,COLORS.gb+'0c',COLORS.gb,1.5);
+  _label(ctx,'Stepwise completeness',565,alY+26,11,COLORS.gb,'center','700');
+  _label(ctx,'% of top-level steps with at least one KO present',565,alY+42,9,COLORS.ink3,'center','400');
+
+  /* Heatmap grid — compact */
+  const hx=80,hy=alY+90,cellW=66,cellH=22,gap=2;
+  const mags=['MAG-01','MAG-02','MAG-03','MAG-04','MAG-05'];
+  const modules=['Glycolysis','TCA','Pentose P.','Ox. phos.','N fixation'];
+
   const data=[
-    [1,.8,1,.6,0,.2],[.8,1,.6,1,0,0],[1,.6,.8,.4,0,.8],
-    [.4,.6,.2,.8,1,.4],[1,1,1,.8,0,0],[.6,.4,.4,.6,0,1],
-    [.2,.8,.6,1,0,.4],[1,1,.8,.6,0,.2],
+    [1,.8,1,.6,0],[.8,1,.6,1,0],[1,.6,.8,.4,.8],
+    [.4,.6,.2,.8,1],[1,1,1,.8,0],
   ];
 
-  /* Column headers (modules) — rotated */
+  /* Column headers — rotated */
   for(let j=0;j<modules.length;j++){
     const mx=hx+60+j*(cellW+gap)+cellW/2;
     ctx.save();
-    ctx.translate(mx,hy-6);
+    ctx.translate(mx,hy-4);
     ctx.rotate(-Math.PI/6);
     ctx.font='500 9px "DM Sans",system-ui,sans-serif';
     ctx.fillStyle=COLORS.ink2;ctx.textAlign='left';
@@ -1395,7 +1407,7 @@ function drawKeggStep6(ctx){
     ctx.restore();
   }
 
-  /* Row headers (MAGs) */
+  /* Row headers */
   for(let i=0;i<mags.length;i++){
     const my=hy+i*(cellH+gap)+cellH/2;
     _monoLabel(ctx,mags[i],hx+54,my+1,9,COLORS.ink2,'right');
@@ -1407,38 +1419,40 @@ function drawKeggStep6(ctx){
       const x=hx+60+j*(cellW+gap);
       const y=hy+i*(cellH+gap);
       const v=data[i][j];
-
-      /* Color gradient: white → teal */
       const r2=Math.round(255-(255-13)*v);
       const g2=Math.round(255-(255-148)*v);
       const b2=Math.round(255-(255-136)*v);
-      const col='rgb('+r2+','+g2+','+b2+')';
-      _roundRect(ctx,x,y,cellW,cellH,3,col,null,0);
-
-      /* Value label */
+      _roundRect(ctx,x,y,cellW,cellH,3,'rgb('+r2+','+g2+','+b2+')',null,0);
       const textCol=v>0.5?'#fff':COLORS.ink3;
       _label(ctx,(v*100|0)+'%',x+cellW/2,y+cellH/2,9,textCol,'center','600');
     }
   }
 
   /* Color legend */
-  const legX=hx+60+modules.length*(cellW+gap)+16;
-  const legY=hy+20;
-  _label(ctx,'Module',legX+28,legY-6,9,COLORS.ink2,'center','600');
-  _label(ctx,'completeness',legX+28,legY+6,9,COLORS.ink2,'center','600');
+  const legX=hx+60+modules.length*(cellW+gap)+14;
+  const legY2=hy+6;
+  _label(ctx,'Module',legX+24,legY2,9,COLORS.ink2,'center','600');
+  _label(ctx,'completeness',legX+24,legY2+12,9,COLORS.ink2,'center','600');
   for(let k=0;k<=4;k++){
     const v=k/4;
     const r2=Math.round(255-(255-13)*v);
     const g2=Math.round(255-(255-148)*v);
     const b2=Math.round(255-(255-136)*v);
-    _roundRect(ctx,legX+6,legY+18+k*22,44,18,3,'rgb('+r2+','+g2+','+b2+')',COLORS.border,0.5);
-    _label(ctx,(v*100)+'%',legX+58,legY+27+k*22,8,COLORS.ink3,'left','500');
+    _roundRect(ctx,legX+2,legY2+22+k*18,40,14,3,'rgb('+r2+','+g2+','+b2+')',COLORS.border,0.5);
+    _label(ctx,(v*100)+'%',legX+50,legY2+29+k*18,8,COLORS.ink3,'left','500');
   }
 
-  /* Interpretation note */
-  _roundRect(ctx,100,hy+mags.length*(cellH+gap)+16,600,54,8,'#f8fafc',COLORS.border,1);
-  _label(ctx,'Each row is one MAG. Each column is a metabolic module.',cx,hy+mags.length*(cellH+gap)+34,11,COLORS.ink2,'center','600');
-  _label(ctx,'Patterns reveal metabolic lifestyles: aerobes, fermenters, nitrogen cyclers, etc.',cx,hy+mags.length*(cellH+gap)+52,10,COLORS.ink3,'center','400');
+  /* Threshold note */
+  const thY=hy+mags.length*(cellH+gap)+8;
+  _roundRect(ctx,80,thY,640,30,8,'#fffbeb',COLORS.gd+'88',1.2);
+  _label(ctx,'Default threshold: 0.75 — modules above this are considered complete',cx,thY+15,10,COLORS.gd,'center','700');
+
+  /* Key advantages */
+  const ky=thY+40;
+  _roundRect(ctx,80,ky,640,56,8,'#f0fdf4',COLORS.ok+'66',1.2);
+  _label(ctx,'Why anvi-estimate-metabolism?',cx,ky+14,11,COLORS.ok,'center','700');
+  _label(ctx,'Native anvi\'o integration with contigs-db / profile-db; supports custom modules beyond KEGG,',cx,ky+30,9.5,COLORS.ink3,'center','500');
+  _label(ctx,'copy-number estimation, and pangenome-level analysis',cx,ky+44,9.5,COLORS.ink3,'center','500');
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2066,8 +2080,8 @@ function drawCazyStep2(ctx){
 
   /* GH header */
   _roundRect(ctx,cx-120,50,240,38,8,COLORS.ga+'18',COLORS.ga,2);
-  _label(ctx,'GH',cx-60,69,20,COLORS.ga,'center','800');
-  _label(ctx,'~180 families, >500k sequences',cx+20,69,10,COLORS.ink3,'center','500');
+  _label(ctx,'GH',cx-80,69,20,COLORS.ga,'center','800');
+  _label(ctx,'~180 families, >500k sequences',cx+30,69,10,COLORS.ink3,'center','500');
 
   /* Three example families as visual cards */
   const fams=[
