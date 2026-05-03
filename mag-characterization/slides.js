@@ -1074,11 +1074,11 @@ function drawKeggStep0(ctx){
   }
 
   /* Scope note */
-  _roundRect(ctx,100,300,600,80,10,'#f8fafc',COLORS.border,1);
-  _label(ctx,'Scope:',140,320,11,COLORS.ink2,'left','700');
-  _label(ctx,'KEGG has >24,000 KOs, >500 modules, >500 pathway maps',160,340,11,COLORS.ink3,'left','400');
-  _label(ctx,'Modules are the most useful unit for MAG interpretation:',160,358,11,COLORS.ink3,'left','400');
-  _label(ctx,'small enough to assess completeness, large enough to be biologically meaningful',160,376,11,COLORS.ink3,'left','400');
+  _roundRect(ctx,100,300,600,90,10,'#f8fafc',COLORS.border,1);
+  _label(ctx,'Scope:',128,322,11,COLORS.ink2,'left','700');
+  _label(ctx,'KEGG has >24,000 KOs, >500 modules, >500 pathway maps',170,340,11,COLORS.ink3,'left','400');
+  _label(ctx,'Modules are the most useful unit for MAG interpretation:',170,358,11,COLORS.ink3,'left','400');
+  _label(ctx,'small enough to assess completeness, large enough to be biologically meaningful',170,376,11,COLORS.ink3,'left','400');
 }
 
 /* ── Step 1: KO assignment by KofamScan ── */
