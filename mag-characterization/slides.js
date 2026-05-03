@@ -1319,19 +1319,9 @@ function drawPfamCanvas(step){
 
 /* helper: draw a protein backbone with domains */
 function _pfamProtein(ctx,name,x,y,len,domains,showBounds){
-  /* Draw backbone only in gaps between domains */
+  /* 1. Draw opaque domain fills FIRST */
   const sorted=[...domains].sort((a,b)=>a.s-b.s);
-  ctx.strokeStyle=COLORS.border;ctx.lineWidth=2.5;
-  let cursor=0;
   for(const d of sorted){
-    if(d.s>cursor){ctx.beginPath();ctx.moveTo(x+cursor,y+16);ctx.lineTo(x+d.s,y+16);ctx.stroke();}
-    cursor=d.e;
-  }
-  if(cursor<len){ctx.beginPath();ctx.moveTo(x+cursor,y+16);ctx.lineTo(x+len,y+16);ctx.stroke();}
-  _label(ctx,'N',x-14,y+16,10,COLORS.ink4,'center','600');
-  _label(ctx,'C',x+len+14,y+16,10,COLORS.ink4,'center','600');
-  if(name) _label(ctx,name,x,y-6,12,COLORS.ink,'left','700');
-  for(const d of domains){
     const dx=x+d.s,dw=d.e-d.s;
     _roundRect(ctx,dx,y+2,dw,28,6,d.c,null,0);
     _roundRect(ctx,dx,y+2,dw,28,6,null,d.c,1.5);
@@ -1341,6 +1331,18 @@ function _pfamProtein(ctx,name,x,y,len,domains,showBounds){
       _monoLabel(ctx,d.e+'',dx+dw,y+38,8,COLORS.ink4,'center');
     }
   }
+  /* 2. Draw backbone connectors only in gaps, padded 4px from domain edges */
+  ctx.strokeStyle=COLORS.border;ctx.lineWidth=2.5;
+  const pad=4;
+  let cursor=0;
+  for(const d of sorted){
+    if(d.s-cursor>pad*2){ctx.beginPath();ctx.moveTo(x+cursor+pad,y+16);ctx.lineTo(x+d.s-pad,y+16);ctx.stroke();}
+    cursor=d.e;
+  }
+  if(len-cursor>pad){ctx.beginPath();ctx.moveTo(x+cursor+pad,y+16);ctx.lineTo(x+len,y+16);ctx.stroke();}
+  _label(ctx,'N',x-14,y+16,10,COLORS.ink4,'center','600');
+  _label(ctx,'C',x+len+14,y+16,10,COLORS.ink4,'center','600');
+  if(name) _label(ctx,name,x,y-6,12,COLORS.ink,'left','700');
 }
 
 /* ── Step 0: What is a protein domain? ── */
@@ -1348,30 +1350,37 @@ function drawPfamStep0(ctx){
   const cx=400;
   _label(ctx,'A single protein with three distinct domains',cx,36,15,COLORS.ink,'center','700');
 
-  /* Long protein backbone — draw only in gaps between domains */
+  /* Long protein with three domains */
   const px=80,pw=640,py=120;
   const doms=[
     {s:40,e:190,l:'Kinase',c:COLORS.gb,desc:'Phosphorylates targets'},
     {s:240,e:400,l:'SH2',c:COLORS.ga,desc:'Binds phosphotyrosine'},
     {s:450,e:580,l:'SH3',c:COLORS.gc,desc:'Binds proline-rich motifs'},
   ];
-  ctx.strokeStyle=COLORS.border;ctx.lineWidth=3;
-  let cur0=0;
-  for(const d of doms){
-    if(d.s>cur0){ctx.beginPath();ctx.moveTo(px+cur0,py+20);ctx.lineTo(px+d.s,py+20);ctx.stroke();}
-    cur0=d.e;
-  }
-  if(cur0<pw){ctx.beginPath();ctx.moveTo(px+cur0,py+20);ctx.lineTo(px+pw,py+20);ctx.stroke();}
-  _label(ctx,'N',px-16,py+20,11,COLORS.ink4,'center','600');
-  _label(ctx,'C',px+pw+16,py+20,11,COLORS.ink4,'center','600');
-  _monoLabel(ctx,'~480 aa',px+pw,py+38,10,COLORS.ink4,'center');
 
-  /* Three colored domain regions */
+  /* 1. Draw opaque domain fills FIRST */
   for(const d of doms){
     const dx=px+d.s,dw=d.e-d.s;
     _roundRect(ctx,dx,py+4,dw,32,8,d.c,null,0);
     _roundRect(ctx,dx,py+4,dw,32,8,null,d.c,2);
     _label(ctx,d.l,dx+dw/2,py+20,13,'#fff','center','700');
+  }
+  /* 2. Draw backbone connectors in gaps, padded from domain edges */
+  ctx.strokeStyle=COLORS.border;ctx.lineWidth=3;
+  const pad=4;
+  let cur0=0;
+  for(const d of doms){
+    if(d.s-cur0>pad*2){ctx.beginPath();ctx.moveTo(px+cur0+pad,py+20);ctx.lineTo(px+d.s-pad,py+20);ctx.stroke();}
+    cur0=d.e;
+  }
+  if(pw-cur0>pad){ctx.beginPath();ctx.moveTo(px+cur0+pad,py+20);ctx.lineTo(px+pw,py+20);ctx.stroke();}
+  _label(ctx,'N',px-16,py+20,11,COLORS.ink4,'center','600');
+  _label(ctx,'C',px+pw+16,py+20,11,COLORS.ink4,'center','600');
+  _monoLabel(ctx,'~480 aa',px+pw,py+38,10,COLORS.ink4,'center');
+
+  /* Annotations below each domain */
+  for(const d of doms){
+    const dx=px+d.s,dw=d.e-d.s;
 
     /* Description below each domain */
     _arrow(ctx,dx+dw/2,py+40,dx+dw/2,py+60,d.c,1.5);
@@ -1450,20 +1459,24 @@ function drawPfamStep1(ctx){
     {s:200,e:330,l:'SH2',c:COLORS.ga},
     {s:370,e:470,l:'SH3',c:COLORS.gc},
   ];
-  /* Draw backbone only in gaps */
-  ctx.strokeStyle=COLORS.border;ctx.lineWidth=2;
-  let cur1=0;
-  for(const d of rdoms){
-    if(d.s>cur1){ctx.beginPath();ctx.moveTo(rx+cur1,ry+24);ctx.lineTo(rx+d.s,ry+24);ctx.stroke();}
-    cur1=d.e;
-  }
-  if(cur1<rw){ctx.beginPath();ctx.moveTo(rx+cur1,ry+24);ctx.lineTo(rx+rw,ry+24);ctx.stroke();}
+  /* 1. Draw opaque domain fills FIRST */
   for(const d of rdoms){
     const dx=rx+d.s,dw=d.e-d.s;
     _roundRect(ctx,dx,ry+10,dw,28,6,d.c,null,0);
     _roundRect(ctx,dx,ry+10,dw,28,6,null,d.c,1.5);
     _label(ctx,d.l,dx+dw/2,ry+24,10,'#fff','center','700');
   }
+  /* 2. Draw backbone connectors in gaps, padded from domain edges */
+  ctx.strokeStyle=COLORS.border;ctx.lineWidth=2;
+  const pad1=4;
+  let cur1=0;
+  for(const d of rdoms){
+    if(d.s-cur1>pad1*2){ctx.beginPath();ctx.moveTo(rx+cur1+pad1,ry+24);ctx.lineTo(rx+d.s-pad1,ry+24);ctx.stroke();}
+    cur1=d.e;
+  }
+  if(rw-cur1>pad1){ctx.beginPath();ctx.moveTo(rx+cur1+pad1,ry+24);ctx.lineTo(rx+rw,ry+24);ctx.stroke();}
+  _label(ctx,'N',rx-14,ry+24,9,COLORS.ink4,'center','600');
+  _label(ctx,'C',rx+rw+14,ry+24,9,COLORS.ink4,'center','600');
 
   /* Caption */
   _roundRect(ctx,100,380,600,44,8,'#f8fafc',COLORS.border,1);
@@ -1490,22 +1503,27 @@ function drawPfamStep2(ctx){
     {s:540,e:660,l:'Peptidase_C39',c:COLORS.gd,aa:'440-535',desc:'Signal peptide cleavage'},
   ];
 
-  /* backbone — draw only in gaps between domains */
-  ctx.strokeStyle=COLORS.border;ctx.lineWidth=3;
-  let cur2=0;
-  for(const d of doms){
-    if(d.s>cur2){ctx.beginPath();ctx.moveTo(px+cur2,py+16);ctx.lineTo(px+d.s,py+16);ctx.stroke();}
-    cur2=d.e;
-  }
-  if(cur2<pw){ctx.beginPath();ctx.moveTo(px+cur2,py+16);ctx.lineTo(px+pw,py+16);ctx.stroke();}
-  _label(ctx,'N',px-16,py+16,11,COLORS.ink4,'center','600');
-  _label(ctx,'C',px+pw+16,py+16,11,COLORS.ink4,'center','600');
-
+  /* 1. Draw opaque domain fills FIRST */
   for(const d of doms){
     const dx=px+d.s,dw=d.e-d.s;
     _roundRect(ctx,dx,py+2,dw,28,6,d.c,null,0);
     _roundRect(ctx,dx,py+2,dw,28,6,null,d.c,2);
     _label(ctx,d.l,dx+dw/2,py+16,Math.min(11,dw/d.l.length*1.6),'#fff','center','700');
+  }
+  /* 2. Backbone connectors in gaps, padded from domain edges */
+  ctx.strokeStyle=COLORS.border;ctx.lineWidth=3;
+  const pad2=4;
+  let cur2=0;
+  for(const d of doms){
+    if(d.s-cur2>pad2*2){ctx.beginPath();ctx.moveTo(px+cur2+pad2,py+16);ctx.lineTo(px+d.s-pad2,py+16);ctx.stroke();}
+    cur2=d.e;
+  }
+  if(pw-cur2>pad2){ctx.beginPath();ctx.moveTo(px+cur2+pad2,py+16);ctx.lineTo(px+pw,py+16);ctx.stroke();}
+  _label(ctx,'N',px-16,py+16,11,COLORS.ink4,'center','600');
+  _label(ctx,'C',px+pw+16,py+16,11,COLORS.ink4,'center','600');
+
+  for(const d of doms){
+    const dx=px+d.s,dw=d.e-d.s;
 
     /* Position labels below */
     _monoLabel(ctx,d.aa,dx+dw/2,py+42,9,d.c,'center');
