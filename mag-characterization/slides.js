@@ -2630,8 +2630,9 @@ function drawHmMsa(ctx){
 }
 
 /* ── Shared: two-phase pipeline banner ── */
-function _hmPipeline(ctx,activePhase){
-  /* activePhase: 1 = TRAIN highlighted, 2 = SEARCH highlighted */
+function _hmPipeline(ctx,activePhase,queryStr){
+  /* activePhase: 1 = TRAIN highlighted, 2 = SEARCH highlighted
+     queryStr: optional letters shown in SEARCH box (default 'MKTVVIG') */
   const pipY=4, pipH=38;
   const p1x=40, p1w=310, p2x=p1x+p1w+38, p2w=380;
   const t1Active=activePhase===1, t2Active=activePhase===2;
@@ -2666,7 +2667,7 @@ function _hmPipeline(ctx,activePhase){
     ctx.restore();
   }
   _label(ctx,'② SEARCH',p2x+10,pipY+pipH/2,13,t2Active?COLORS.gb:COLORS.gb+'88','left','800');
-  const qLetters='MKTVVIG', qlX=p2x+108;
+  const qLetters=queryStr||'MKTVVIG', qlX=p2x+108;
   for(let i=0;i<qLetters.length;i++){
     _monoLabel(ctx,qLetters[i],qlX+i*18,pipY+pipH/2,12,t2Active?COLORS.gb:COLORS.gb+'55','center');
   }
@@ -2758,7 +2759,7 @@ function drawHmBuild(ctx){
   const barData=[
     [{aa:'M',f:1.0}],
     [{aa:'K',f:0.75},{aa:'R',f:0.25}],
-    [{aa:'T',f:0.50},{aa:'S',f:0.25},{aa:'other',f:0.25}],
+    [{aa:'T',f:0.75},{aa:'S',f:0.25}],
     [{aa:'V',f:0.75},{aa:'I',f:0.25}],
     [{aa:'G',f:1.0}],
   ];
@@ -2909,7 +2910,7 @@ function drawHmViterbi(ctx){
   /* ═══════════════════════════════════════════════════════════════
      TOP: two-phase pipeline — SEARCH active
      ═══════════════════════════════════════════════════════════════ */
-  _hmPipeline(ctx,2);
+  _hmPipeline(ctx,2,'MKVG');
 
   /* ── Left: 3-step search process ── */
   const procX=30, procW=170, procY=62;
@@ -2929,13 +2930,13 @@ function drawHmViterbi(ctx){
     if(i<2) _arrow(ctx,procX+procW/2,y+30,procX+procW/2,y+36,s.col+'44',1);
   }
 
-  /* ── Right: Viterbi path through the model ── */
-  const modelX=230;
+  /* ── Right: Viterbi path through the SAME 5-state model ── */
+  const modelX=220;
 
-  /* Query sequence */
-  const query=['M','K','G'];
-  const qCW=48, qY=62;
-  const qX0=modelX+180;
+  /* Query sequence — 4 AAs against 5 model states → one deletion */
+  const query=['M','K','V','G'];
+  const qCW=44, qY=62;
+  const qX0=modelX+200;
   _label(ctx,'Query:',qX0-10,qY+14,11,COLORS.gb,'right','700');
   for(let i=0;i<query.length;i++){
     const x=qX0+i*qCW;
@@ -2943,27 +2944,28 @@ function drawHmViterbi(ctx){
     _monoLabel(ctx,query[i],x+qCW/2-2,qY+14,15,COLORS.gb,'center');
   }
 
-  /* HMM states (4 model positions) */
-  const nSt=4, sR=16, gap=105;
-  const stX0=modelX+80, mY=148;
+  /* HMM states — 5 positions matching the build step (M,K,T,V,G) */
+  const nSt=5, sR=14, gap=88;
+  const stX0=modelX+60, mY=148;
+  const domAA=['M','K','T','V','G'];
 
   /* B node */
-  const bX=stX0-50;
-  ctx.beginPath();ctx.arc(bX,mY,10,0,Math.PI*2);
+  const bX=stX0-42;
+  ctx.beginPath();ctx.arc(bX,mY,9,0,Math.PI*2);
   ctx.fillStyle=COLORS.ink4+'18';ctx.fill();
   ctx.strokeStyle=COLORS.ink4+'66';ctx.lineWidth=1;ctx.stroke();
-  _label(ctx,'B',bX,mY,9,COLORS.ink4,'center','700');
+  _label(ctx,'B',bX,mY,8,COLORS.ink4,'center','700');
 
   /* E node */
-  const eX=stX0+(nSt-1)*gap+50;
-  ctx.beginPath();ctx.arc(eX,mY,10,0,Math.PI*2);
+  const eX=stX0+(nSt-1)*gap+42;
+  ctx.beginPath();ctx.arc(eX,mY,9,0,Math.PI*2);
   ctx.fillStyle=COLORS.ink4+'18';ctx.fill();
   ctx.strokeStyle=COLORS.ink4+'66';ctx.lineWidth=1;ctx.stroke();
-  _label(ctx,'E',eX,mY,9,COLORS.ink4,'center','700');
+  _label(ctx,'E',eX,mY,8,COLORS.ink4,'center','700');
 
-  /* Path: B→M1→M2→D3→M4→E */
-  const onPath=[true,true,false,true];
-  const dOnIdx=1;
+  /* Path: B→M1→M2→D3→M4→M5→E  (skip position 3 = T) */
+  const onPath=[true,true,false,true,true];
+  const dOnIdx=1; /* diamond index 1 = D3 (between M2 and M3) */
 
   for(let i=0;i<nSt;i++){
     const x=stX0+i*gap;
@@ -2973,7 +2975,8 @@ function drawHmViterbi(ctx){
       isOn?COLORS.gc+'33':COLORS.gc+'0c',
       isOn?COLORS.gc:COLORS.gc+'44',
       isOn?2.5:1);
-    _label(ctx,'M'+(i+1),x,mY,10,isOn?COLORS.gc:COLORS.gc+'55','center','700');
+    _label(ctx,'M'+(i+1),x,mY-3,8,isOn?COLORS.gc:COLORS.gc+'55','center','700');
+    _monoLabel(ctx,domAA[i],x,mY+9,9,isOn?COLORS.gc:COLORS.gc+'44','center');
 
     if(i<nSt-1){
       ctx.setLineDash([3,3]);
@@ -2982,15 +2985,15 @@ function drawHmViterbi(ctx){
     }
 
     /* Insert states (faded) */
-    const iY=mY-48;
-    ctx.beginPath();ctx.arc(x,iY,8,0,Math.PI*2);
+    const iY=mY-42;
+    ctx.beginPath();ctx.arc(x,iY,7,0,Math.PI*2);
     ctx.fillStyle=COLORS.gb+'0c';ctx.fill();
     ctx.strokeStyle=COLORS.gb+'33';ctx.lineWidth=1;ctx.stroke();
-    _label(ctx,'I'+(i+1),x,iY,7,COLORS.gb+'44','center','700');
+    _label(ctx,'I'+(i+1),x,iY,6,COLORS.gb+'44','center','700');
 
     /* Delete diamonds */
     if(i<nSt-1){
-      const dY=mY+48, dR=10, dX=x+gap/2;
+      const dY=mY+42, dR=9, dX=x+gap/2;
       const dIsOn=(i===dOnIdx);
       ctx.save();ctx.translate(dX,dY);ctx.rotate(Math.PI/4);
       ctx.fillStyle=dIsOn?COLORS.gd+'33':COLORS.gd+'0c';
@@ -2999,52 +3002,59 @@ function drawHmViterbi(ctx){
       ctx.lineWidth=dIsOn?2:1;
       ctx.strokeRect(-dR,-dR,dR*2,dR*2);
       ctx.restore();
-      _label(ctx,'D'+(i+2),dX,dY,8,dIsOn?COLORS.gd:COLORS.gd+'44','center','700');
+      _label(ctx,'D'+(i+2),dX,dY,7,dIsOn?COLORS.gd:COLORS.gd+'44','center','700');
     }
   }
 
   /* Viterbi path (bold amber arrows) */
   const pCol='#f59e0b';
-  _arrow(ctx,bX+12,mY,stX0-sR-3,mY,pCol,2.5);
+  _arrow(ctx,bX+11,mY,stX0-sR-3,mY,pCol,2.5);
   const m1x=stX0, m2x=stX0+gap;
   _arrow(ctx,m1x+sR+3,mY,m2x-sR-3,mY,pCol,2.5);
-  const d3x=m2x+gap/2, d3y=mY+48;
-  _arrow(ctx,m2x+sR/2+4,mY+sR+3,d3x-8,d3y-8,pCol,2.5);
+  /* M2 → D3 (diagonal down to diamond between M2 and M3) */
+  const d3x=m2x+gap/2, d3y=mY+42;
+  _arrow(ctx,m2x+sR/2+3,mY+sR+2,d3x-7,d3y-7,pCol,2.5);
+  /* D3 → M4 (diagonal up, skipping M3) */
   const m4x=stX0+3*gap;
-  _arrow(ctx,d3x+8,d3y-8,m4x-sR/2-4,mY+sR+3,pCol,2.5);
-  _arrow(ctx,m4x+sR+3,mY,eX-12,mY,pCol,2.5);
+  _arrow(ctx,d3x+7,d3y-7,m4x-sR/2-3,mY+sR+2,pCol,2.5);
+  /* M4 → M5 */
+  const m5x=stX0+4*gap;
+  _arrow(ctx,m4x+sR+3,mY,m5x-sR-3,mY,pCol,2.5);
+  /* M5 → E */
+  _arrow(ctx,m5x+sR+3,mY,eX-11,mY,pCol,2.5);
 
-  _label(ctx,'Best path:  B → M1 → M2 → D3 → M4 → E',cx+90,mY+78,12,pCol,'center','700');
+  _label(ctx,'Best path:  B → M1 → M2 → D3 → M4 → M5 → E',cx+80,mY+68,11,pCol,'center','700');
 
   /* ── Resulting alignment ── */
-  const alY=mY+100;
-  _label(ctx,'Resulting alignment:',cx+90,alY,13,COLORS.gc,'center','700');
+  const alY=mY+86;
+  _label(ctx,'Resulting alignment:',cx+80,alY,12,COLORS.gc,'center','700');
 
   const alData=[
     {pos:'1',query:'M', model:'M', type:'match'},
     {pos:'2',query:'K', model:'K', type:'match'},
     {pos:'3',query:'—', model:'T', type:'delete'},
-    {pos:'4',query:'G', model:'G', type:'match'},
+    {pos:'4',query:'V', model:'V', type:'match'},
+    {pos:'5',query:'G', model:'G', type:'match'},
   ];
-  const aCW=80, aX0=cx+90-(alData.length*aCW)/2;
+  const aCW=66, aX0=cx+80-(alData.length*aCW)/2;
 
-  _label(ctx,'Position',aX0-12,alY+22,9,COLORS.ink4,'right','600');
-  _label(ctx,'Query',aX0-12,alY+42,9,COLORS.gb,'right','600');
-  _label(ctx,'Model',aX0-12,alY+62,9,COLORS.gc,'right','600');
+  _label(ctx,'Position',aX0-12,alY+20,8,COLORS.ink4,'right','600');
+  _label(ctx,'Query',aX0-12,alY+38,8,COLORS.gb,'right','600');
+  _label(ctx,'Model',aX0-12,alY+56,8,COLORS.gc,'right','600');
 
   for(let i=0;i<alData.length;i++){
     const d=alData[i], x=aX0+i*aCW;
     const isDel=d.type==='delete';
-    _roundRect(ctx,x,alY+12,aCW-6,58,6,isDel?COLORS.gd+'12':'#f0fdf4',isDel?COLORS.gd:COLORS.gc,1.5);
-    _label(ctx,d.pos,x+aCW/2-3,alY+24,9,COLORS.ink4,'center','600');
-    _monoLabel(ctx,d.query,x+aCW/2-3,alY+42,14,isDel?COLORS.gd:COLORS.gb,'center');
-    _monoLabel(ctx,d.model,x+aCW/2-3,alY+60,14,isDel?COLORS.gd:COLORS.gc,'center');
+    _roundRect(ctx,x,alY+10,aCW-4,52,5,isDel?COLORS.gd+'12':'#f0fdf4',isDel?COLORS.gd:COLORS.gc,1.5);
+    _label(ctx,d.pos,x+aCW/2-2,alY+22,8,COLORS.ink4,'center','600');
+    _monoLabel(ctx,d.query,x+aCW/2-2,alY+38,13,isDel?COLORS.gd:COLORS.gb,'center');
+    _monoLabel(ctx,d.model,x+aCW/2-2,alY+54,13,isDel?COLORS.gd:COLORS.gc,'center');
   }
 
   /* Bottom explanation */
-  const exY=alY+80;
+  const exY=alY+70;
   _roundRect(ctx,procX,exY,770,44,8,COLORS.gc+'0c',COLORS.gc+'33',1);
-  _label(ctx,'Position 3: query has no AA → the model skips it via the delete state',cx,exY+14,11,COLORS.gd,'center','600');
+  _label(ctx,'Position 3 (T): query has no AA here → model skips it via delete state D3',cx,exY+14,11,COLORS.gd,'center','600');
   _label(ctx,'Viterbi picks the single path that maximises the total log-odds score',cx,exY+32,11,COLORS.ink3,'center','500');
 }
 
@@ -3072,17 +3082,9 @@ function drawHmExpect(ctx){
   _label(ctx,'So the model strongly expects M:',205,boxY+156,13,COLORS.gc,'center','600');
   _roundRect(ctx,140,boxY+170,70,70,8,COLORS.gc+'30',COLORS.gc,2.5);
   _monoLabel(ctx,'M',175,boxY+205,36,COLORS.gc,'center');
-  _label(ctx,'95%',175,boxY+252,16,COLORS.gc,'center','700');
+  _label(ctx,'100%',175,boxY+252,16,COLORS.gc,'center','700');
 
-  /* Tiny others */
-  const oth=['K','R','T','S'];
-  for(let i=0;i<4;i++){
-    _roundRect(ctx,240+i*32,boxY+200,26,26,3,COLORS.gc+'0c',COLORS.gc+'33',1);
-    _monoLabel(ctx,oth[i],240+i*32+13,boxY+213,11,COLORS.gc+'88','center');
-  }
-  _label(ctx,'~1% each',290,boxY+236,10,COLORS.ink4,'center','500');
-
-  _label(ctx,'Almost certain to be M',205,boxY+282,12,COLORS.ink3,'center','600');
+  _label(ctx,'Always M in this family',205,boxY+282,12,COLORS.ink3,'center','600');
 
   /* Variable callout (right) */
   _roundRect(ctx,420,boxY,350,310,12,COLORS.gb+'08',COLORS.gb+'44',1.5);
@@ -3099,7 +3101,7 @@ function drawHmExpect(ctx){
 
   /* Proportional boxes */
   _label(ctx,'The model accepts several AAs:',595,boxY+156,13,COLORS.gb,'center','600');
-  const vd=[{a:'K',p:'60%',sz:50},{a:'R',p:'25%',sz:38},{a:'S',p:'10%',sz:28},{a:'T',p:'5%',sz:24}];
+  const vd=[{a:'K',p:'75%',sz:50},{a:'R',p:'25%',sz:38}];
   let vx=460;
   for(const v of vd){
     const vy=boxY+170+(60-v.sz)/2;
@@ -3123,15 +3125,15 @@ function drawHmScoreCompare(ctx){
   /* ═══════════════════════════════════════════════════════════════
      TOP: two-phase pipeline — SEARCH active
      ═══════════════════════════════════════════════════════════════ */
-  _hmPipeline(ctx,2);
+  _hmPipeline(ctx,2,'MKTIG');
 
   /* Query cells */
   const data=[
-    {aa:'M',st:'M1',fit:true, pct:'95%', note:'expected'},
-    {aa:'K',st:'M2',fit:true, pct:'60%', note:'common'},
-    {aa:'T',st:'M3',fit:true, pct:'55%', note:'common'},
-    {aa:'V',st:'M4',fit:false,pct:'30%', note:'unusual'},
-    {aa:'G',st:'M5',fit:true, pct:'92%', note:'expected'},
+    {aa:'M',st:'M1',fit:true, pct:'100%',note:'dominant'},
+    {aa:'K',st:'M2',fit:true, pct:'75%', note:'common'},
+    {aa:'T',st:'M3',fit:true, pct:'75%', note:'common'},
+    {aa:'I',st:'M4',fit:false,pct:'25%', note:'rare variant'},
+    {aa:'G',st:'M5',fit:true, pct:'100%',note:'dominant'},
   ];
   const cW=76, cH=42, qY=60;
   const qX=cx-(data.length*cW)/2;
