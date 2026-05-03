@@ -1101,15 +1101,15 @@ function drawKeggStep1(ctx){
 
   /* Reaction box */
   const rxY=koY+106;
-  _roundRect(ctx,cx-150,rxY,300,44,8,COLORS.ga+'12',COLORS.ga,1.5);
-  _monoLabel(ctx,'R00623',cx-60,rxY+22,12,COLORS.ga,'center');
-  _label(ctx,'ethanol + NAD+  =  acetaldehyde + NADH',cx+30,rxY+22,10,COLORS.ink2,'center','500');
+  _roundRect(ctx,cx-150,rxY,300,56,8,COLORS.ga+'12',COLORS.ga,1.5);
+  _monoLabel(ctx,'R00623',cx,rxY+18,12,COLORS.ga,'center');
+  _label(ctx,'ethanol + NAD+  =  acetaldehyde + NADH',cx,rxY+38,10,COLORS.ink2,'center','500');
 
   /* Arrow to pathway */
-  _arrow(ctx,cx,rxY+50,cx,rxY+74,COLORS.ink4,2);
+  _arrow(ctx,cx,rxY+62,cx,rxY+86,COLORS.ink4,2);
 
   /* Pathway box */
-  const pwY=rxY+80;
+  const pwY=rxY+92;
   _roundRect(ctx,cx-130,pwY,260,40,8,COLORS.gc+'12',COLORS.gc,1.5);
   _label(ctx,'Glycolysis / Gluconeogenesis (map00010)',cx,pwY+20,12,COLORS.gc,'center','600');
 
@@ -1349,7 +1349,7 @@ function drawPfamStep0(ctx){
   ctx.beginPath();ctx.moveTo(px,py+20);ctx.lineTo(px+pw,py+20);ctx.stroke();
   _label(ctx,'N',px-16,py+20,11,COLORS.ink4,'center','600');
   _label(ctx,'C',px+pw+16,py+20,11,COLORS.ink4,'center','600');
-  _monoLabel(ctx,'~480 aa',px+pw+40,py+20,10,COLORS.ink4,'left');
+  _monoLabel(ctx,'~480 aa',px+pw,py+38,10,COLORS.ink4,'center');
 
   /* Three colored domain regions */
   const doms=[
@@ -1469,7 +1469,7 @@ function drawPfamStep2(ctx){
 
   /* protein name and length */
   _label(ctx,'ABC transporter permease',px,py-8,13,COLORS.ink,'left','700');
-  _monoLabel(ctx,'573 aa',px+pw+20,py+16,10,COLORS.ink4,'left');
+  _monoLabel(ctx,'573 aa',px+pw,py+38,10,COLORS.ink4,'center');
 
   /* backbone */
   ctx.strokeStyle=COLORS.border;ctx.lineWidth=3;
@@ -1560,7 +1560,7 @@ function drawPfamStep3(ctx){
 
   /* "Same domain" labels on connecting lines */
   _label(ctx,'← HATPase_c shared',px+prots[0].doms[2].e+30,130,10,COLORS.bad,'left','600');
-  _label(ctx,'← HAMP shared',px+prots[0].doms[0].e+30,185,10,COLORS.gc,'left','600');
+  _label(ctx,'← HAMP shared',px+prots[0].doms[0].e+30,148,10,COLORS.gc,'left','600');
 
   /* Caption */
   _roundRect(ctx,80,370,640,50,8,'#f8fafc',COLORS.border,1);
@@ -1775,15 +1775,17 @@ function drawCazyStep1(ctx){
 
     _roundRect(ctx,bx,by,bw,bh,8,c.col+'0c',c.col,2);
 
-    /* Abbreviation */
-    _label(ctx,c.abbr,bx+38,by+36,26,c.col,'center','800');
+    /* Abbreviation — smaller for 3-char abbreviations like CBM */
+    const abbrSz=c.abbr.length>2?20:26;
+    _label(ctx,c.abbr,bx+38,by+36,abbrSz,c.col,'center','800');
 
     /* Vertical separator */
     ctx.strokeStyle=c.col+'44';ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(bx+70,by+12);ctx.lineTo(bx+70,by+bh-12);ctx.stroke();
 
-    /* Full name and description */
-    _label(ctx,c.name,bx+70+(bw-70)/2,by+30,11,COLORS.ink,'center','700');
+    /* Full name and description — shrink long names to fit */
+    const nameSz=c.name.length>22?9.5:11;
+    _label(ctx,c.name,bx+70+(bw-70)/2,by+30,nameSz,COLORS.ink,'center','700');
     _label(ctx,c.fn,bx+70+(bw-70)/2,by+50,10,COLORS.ink3,'center','400');
     _monoLabel(ctx,c.count,bx+70+(bw-70)/2,by+72,9,c.col,'center');
 
@@ -1809,9 +1811,9 @@ function drawCazyStep2(ctx){
   _label(ctx,'GH families target specific substrates',cx,28,15,COLORS.ink,'center','700');
 
   /* Parent class box */
-  _roundRect(ctx,280,50,240,44,8,COLORS.ga+'14',COLORS.ga,2);
-  _label(ctx,'GH',310,72,20,COLORS.ga,'center','800');
-  _label(ctx,'Glycoside Hydrolases (~180 families)',420,72,12,COLORS.ink2,'center','600');
+  _roundRect(ctx,260,50,280,44,8,COLORS.ga+'14',COLORS.ga,2);
+  _label(ctx,'GH',290,72,20,COLORS.ga,'center','800');
+  _label(ctx,'Glycoside Hydrolases (~180 families)',430,72,11,COLORS.ink2,'center','600');
 
   /* Arrow down */
   _arrow(ctx,cx,98,cx,120,COLORS.ga,2);
@@ -2181,7 +2183,7 @@ function drawBgcStep1(ctx){
     {label:'Regulatory',desc:'Control expression',col:'#94a3b8'},
     {label:'Resistance',desc:'Self-protection',col:COLORS.bad},
   ];
-  const lw=145,lGap=10,lTotal=legItems.length*lw+(legItems.length-1)*lGap;
+  const lw=136,lGap=8,lTotal=legItems.length*lw+(legItems.length-1)*lGap;
   const lx0=400-lTotal/2;
   for(let i=0;i<legItems.length;i++){
     const it=legItems[i];
