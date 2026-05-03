@@ -2585,7 +2585,8 @@ function drawHmProblem(ctx){
 function drawHmMsa(ctx){
   const cx=400;
 
-  _label(ctx,'Solution: align known family members to find patterns',cx,20,15,COLORS.gc,'center','700');
+  _label(ctx,'Solution: align known family members to find patterns',cx,14,15,COLORS.gc,'center','700');
+  _label(ctx,'(These are other proteins in the database — not the query)',cx,34,11,COLORS.ink4,'center','500');
 
   const seqs=[
     ['M','K','T','-','V','G'],
@@ -2740,6 +2741,14 @@ function drawHmBuild(ctx){
   _roundRect(ctx,exX,msaY+166,exW,46,8,COLORS.ink+'06',COLORS.ink4+'44',1);
   _label(ctx,'The bars are the "fingerprint"',exX+exW/2,msaY+182,11,COLORS.ink2,'center','600');
   _label(ctx,'of this protein family',exX+exW/2,msaY+198,11,COLORS.ink2,'center','600');
+
+  /* ── "Your query" anchor — remind students where the query went ── */
+  const qAncY=msaY+224;
+  _roundRect(ctx,exX,qAncY,exW,68,8,COLORS.gb+'08',COLORS.gb+'22',1);
+  _label(ctx,'Your query (MKTVVIG)',exX+exW/2,qAncY+16,11,COLORS.gb,'center','700');
+  _label(ctx,'is waiting — it will be',exX+exW/2,qAncY+32,10,COLORS.ink4,'center','500');
+  _label(ctx,'scored against this model',exX+exW/2,qAncY+46,10,COLORS.ink4,'center','500');
+  _label(ctx,'in step 9',exX+exW/2,qAncY+60,11,COLORS.gb,'center','700');
 
   /* Bottom takeaway */
   _roundRect(ctx,cx-280,barY+barH+28,560,36,8,COLORS.gc+'0c',COLORS.gc+'33',1);
