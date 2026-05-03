@@ -2867,13 +2867,13 @@ function drawBgcStep2(ctx){
   let startTime=null;
   const modules=[
     {aa:'Leu',col:'#7c3aed'},
-    {aa:'D-Phe',col:'#0891b2'},
+    {aa:'Orn',col:'#0891b2'},
     {aa:'Pro',col:'#d97706'},
     {aa:'Val',col:'#16a34a'},
   ];
   const nMod=modules.length;
-  const stepDur=1500;
-  const holdDur=3500;
+  const stepDur=2500;
+  const holdDur=4500;
   const totalDur=nMod*stepDur+holdDur;
 
   function renderFrame(ts){
@@ -2926,40 +2926,57 @@ function drawBgcStep2(ctx){
       _label(c,'Module '+(i+1),mx+mw/2,my+12,10,
         isActive?COLORS.gc:isDone?COLORS.gc+'88':COLORS.ink4,'center','700');
 
-      /* C-A-T domains as small pills inside the module */
+      /* C-A-T domains as pills — highlight sequentially for active module */
       const pillW=34,pillH=18,pillGap=4;
       const px0=mx+(mw-3*pillW-2*pillGap)/2;
-      const py=my+22;
+      const py=my+24;
       const doms=['C','A','T'];
+      const domFull=['Condensation','Adenylation','Thiolation'];
+      const domRole=['joins chain','selects aa','carries it'];
       const dCols=[COLORS.gc,COLORS.gb,COLORS.gd];
+      /* Which domain is active? A(0-0.3) → T(0.3-0.6) → C(0.6-1.0) */
+      const activeDom=isActive?(t<0.3?1:t<0.6?2:0):-1;
+
       for(let d=0;d<3;d++){
         const px=px0+d*(pillW+pillGap);
-        const pAlpha=isActive||isDone?'55':'22';
-        _roundRect(c,px,py,pillW,pillH,3,dCols[d]+pAlpha,dCols[d]+'88',0.8);
-        _label(c,doms[d],px+pillW/2,py+pillH/2,8,'#fff','center','700');
+        let pFill=dCols[d]+'22';
+        let pBorder=dCols[d]+'55';
+        let pBw=0.8;
+        if(isDone){pFill=dCols[d]+'55';pBorder=dCols[d]+'88';}
+        if(isActive&&d===activeDom){pFill=dCols[d];pBorder=dCols[d];pBw=2;}
+        else if(isActive){pFill=dCols[d]+'44';pBorder=dCols[d]+'66';}
+        _roundRect(c,px,py,pillW,pillH,3,pFill,pBorder,pBw);
+        _label(c,doms[d],px+pillW/2,py+pillH/2,8,
+          (isActive&&d===activeDom)?'#fff':'#fff','center','700');
       }
 
-      /* Amino acid — the module's product */
-      const aaR=14;
+      /* Role label below pills for active domain */
+      if(isActive&&activeDom>=0){
+        const rolePx=px0+activeDom*(pillW+pillGap)+pillW/2;
+        _label(c,domRole[activeDom],rolePx,py+pillH+10,7,dCols[activeDom],'center','600');
+      }
+
+      /* Amino acid — appears when T domain is active (t>=0.3) */
+      const aaR=13;
       const aaCx=mx+mw/2;
-      const aaCy=my+mh-aaR-4;
+      const aaCy=my+mh-aaR-2;
 
       if(isDone||(isActive&&t>=0.3)){
         let scale=1;
-        if(isActive) scale=Math.min((t-0.3)/0.2,1);
+        if(isActive) scale=Math.min((t-0.3)/0.15,1);
         c.save();c.translate(aaCx,aaCy);c.scale(scale,scale);
         c.beginPath();c.arc(0,0,aaR,0,Math.PI*2);
         c.fillStyle=modules[i].col+'22';c.fill();
         c.strokeStyle=modules[i].col;c.lineWidth=1.5;c.stroke();
-        _label(c,modules[i].aa,0,0,10,modules[i].col,'center','800');
+        _label(c,modules[i].aa,0,0,9,modules[i].col,'center','800');
         c.restore();
       }
 
-      /* "1 module = 1 amino acid" arrow for active module */
-      if(isActive&&t>=0.5){
-        const arrowAlpha=Math.min((t-0.5)/0.2,1);
+      /* Arrow from amino acid to chain for active module */
+      if(isActive&&t>=0.6){
+        const arrowAlpha=Math.min((t-0.6)/0.2,1);
         c.globalAlpha=arrowAlpha;
-        _arrow(c,aaCx,aaCy+aaR+2,aaCx,my+mh+18,modules[i].col,1.5);
+        _arrow(c,aaCx,aaCy+aaR+2,aaCx,my+mh+16,modules[i].col,1.5);
         c.globalAlpha=1;
       }
     }
@@ -3017,7 +3034,7 @@ function drawBgcStep2(ctx){
 
     _roundRect(c,430,bY,320,66,8,'#f8fafc',COLORS.border,1);
     _label(c,'Inside each module',430+160,bY+14,11,COLORS.ink2,'center','700');
-    _label(c,'C condenses  |  A selects amino acid  |  T carries it',430+160,bY+32,9,COLORS.ink3,'center','400');
+    _label(c,'C joins chain  |  A selects amino acid  |  T carries it',430+160,bY+32,9,COLORS.ink3,'center','400');
     _label(c,'3 domains cooperate to add one building block',430+160,bY+48,9,COLORS.ink4,'center','400');
 
     requestAnimationFrame(renderFrame);
@@ -3077,73 +3094,79 @@ function drawBgcStep3(ctx){
 /* ── Step 4: antiSMASH pipeline (POLISHED) ── */
 function drawBgcStep4(ctx){
   const cx=400;
-  _label(ctx,'antiSMASH: rule-based BGC detection',cx,28,14,COLORS.ink,'center','700');
+  _label(ctx,'antiSMASH: rule-based BGC detection',cx,24,15,COLORS.ink,'center','700');
 
-  /* Workflow boxes */
+  /* ── Compact pipeline at top ── */
   const steps=[
-    {label:'Gene\nprediction',x:100,col:COLORS.ink2},
-    {label:'Domain\ndetection',x:260,col:COLORS.gc},
-    {label:'Cluster\nrules',x:420,col:COLORS.gb},
-    {label:'Type\nassignment',x:560,col:COLORS.gd},
-    {label:'MIBiG\ncomparison',x:700,col:COLORS.ga},
+    {label:'Gene prediction',x:100,col:COLORS.ink2},
+    {label:'Domain detection',x:260,col:COLORS.gc},
+    {label:'Cluster rules',x:420,col:COLORS.gb},
+    {label:'Type assignment',x:560,col:COLORS.gd},
+    {label:'MIBiG comparison',x:700,col:COLORS.ga},
   ];
-  const wfY=52,bw=112,bh=52;
-
+  const wfY=44,bw=108,bh=28;
   for(let i=0;i<steps.length;i++){
     const s=steps[i];
-    _roundRect(ctx,s.x-bw/2,wfY,bw,bh,8,s.col+'11',s.col,1.5);
-    const lines=s.label.split('\n');
-    _label(ctx,lines[0],s.x,wfY+18,10,s.col,'center','700');
-    if(lines[1])_label(ctx,lines[1],s.x,wfY+32,10,s.col,'center','500');
+    const isRule=i===2;
+    _roundRect(ctx,s.x-bw/2,wfY,bw,bh,5,isRule?s.col+'22':s.col+'0c',s.col,isRule?2:1);
+    _label(ctx,s.label,s.x,wfY+bh/2,9,s.col,'center',isRule?'800':'600');
     if(i<steps.length-1)
-      _arrow(ctx,s.x+bw/2+2,wfY+bh/2,steps[i+1].x-bw/2-2,wfY+bh/2,COLORS.border,1.5);
+      _arrow(ctx,s.x+bw/2+2,wfY+bh/2,steps[i+1].x-bw/2-2,wfY+bh/2,COLORS.border,1);
   }
 
-  /* Example contig */
-  const scanY=160;
-  _label(ctx,'Example: scanning a contig',cx,scanY,11,COLORS.ink2,'center','700');
-  _roundRect(ctx,60,scanY+14,680,5,3,'#e2e8f0','#cbd5e1',1);
+  /* ── NRPS rule example ── */
+  const rY=100;
+  _label(ctx,'Example: the NRPS detection rule',cx,rY,13,COLORS.gb,'center','700');
 
+  /* Code box — real antiSMASH syntax */
+  const codeY=rY+18;
+  _roundRect(ctx,120,codeY,560,50,6,COLORS.ink+'08',COLORS.ink+'18',1);
+  _monoLabel(ctx,'CONDITIONS:',140,codeY+18,10,COLORS.ink4,'left');
+  _monoLabel(ctx,'cds(Condensation and (AMP-binding or A-OX))',260,codeY+18,10,COLORS.gc,'left');
+  _monoLabel(ctx,'CUTOFF:',140,codeY+38,10,COLORS.ink4,'left');
+  _monoLabel(ctx,'20 kb',260,codeY+38,10,COLORS.ink3,'left');
+
+  /* Plain-english translation */
+  _label(ctx,'"Find a gene with both Condensation and AMP-binding domains, within 20 kb"',cx,codeY+68,11,COLORS.ok,'center','600');
+
+  /* ── Contig with rule applied ── */
+  const scanY=codeY+100;
+  _label(ctx,'antiSMASH scans your contig and applies the rule:',cx,scanY,11,COLORS.ink2,'center','600');
+
+  /* contig bar */
+  _roundRect(ctx,60,scanY+18,680,4,2,'#e2e8f0','#cbd5e1',0.5);
+
+  /* genes */
   const genes=[
-    {x:70,w:40,dir:1,col:'#cbd5e1'},{x:120,w:35,dir:-1,col:'#cbd5e1'},
-    {x:190,w:60,dir:1,col:COLORS.gc},{x:260,w:50,dir:1,col:COLORS.gc},
-    {x:320,w:40,dir:-1,col:COLORS.gb},{x:370,w:70,dir:1,col:COLORS.gc},
-    {x:450,w:45,dir:1,col:COLORS.gd},{x:505,w:35,dir:-1,col:COLORS.bad},
-    {x:570,w:40,dir:1,col:'#cbd5e1'},{x:620,w:50,dir:-1,col:'#cbd5e1'},
-    {x:680,w:40,dir:1,col:'#cbd5e1'},
+    {x:70,w:40,dir:1,col:'#cbd5e1',dom:''},
+    {x:120,w:34,dir:-1,col:'#cbd5e1',dom:''},
+    {x:190,w:54,dir:1,col:COLORS.gc,dom:'C'},
+    {x:256,w:48,dir:1,col:COLORS.gc,dom:'A'},
+    {x:316,w:38,dir:-1,col:COLORS.gc,dom:'T'},
+    {x:368,w:54,dir:1,col:COLORS.gc,dom:'C'},
+    {x:434,w:48,dir:1,col:COLORS.gc,dom:'A'},
+    {x:494,w:38,dir:1,col:COLORS.gc,dom:'T'},
+    {x:548,w:42,dir:-1,col:COLORS.gd,dom:'TE'},
+    {x:610,w:40,dir:1,col:'#cbd5e1',dom:''},
+    {x:660,w:46,dir:-1,col:'#cbd5e1',dom:''},
   ];
-  const gY=scanY+28,gH=22;
+  const gY=scanY+30,gH=24;
   for(const g of genes) _geneArrow(ctx,g.x,gY,g.w,gH,g.dir,g.col+'99',g.col);
 
-  /* Highlight detected BGC */
-  _roundRect(ctx,183,gY-6,362,gH+12,6,COLORS.gc+'08',COLORS.gc,2);
-  _label(ctx,'Detected BGC',364,gY-14,10,COLORS.gc,'center','700');
-
-  /* Output table */
-  const tY=scanY+80;
-  _label(ctx,'antiSMASH HTML output:',cx,tY,11,COLORS.ink2,'center','700');
-
-  const colHdr=['Region','Type','Size','On edge?','Known cluster match'];
-  const colX2=[80,170,280,360,560];
-  _roundRect(ctx,60,tY+12,680,22,4,COLORS.ink+'0a',COLORS.border,1);
-  for(let i=0;i<colHdr.length;i++) _label(ctx,colHdr[i],colX2[i],tY+23,9,COLORS.ink,'left','700');
-
-  const rows=[
-    ['Region 1','NRPS','35.2 kb','No','Vancomycin (78%)'],
-    ['Region 2','Terpene','12.6 kb','Yes','Geosmin (92%)'],
-    ['Region 3','NRPS-PKS','48.1 kb','No','No match'],
-  ];
-  for(let r=0;r<rows.length;r++){
-    const ry=tY+36+r*20;
-    if(r%2===0)_roundRect(ctx,60,ry-2,680,20,3,COLORS.ink+'05','transparent',0);
-    for(let c=0;c<rows[r].length;c++){
-      const isEdge=c===3&&rows[r][c]==='Yes';
-      const isNoMatch=c===4&&rows[r][c]==='No match';
-      _monoLabel(ctx,rows[r][c],colX2[c],ry+8,9,isEdge?COLORS.warn:(isNoMatch?COLORS.bad:COLORS.ink3),'left');
-    }
+  /* Domain labels above coloured genes */
+  for(const g of genes){
+    if(g.dom) _label(ctx,g.dom,g.x+g.w/2,gY-8,8,g.col,'center','700');
   }
 
-  _label(ctx,'antiSMASH produces an interactive HTML report with clickable BGC regions',cx,tY+100,10,COLORS.ink4,'center','400');
+  /* Highlight detected BGC region */
+  _roundRect(ctx,182,gY-16,420,gH+28,6,COLORS.gc+'08',COLORS.gc,2);
+  _label(ctx,'Rule matched → NRPS region detected',392,gY+gH+22,10,COLORS.gc,'center','700');
+
+  /* Bottom: other rule types mentioned briefly */
+  const bY=gY+gH+50;
+  _roundRect(ctx,100,bY,600,44,8,'#f8fafc',COLORS.border,1);
+  _label(ctx,'antiSMASH has ~70 rules for different BGC types',cx,bY+16,11,COLORS.ink2,'center','700');
+  _label(ctx,'NRPS, PKS, Terpene, RiPP, Siderophore, Bacteriocin, ...',cx,bY+34,10,COLORS.ink4,'center','400');
 }
 
 /* ── Step 5: MIBiG — known vs novel (NEW) ── */
@@ -3282,7 +3305,7 @@ function drawBgcFragCanvas(){
 
   /* Helper: draw a gene arrow */
   function _gene(x,y,w,h,col,label,flip){
-    const tipW=8;
+    const tipW=10;
     ctx.fillStyle=col;ctx.beginPath();
     if(!flip){
       ctx.moveTo(x,y);ctx.lineTo(x+w-tipW,y);ctx.lineTo(x+w,y+h/2);
@@ -3292,128 +3315,125 @@ function drawBgcFragCanvas(){
       ctx.lineTo(x+tipW,y+h);ctx.lineTo(x+w,y+h);
     }
     ctx.closePath();ctx.fill();
-    if(label) _label(ctx,label,x+w/2,y+h/2+1,Math.min(8,w/label.length*1.5),'#fff','center','600');
+    if(label) _label(ctx,label,x+w/2,y+h/2+1,Math.min(10,w/label.length*1.8),'#fff','center','600');
   }
 
   /* Gene color palette */
   const gCols={bio:COLORS.gb, bio2:'#2563eb', tail:'#7c3aed', reg:COLORS.gd, res:COLORS.bad, trans:COLORS.ga, dim:'#cbd5e1'};
-  const gH=18, contigH=10;
+  const gH=24, contigH=10;
 
   /* ── Scenario 1: Complete BGC ── */
-  const s1y=30;
-  _roundRect(ctx,20,s1y,240,130,8,COLORS.ok+'08',COLORS.ok+'44',1);
-  _label(ctx,'Complete BGC',140,s1y+16,12,COLORS.ok,'center','700');
-  _label(ctx,'Highest confidence',140,s1y+30,9,COLORS.ink3,'center','400');
+  const s1y=10;
+  _roundRect(ctx,20,s1y,240,170,8,COLORS.ok+'08',COLORS.ok+'44',1);
+  _label(ctx,'Complete BGC',140,s1y+20,13,COLORS.ok,'center','700');
+  _label(ctx,'Highest confidence',140,s1y+36,10,COLORS.ink3,'center','400');
 
   /* contig bar */
   const c1x=36,c1w=208;
-  _roundRect(ctx,c1x,s1y+42,c1w,contigH,3,COLORS.border+'44',null,0);
-  _label(ctx,'Contig',c1x+c1w+8,s1y+47,7,COLORS.ink4,'left','500');
+  _roundRect(ctx,c1x,s1y+54,c1w,contigH,3,COLORS.border+'44',null,0);
 
   /* genes on contig */
-  const g1y=s1y+58;
-  _gene(c1x+10,g1y,40,gH,gCols.bio,'KS',false);
-  _gene(c1x+54,g1y,36,gH,gCols.bio2,'AT',false);
-  _gene(c1x+94,g1y,30,gH,gCols.tail,'KR',false);
-  _gene(c1x+128,g1y,38,gH,gCols.reg,'Reg',true);
-  _gene(c1x+170,g1y,32,gH,gCols.trans,'Tr',false);
+  const g1y=s1y+72;
+  _gene(c1x+10,g1y,44,gH,gCols.bio,'KS',false);
+  _gene(c1x+58,g1y,40,gH,gCols.bio2,'AT',false);
+  _gene(c1x+102,g1y,34,gH,gCols.tail,'KR',false);
+  _gene(c1x+140,g1y,38,gH,gCols.reg,'Reg',true);
+  _gene(c1x+182,g1y,32,gH,gCols.trans,'Tr',false);
   /* BGC bracket */
   ctx.strokeStyle=COLORS.ok;ctx.lineWidth=1.5;ctx.setLineDash([]);
-  const bL=c1x+8,bR=c1x+204;
-  ctx.beginPath();ctx.moveTo(bL,g1y+gH+4);ctx.lineTo(bL,g1y+gH+10);
-  ctx.lineTo(bR,g1y+gH+10);ctx.lineTo(bR,g1y+gH+4);ctx.stroke();
-  _label(ctx,'BGC (all genes present)',140,g1y+gH+22,8,COLORS.ok,'center','600');
+  const bL=c1x+8,bR=c1x+216;
+  ctx.beginPath();ctx.moveTo(bL,g1y+gH+5);ctx.lineTo(bL,g1y+gH+12);
+  ctx.lineTo(bR,g1y+gH+12);ctx.lineTo(bR,g1y+gH+5);ctx.stroke();
+  _label(ctx,'BGC (all genes present)',140,g1y+gH+26,9,COLORS.ok,'center','600');
 
   /* checkmarks */
-  _label(ctx,'All core domains',140,s1y+112,8,COLORS.ok,'center','600');
-  _label(ctx,'MIBiG match possible',140,s1y+122,8,COLORS.ok,'center','400');
+  _label(ctx,'All core domains',140,s1y+140,9,COLORS.ok,'center','600');
+  _label(ctx,'MIBiG match possible',140,s1y+154,9,COLORS.ok,'center','400');
 
   /* ── Scenario 2: On contig edge ── */
   const s2y=s1y;
-  _roundRect(ctx,280,s2y,240,130,8,'#fff7ed','#f59e0b66',1);
-  _label(ctx,'BGC on contig edge',400,s2y+16,12,'#d97706','center','700');
-  _label(ctx,'Medium confidence',400,s2y+30,9,COLORS.ink3,'center','400');
+  _roundRect(ctx,280,s2y,240,170,8,'#fff7ed','#f59e0b66',1);
+  _label(ctx,'BGC on contig edge',400,s2y+20,13,'#d97706','center','700');
+  _label(ctx,'Medium confidence',400,s2y+36,10,COLORS.ink3,'center','400');
 
   /* contig — cut at right edge */
   const c2x=296,c2w=208;
-  _roundRect(ctx,c2x,s2y+42,c2w,contigH,3,COLORS.border+'44',null,0);
+  _roundRect(ctx,c2x,s2y+54,c2w,contigH,3,COLORS.border+'44',null,0);
   /* Jagged right edge */
   ctx.fillStyle='#fff';ctx.beginPath();
   const jx=c2x+c2w;
-  for(let i=0;i<contigH;i+=3){ctx.rect(jx-2,s2y+42+i,4,1.5);}
+  for(let i=0;i<contigH;i+=3){ctx.rect(jx-2,s2y+54+i,4,1.5);}
   ctx.fill();
-  _label(ctx,'Edge',jx+6,s2y+47,7,COLORS.bad,'left','600');
 
   /* genes — last one cut off */
-  const g2y=s2y+58;
-  _gene(c2x+10,g2y,40,gH,gCols.bio,'KS',false);
-  _gene(c2x+54,g2y,36,gH,gCols.bio2,'AT',false);
-  _gene(c2x+94,g2y,30,gH,gCols.tail,'KR',false);
-  _gene(c2x+128,g2y,38,gH,gCols.reg,'Reg',true);
+  const g2y=s2y+72;
+  _gene(c2x+10,g2y,44,gH,gCols.bio,'KS',false);
+  _gene(c2x+58,g2y,40,gH,gCols.bio2,'AT',false);
+  _gene(c2x+102,g2y,34,gH,gCols.tail,'KR',false);
+  _gene(c2x+140,g2y,38,gH,gCols.reg,'Reg',true);
   /* Truncated gene */
   ctx.fillStyle=gCols.dim;ctx.beginPath();
-  ctx.moveTo(c2x+170,g2y);ctx.lineTo(c2x+c2w,g2y);ctx.lineTo(c2x+c2w,g2y+gH);
-  ctx.lineTo(c2x+170,g2y+gH);ctx.closePath();ctx.fill();
-  _label(ctx,'?',c2x+190,g2y+gH/2+1,10,COLORS.ink4,'center','700');
+  ctx.moveTo(c2x+182,g2y);ctx.lineTo(c2x+c2w,g2y);ctx.lineTo(c2x+c2w,g2y+gH);
+  ctx.lineTo(c2x+182,g2y+gH);ctx.closePath();ctx.fill();
+  _label(ctx,'?',c2x+200,g2y+gH/2+1,11,COLORS.ink4,'center','700');
 
   /* bracket */
   ctx.strokeStyle='#d97706';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);
-  ctx.beginPath();ctx.moveTo(c2x+8,g2y+gH+4);ctx.lineTo(c2x+8,g2y+gH+10);
-  ctx.lineTo(c2x+c2w,g2y+gH+10);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(c2x+8,g2y+gH+5);ctx.lineTo(c2x+8,g2y+gH+12);
+  ctx.lineTo(c2x+c2w,g2y+gH+12);ctx.stroke();
   ctx.setLineDash([]);
-  _label(ctx,'Genes may be missing',400,g2y+gH+22,8,'#d97706','center','600');
+  _label(ctx,'Genes may be missing',400,g2y+gH+26,9,'#d97706','center','600');
 
-  _label(ctx,'Some domains absent',400,s2y+112,8,'#d97706','center','600');
-  _label(ctx,'Classification uncertain',400,s2y+122,8,'#d97706','center','400');
+  _label(ctx,'Some domains absent',400,s2y+140,9,'#d97706','center','600');
+  _label(ctx,'Classification uncertain',400,s2y+154,9,'#d97706','center','400');
 
   /* ── Scenario 3: Split across gap ── */
   const s3y=s1y;
-  _roundRect(ctx,540,s3y,240,130,8,COLORS.bad+'08',COLORS.bad+'44',1);
-  _label(ctx,'BGC split across gap',660,s3y+16,12,COLORS.bad,'center','700');
-  _label(ctx,'Low confidence',660,s3y+30,9,COLORS.ink3,'center','400');
+  _roundRect(ctx,540,s3y,240,170,8,COLORS.bad+'08',COLORS.bad+'44',1);
+  _label(ctx,'BGC split across gap',660,s3y+20,13,COLORS.bad,'center','700');
+  _label(ctx,'Low confidence',660,s3y+36,10,COLORS.ink3,'center','400');
 
   /* Two contigs with gap */
-  const c3x=556,c3w1=80,c3w2=90,gapW=20;
-  _roundRect(ctx,c3x,s3y+42,c3w1,contigH,3,COLORS.border+'44',null,0);
-  _roundRect(ctx,c3x+c3w1+gapW,s3y+42,c3w2,contigH,3,COLORS.border+'44',null,0);
+  const c3x=556,c3w1=90,c3w2=100,gapW=24;
+  _roundRect(ctx,c3x,s3y+54,c3w1,contigH,3,COLORS.border+'44',null,0);
+  _roundRect(ctx,c3x+c3w1+gapW,s3y+54,c3w2,contigH,3,COLORS.border+'44',null,0);
   /* Gap indicator */
   ctx.strokeStyle=COLORS.bad;ctx.lineWidth=1;ctx.setLineDash([2,2]);
-  ctx.beginPath();ctx.moveTo(c3x+c3w1+3,s3y+47);ctx.lineTo(c3x+c3w1+gapW-3,s3y+47);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(c3x+c3w1+3,s3y+59);ctx.lineTo(c3x+c3w1+gapW-3,s3y+59);ctx.stroke();
   ctx.setLineDash([]);
-  _label(ctx,'gap',c3x+c3w1+gapW/2,s3y+40,6,COLORS.bad,'center','600');
 
   /* Genes split */
-  const g3y=s3y+58;
-  _gene(c3x+4,g3y,36,gH,gCols.bio,'KS',false);
-  _gene(c3x+44,g3y,32,gH,gCols.bio2,'AT',false);
+  const g3y=s3y+72;
+  _gene(c3x+4,g3y,40,gH,gCols.bio,'KS',false);
+  _gene(c3x+48,g3y,36,gH,gCols.bio2,'AT',false);
   /* Cut gene on edge of first contig */
   ctx.fillStyle=gCols.dim;ctx.beginPath();
-  ctx.moveTo(c3x+c3w1-18,g3y);ctx.lineTo(c3x+c3w1,g3y);ctx.lineTo(c3x+c3w1,g3y+gH);
-  ctx.lineTo(c3x+c3w1-18,g3y+gH);ctx.closePath();ctx.fill();
-  _label(ctx,'?',c3x+c3w1-9,g3y+gH/2+1,8,COLORS.ink4,'center','700');
+  ctx.moveTo(c3x+c3w1-20,g3y);ctx.lineTo(c3x+c3w1,g3y);ctx.lineTo(c3x+c3w1,g3y+gH);
+  ctx.lineTo(c3x+c3w1-20,g3y+gH);ctx.closePath();ctx.fill();
+  _label(ctx,'?',c3x+c3w1-10,g3y+gH/2+1,9,COLORS.ink4,'center','700');
 
   /* Second contig genes */
   const c3x2=c3x+c3w1+gapW;
   ctx.fillStyle=gCols.dim;ctx.beginPath();
-  ctx.moveTo(c3x2,g3y);ctx.lineTo(c3x2+16,g3y);ctx.lineTo(c3x2+16,g3y+gH);
+  ctx.moveTo(c3x2,g3y);ctx.lineTo(c3x2+18,g3y);ctx.lineTo(c3x2+18,g3y+gH);
   ctx.lineTo(c3x2,g3y+gH);ctx.closePath();ctx.fill();
-  _label(ctx,'?',c3x2+8,g3y+gH/2+1,8,COLORS.ink4,'center','700');
-  _gene(c3x2+20,g3y,36,gH,gCols.reg,'Reg',true);
-  _gene(c3x2+60,g3y,28,gH,gCols.trans,'Tr',false);
+  _label(ctx,'?',c3x2+9,g3y+gH/2+1,9,COLORS.ink4,'center','700');
+  _gene(c3x2+22,g3y,40,gH,gCols.reg,'Reg',true);
+  _gene(c3x2+66,g3y,30,gH,gCols.trans,'Tr',false);
 
   /* Red X in gap */
-  ctx.strokeStyle=COLORS.bad;ctx.lineWidth=2;
+  ctx.strokeStyle=COLORS.bad;ctx.lineWidth=2.5;
   const gxC=c3x+c3w1+gapW/2, gyC=g3y+gH/2;
-  ctx.beginPath();ctx.moveTo(gxC-5,gyC-5);ctx.lineTo(gxC+5,gyC+5);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(gxC+5,gyC-5);ctx.lineTo(gxC-5,gyC+5);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(gxC-6,gyC-6);ctx.lineTo(gxC+6,gyC+6);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(gxC+6,gyC-6);ctx.lineTo(gxC-6,gyC+6);ctx.stroke();
 
-  _label(ctx,'Cannot reconstruct',660,g3y+gH+22,8,COLORS.bad,'center','600');
-  _label(ctx,'Product unknown',660,s3y+112,8,COLORS.bad,'center','600');
-  _label(ctx,'May be false positive',660,s3y+122,8,COLORS.bad,'center','400');
+  _label(ctx,'Cannot reconstruct',660,g3y+gH+26,9,COLORS.bad,'center','600');
+  _label(ctx,'Product unknown',660,s3y+140,9,COLORS.bad,'center','600');
+  _label(ctx,'May be false positive',660,s3y+154,9,COLORS.bad,'center','400');
 
-  /* ── Bottom: decision flow ── */
-  const dy=180;
-  _label(ctx,'Checklist for every BGC prediction',cx,dy,12,COLORS.ink2,'center','700');
+  /* ── Checklist ── */
+  const dy=200;
+  _label(ctx,'Checklist for every BGC prediction',cx,dy,13,COLORS.ink2,'center','700');
 
   const checks=[
     {q:'Is the cluster complete or on a contig edge?',icon:'1',col:COLORS.gb},
@@ -3424,18 +3444,18 @@ function drawBgcFragCanvas(){
 
   for(let i=0;i<checks.length;i++){
     const c=checks[i];
-    const cy=dy+18+i*28;
+    const cy=dy+22+i*34;
     /* Circle number */
-    ctx.beginPath();ctx.arc(90,cy+8,9,0,Math.PI*2);
+    ctx.beginPath();ctx.arc(90,cy+10,11,0,Math.PI*2);
     ctx.fillStyle=c.col+'18';ctx.fill();ctx.strokeStyle=c.col;ctx.lineWidth=1;ctx.stroke();
-    _label(ctx,c.icon,90,cy+9,9,c.col,'center','700');
-    _label(ctx,c.q,106,cy+9,10,COLORS.ink2,'left','500');
+    _label(ctx,c.icon,90,cy+11,10,c.col,'center','700');
+    _label(ctx,c.q,110,cy+11,11,COLORS.ink2,'left','500');
   }
 
   /* Warning box */
-  const wy=dy+18+checks.length*28+6;
-  _roundRect(ctx,60,wy,680,28,6,'#fef3c7','#f59e0b66',1.2);
-  _label(ctx,'antiSMASH predicts biosynthetic potential, not proof of production',cx,wy+14,10,'#92400e','center','700');
+  const wy=dy+22+checks.length*34+10;
+  _roundRect(ctx,60,wy,680,32,6,'#fef3c7','#f59e0b66',1.2);
+  _label(ctx,'antiSMASH predicts biosynthetic potential, not proof of production',cx,wy+16,11,'#92400e','center','700');
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -3467,9 +3487,24 @@ function drawSynthCanvas(){
     ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
   }
 
-  // Corner nodes
+  // Dashed lines from center to corners — draw BEFORE circles so they go behind
+  ctx.setLineDash([4,3]);ctx.lineWidth=1;
+  for(const p of pts){
+    ctx.strokeStyle=p.col+'44';
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(p.x,p.y);ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // Center label
+  _roundRect(ctx,cx-70,cy-16,140,32,8,COLORS.gb+'11',COLORS.gb+'66',1.5);
+  _label(ctx,'Biological',cx,cy-4,11,COLORS.gb,'center','700');
+  _label(ctx,'interpretation',cx,cy+10,11,COLORS.gb,'center','700');
+
+  // Corner nodes — drawn AFTER lines so circles cover them
   for(const p of pts){
     ctx.shadowColor=p.col;ctx.shadowBlur=16;
+    ctx.beginPath();ctx.arc(p.x,p.y,28,0,Math.PI*2);
+    ctx.fillStyle='#fff';ctx.fill();
     ctx.beginPath();ctx.arc(p.x,p.y,28,0,Math.PI*2);
     ctx.fillStyle=p.col+'22';ctx.fill();
     ctx.strokeStyle=p.col;ctx.lineWidth=2.5;ctx.stroke();
@@ -3483,19 +3518,6 @@ function drawSynthCanvas(){
   _label(ctx,pts[0].sub,pts[0].x,pts[0].y-40,11,COLORS.ink3,'center','500');
   _label(ctx,pts[1].sub,pts[1].x-10,pts[1].y+40,11,COLORS.ink3,'center','500');
   _label(ctx,pts[2].sub,pts[2].x+10,pts[2].y+40,11,COLORS.ink3,'center','500');
-
-  // Center label
-  _roundRect(ctx,cx-70,cy-16,140,32,8,COLORS.gb+'11',COLORS.gb+'66',1.5);
-  _label(ctx,'Biological',cx,cy-4,11,COLORS.gb,'center','700');
-  _label(ctx,'interpretation',cx,cy+10,11,COLORS.gb,'center','700');
-
-  // Dashed lines from center to corners
-  ctx.setLineDash([4,3]);ctx.lineWidth=1;
-  for(const p of pts){
-    ctx.strokeStyle=p.col+'44';
-    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(p.x,p.y);ctx.stroke();
-  }
-  ctx.setLineDash([]);
 
   // Bottom message
   _roundRect(ctx,140,395,520,30,8,'#eff6ff',COLORS.gb+'44',1);
