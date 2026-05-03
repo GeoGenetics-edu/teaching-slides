@@ -2844,23 +2844,38 @@ function drawHmArchitecture(ctx){
     if(i<nSt-1) _arrow(ctx,x+sR+4,mY,x+gap-sR-4,mY,COLORS.gc+'66',1.8);
 
     /* Insert state (circle above) */
-    const iY=mY-68;
-    ctx.beginPath();ctx.arc(x,iY,13,0,Math.PI*2);
+    const iY=mY-68, iR=13;
+    ctx.beginPath();ctx.arc(x,iY,iR,0,Math.PI*2);
     ctx.fillStyle=COLORS.gb+'22';ctx.fill();
     ctx.strokeStyle=COLORS.gb;ctx.lineWidth=1.5;ctx.stroke();
     _label(ctx,'I'+(i+1),x,iY,9,COLORS.gb,'center','700');
 
-    /* Arrow M→I (up, left side) */
-    _arrow(ctx,x-5,mY-sR-3,x-5,iY+15,COLORS.gb,1.5);
-    /* Arrow I→M (back down, right side) */
-    _arrow(ctx,x+5,iY+15,x+5,mY-sR-3,COLORS.gb,1.5);
-    /* Self-loop arc on I — curves over the top, arrow points back down */
-    const slCy=iY-20, slR=10;
-    ctx.beginPath();ctx.arc(x,slCy,slR,-0.7,Math.PI+0.7,true);
-    ctx.strokeStyle=COLORS.gb;ctx.lineWidth=1.8;ctx.stroke();
-    /* Arrowhead at left end, pointing down into circle */
-    const aeX=x+slR*Math.cos(Math.PI+0.7), aeY=slCy+slR*Math.sin(Math.PI+0.7);
-    ctx.beginPath();ctx.moveTo(aeX,aeY);ctx.lineTo(aeX+5,aeY-2);ctx.lineTo(aeX+4,aeY+4);ctx.fillStyle=COLORS.gb;ctx.fill();
+    /* Arrow M→I (curved left) */
+    const mTop=mY-sR-2, iBot=iY+iR+2;
+    ctx.beginPath();
+    ctx.moveTo(x-4,mTop);
+    ctx.bezierCurveTo(x-22,mTop-12, x-22,iBot+12, x-4,iBot);
+    ctx.strokeStyle=COLORS.gb;ctx.lineWidth=1.3;ctx.stroke();
+    /* arrowhead pointing into I */
+    ctx.beginPath();ctx.moveTo(x-4,iBot);ctx.lineTo(x-9,iBot+5);ctx.lineTo(x+1,iBot+3);
+    ctx.fillStyle=COLORS.gb;ctx.fill();
+
+    /* Arrow I→M (curved right) */
+    ctx.beginPath();
+    ctx.moveTo(x+4,iBot);
+    ctx.bezierCurveTo(x+22,iBot+12, x+22,mTop-12, x+4,mTop);
+    ctx.strokeStyle=COLORS.gb;ctx.lineWidth=1.3;ctx.stroke();
+    /* arrowhead pointing into M */
+    ctx.beginPath();ctx.moveTo(x+4,mTop);ctx.lineTo(x+9,mTop-5);ctx.lineTo(x-1,mTop-3);
+    ctx.fillStyle=COLORS.gb;ctx.fill();
+
+    /* Self-loop arc on I */
+    const slCy=iY-22, slR=13;
+    ctx.beginPath();ctx.arc(x,slCy,slR,-0.5,Math.PI+0.5,true);
+    ctx.strokeStyle=COLORS.gb;ctx.lineWidth=1.3;ctx.stroke();
+    /* Arrowhead at left end */
+    const aeX=x+slR*Math.cos(Math.PI+0.5), aeY=slCy+slR*Math.sin(Math.PI+0.5);
+    ctx.beginPath();ctx.moveTo(aeX,aeY);ctx.lineTo(aeX+6,aeY-1);ctx.lineTo(aeX+3,aeY+5);ctx.fillStyle=COLORS.gb;ctx.fill();
 
     /* Delete state (diamond below, between this M and next M) */
     if(i<nSt-1){
