@@ -2384,15 +2384,16 @@ function drawIlluCanvas(step){
    11. HMMER-CANVAS — Multiple alignment → profile HMM → query
    ═══════════════════════════════════════════════════════════ */
 
-/* ── HMMER/BLAST concept — 7-step pedagogical animation ── */
+/* ── HMMER/BLAST concept — 8-step pedagogical animation ── */
 const hmHeaders=[
   'Step 1: BLAST finds seed words in the query',
   'Step 2: BLAST extends seeds into a full alignment',
   'Step 3: The problem — divergent sequences escape BLAST',
   'Step 4: Solution — align the family to see patterns',
   'Step 5: Build a Profile HMM from the alignment',
-  'Step 6: What each state "expects"',
-  'Step 7: Score a new query through the model',
+  'Step 6: The HMM has Match, Insert, and Delete states',
+  'Step 7: What each state "expects"',
+  'Step 8: Score a new query through the model',
 ];
 const hmCanvasHeaders=[
   'BLAST — break query into seed words',
@@ -2400,14 +2401,15 @@ const hmCanvasHeaders=[
   'Why BLAST misses remote homologs',
   'Multiple sequence alignment of a protein family',
   'From alignment columns to HMM states',
+  'Profile HMM architecture — M / I / D states',
   'Conserved vs variable positions',
   'Scoring a query through the profile HMM',
 ];
-/* card 0 = BLAST (steps 0-2), card 1 = HMM (steps 3-5), card 2 = comparison (step 6) */
-const hmCardMap=[0,0,0,1,1,1,2];
+/* card 0 = BLAST (steps 0-2), card 1 = HMM (steps 3-6), card 2 = comparison (step 7) */
+const hmCardMap=[0,0,0,1,1,1,1,2];
 
 function hmHighlight(step){
-  const active=hmCardMap[Math.min(step,6)];
+  const active=hmCardMap[Math.min(step,7)];
   for(let i=0;i<3;i++){
     const el=document.getElementById('hm-card-'+i);if(!el)continue;
     el.style.opacity=i===active?'1':i<active?'0.5':'0.35';
@@ -2415,16 +2417,16 @@ function hmHighlight(step){
     el.style.boxShadow=i===active?'0 4px 6px rgba(15,23,42,.04),0 2px 12px rgba(15,23,42,.06)':'0 1px 2px rgba(15,23,42,.04),0 1px 3px rgba(15,23,42,.06)';
   }
   const h=document.getElementById('hm-header');
-  if(h) h.textContent=hmHeaders[Math.min(step,6)];
+  if(h) h.textContent=hmHeaders[Math.min(step,7)];
   const ch=document.getElementById('hm-canvas-header');
-  if(ch) ch.textContent=hmCanvasHeaders[Math.min(step,6)];
+  if(ch) ch.textContent=hmCanvasHeaders[Math.min(step,7)];
 }
 
 function drawHmmerCanvas(step){
   step=step||0;
   const ctx=_c('hmmer-canvas');if(!ctx)return;
   ctx.clearRect(0,0,800,440);
-  [drawHmSeed,drawHmExtend,drawHmProblem,drawHmMsa,drawHmBuild,drawHmExpect,drawHmScoreCompare][Math.min(step,6)](ctx);
+  [drawHmSeed,drawHmExtend,drawHmProblem,drawHmMsa,drawHmBuild,drawHmArchitecture,drawHmExpect,drawHmScoreCompare][Math.min(step,7)](ctx);
 }
 
 /* ══════════════════════════════════════════════════
@@ -2666,17 +2668,17 @@ function drawHmBuild(ctx){
   _label(ctx,'Each column becomes one state',msaX+nC*cW/2,msaBtm+36,13,COLORS.gc,'center','700');
 
   /* HMM chain */
-  const sR=26, gap=44;
+  const sR=18, gap=44;
   const hmX=msaX;
   for(let i=0;i<nC;i++){
     const x=hmX+i*cW+cW/2-1;
     const cons=i===0||i===4;
     const col=cons?COLORS.gc:COLORS.gb;
-    _roundRect(ctx,x-sR,stY-sR,sR*2,sR*2,6,col+'22',col,2.5);
-    _label(ctx,'M'+(i+1),x,stY,14,col,'center','700');
+    _roundRect(ctx,x-sR,stY-sR,sR*2,sR*2,5,col+'22',col,2);
+    _label(ctx,'M'+(i+1),x,stY,12,col,'center','700');
     if(i<nC-1){
       const nx=hmX+(i+1)*cW+cW/2-1;
-      _arrow(ctx,x+sR+3,stY,nx-sR-3,stY,col+'55',2);
+      _arrow(ctx,x+sR+3,stY,nx-sR-3,stY,col+'55',1.5);
     }
   }
 
@@ -2694,7 +2696,91 @@ function drawHmBuild(ctx){
   _label(ctx,'The model captures the "rules" of the family at every position',cx,stY+sR+50,13,COLORS.gc,'center','600');
 }
 
-/* ── Step 5: What each state "expects" ── */
+/* ── Step 5: HMM architecture — Match / Insert / Delete states ── */
+function drawHmArchitecture(ctx){
+  const cx=400;
+
+  _label(ctx,'Profile HMM: three types of state',cx,20,16,COLORS.gc,'center','700');
+
+  /* ── Main chain: M states ── */
+  const nSt=4, sR=22, gap=130;
+  const stX0=cx-((nSt-1)*gap)/2, mY=180;
+
+  /* Begin node */
+  const bX=stX0-80;
+  _roundRect(ctx,bX-16,mY-16,32,32,16,COLORS.ink4+'22',COLORS.ink4,1.5);
+  _label(ctx,'B',bX,mY,11,COLORS.ink4,'center','700');
+  _arrow(ctx,bX+18,mY,stX0-sR-4,mY,COLORS.ink4+'66',1.5);
+
+  for(let i=0;i<nSt;i++){
+    const x=stX0+i*gap;
+
+    /* Match state (square) */
+    _roundRect(ctx,x-sR,mY-sR,sR*2,sR*2,5,COLORS.gc+'22',COLORS.gc,2.5);
+    _label(ctx,'M'+(i+1),x,mY,13,COLORS.gc,'center','700');
+
+    /* Arrow to next M */
+    if(i<nSt-1) _arrow(ctx,x+sR+4,mY,x+gap-sR-4,mY,COLORS.gc+'66',2);
+
+    /* Insert state (small circle above) */
+    const iY=mY-80;
+    ctx.beginPath();ctx.arc(x,iY,14,0,Math.PI*2);
+    ctx.fillStyle=COLORS.gb+'22';ctx.fill();
+    ctx.strokeStyle=COLORS.gb;ctx.lineWidth=1.5;ctx.stroke();
+    _label(ctx,'I'+(i+1),x,iY,10,COLORS.gb,'center','700');
+
+    /* Arrow M→I (up) */
+    _arrow(ctx,x,mY-sR-3,x,iY+16,COLORS.gb+'66',1);
+    /* Arrow I→M (back down, slightly offset) */
+    _arrow(ctx,x+8,iY+16,x+8,mY-sR-3,COLORS.gb+'66',1);
+    /* Self-loop indicator */
+    ctx.beginPath();ctx.arc(x,iY-20,8,0.3*Math.PI,0.7*Math.PI);
+    ctx.strokeStyle=COLORS.gb+'88';ctx.lineWidth=1.5;ctx.stroke();
+    /* arrowhead on self-loop */
+    const aX=x+8*Math.cos(0.7*Math.PI), aY=iY-20+8*Math.sin(0.7*Math.PI);
+    ctx.beginPath();ctx.moveTo(aX,aY);ctx.lineTo(aX+5,aY-3);ctx.lineTo(aX+2,aY+4);ctx.fillStyle=COLORS.gb+'88';ctx.fill();
+
+    /* Delete state (small diamond below) */
+    if(i<nSt-1){
+      const dY=mY+80;
+      const dX=x+gap/2;
+      ctx.save();ctx.translate(dX,dY);ctx.rotate(Math.PI/4);
+      ctx.fillStyle=COLORS.gd+'22';ctx.fillRect(-10,-10,20,20);
+      ctx.strokeStyle=COLORS.gd;ctx.lineWidth=1.5;ctx.strokeRect(-10,-10,20,20);
+      ctx.restore();
+      _label(ctx,'D'+(i+2),dX,dY,9,COLORS.gd,'center','700');
+
+      /* M→D and D→M arrows */
+      _arrow(ctx,x+sR/2+6,mY+sR+3,dX-12,dY-12,COLORS.gd+'55',1);
+      const nx=stX0+(i+1)*gap;
+      _arrow(ctx,dX+12,dY-12,nx-sR/2-6,mY+sR+3,COLORS.gd+'55',1);
+    }
+  }
+
+  /* End node */
+  const eX=stX0+(nSt-1)*gap+80;
+  _roundRect(ctx,eX-16,mY-16,32,32,16,COLORS.ink4+'22',COLORS.ink4,1.5);
+  _label(ctx,'E',eX,mY,11,COLORS.ink4,'center','700');
+  _arrow(ctx,stX0+(nSt-1)*gap+sR+4,mY,eX-18,mY,COLORS.ink4+'66',1.5);
+
+  /* ── Legend below ── */
+  const lY=mY+130;
+  const items=[
+    {col:COLORS.gc, label:'Match (M)', desc:'Emit an amino acid (the expected one)'},
+    {col:COLORS.gb, label:'Insert (I)', desc:'Extra AA not in the model (insertion in query)'},
+    {col:COLORS.gd, label:'Delete (D)', desc:'Skip a position (deletion in query)'},
+  ];
+  const lW=220, lX0=cx-(items.length*lW)/2;
+  for(let i=0;i<items.length;i++){
+    const x=lX0+i*lW+lW/2;
+    _roundRect(ctx,lX0+i*lW+10,lY,lW-20,70,8,items[i].col+'0a',items[i].col+'44',1.5);
+    _label(ctx,items[i].label,x,lY+20,13,items[i].col,'center','700');
+    _label(ctx,items[i].desc,x,lY+42,10,COLORS.ink3,'center','500');
+    _label(ctx,i===0?'(most common)':i===1?'(handles insertions)':'(handles deletions)',x,lY+58,9,COLORS.ink4,'center','500');
+  }
+}
+
+/* ── Step 6: What each state "expects" ── */
 function drawHmExpect(ctx){
   const cx=400;
 
