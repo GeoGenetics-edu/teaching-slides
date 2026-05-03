@@ -622,275 +622,376 @@ function drawTkStep2(ctx){
   _label(ctx,'Species = cluster of genomes with ANI > 95%',400,20,13,COLORS.ink2,'center','700');
 
   // ── 1. ANI clustering diagram ──
-  // Three species clusters as genome dot clouds + the MAG
+  // Clusters: organic dot scatter, no overlaps with MAG or annotations
   const clusters=[
-    {cx:140,cy:155,r:68,col:COLORS.gb,name:'Species A',
-     pts:[{dx:-25,dy:-22},{dx:12,dy:-30},{dx:-15,dy:8},{dx:20,dy:2},{dx:-3,dy:25},{dx:10,dy:-10},{dx:-30,dy:-5}]},
-    {cx:370,cy:170,r:62,col:COLORS.gc,name:'Species B',
-     pts:[{dx:-18,dy:-22},{dx:20,dy:-15},{dx:-10,dy:12},{dx:15,dy:20},{dx:-25,dy:-4},{dx:5,dy:-30}]},
-    {cx:590,cy:150,r:60,col:COLORS.gd,name:'Species C',
-     pts:[{dx:-15,dy:-20},{dx:18,dy:-12},{dx:-8,dy:10},{dx:22,dy:18},{dx:-20,dy:18},{dx:8,dy:-28}]},
+    {cx:135,cy:150,r:72,col:COLORS.gb,name:'Species A',
+     pts:[{dx:-35,dy:-18},{dx:-8,dy:-38},{dx:22,dy:-25},{dx:38,dy:-5},{dx:28,dy:22},{dx:-5,dy:30},{dx:-32,dy:12}]},
+    {cx:380,cy:155,r:66,col:COLORS.gc,name:'Species B',
+     pts:[{dx:15,dy:-35},{dx:38,dy:-12},{dx:32,dy:22},{dx:5,dy:35},{dx:-40,dy:-2},{dx:-18,dy:-22}]},
+    {cx:615,cy:148,r:64,col:COLORS.gd,name:'Species C',
+     pts:[{dx:-28,dy:-25},{dx:8,dy:-32},{dx:32,dy:-10},{dx:25,dy:22},{dx:-10,dy:28},{dx:-30,dy:8}]},
   ];
 
   // Draw 95% ANI radius circles with soft gradient fill
   for(const cl of clusters){
     const grad=ctx.createRadialGradient(cl.cx,cl.cy,0,cl.cx,cl.cy,cl.r);
-    grad.addColorStop(0,cl.col+'12');grad.addColorStop(1,cl.col+'04');
+    grad.addColorStop(0,cl.col+'10');grad.addColorStop(1,cl.col+'03');
     ctx.beginPath();ctx.arc(cl.cx,cl.cy,cl.r,0,Math.PI*2);
     ctx.fillStyle=grad;ctx.fill();
-    ctx.strokeStyle=cl.col+'55';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);ctx.stroke();
+    ctx.strokeStyle=cl.col+'44';ctx.lineWidth=1.2;ctx.setLineDash([5,4]);ctx.stroke();
     ctx.setLineDash([]);
     // Cluster label above
-    _label(ctx,cl.name,cl.cx,cl.cy-cl.r-12,11,cl.col,'center','700');
+    _label(ctx,cl.name,cl.cx,cl.cy-cl.r-14,11,cl.col,'center','700');
   }
 
-  // Draw genome dots (larger for projection)
+  // Draw genome reference dots
+  const dotR=5.5;
   for(const cl of clusters){
     for(const p of cl.pts){
-      ctx.beginPath();ctx.arc(cl.cx+p.dx,cl.cy+p.dy,6,0,Math.PI*2);
-      ctx.fillStyle=cl.col+'cc';ctx.fill();
-      ctx.strokeStyle='#fff';ctx.lineWidth=1.2;ctx.stroke();
+      ctx.beginPath();ctx.arc(cl.cx+p.dx,cl.cy+p.dy,dotR,0,Math.PI*2);
+      ctx.fillStyle=cl.col+'bb';ctx.fill();
+      ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();
     }
   }
 
-  // MAG: falls inside Species B cluster — prominent
-  const magX=348,magY=158;
-  ctx.shadowColor=COLORS.bad;ctx.shadowBlur=12;
-  ctx.beginPath();ctx.arc(magX,magY,10,0,Math.PI*2);
-  ctx.fillStyle=COLORS.bad+'44';ctx.fill();
-  ctx.strokeStyle=COLORS.bad;ctx.lineWidth=2.5;ctx.stroke();
-  ctx.shadowBlur=0;
-  _label(ctx,'MAG',magX,magY+1,8,COLORS.bad,'center','700');
-
-  // ANI distance annotation: MAG → nearest Species B genome
-  const nearX=clusters[1].cx+20,nearY=clusters[1].cy-15;
-  ctx.strokeStyle=COLORS.ok;ctx.lineWidth=1.2;ctx.setLineDash([3,2]);
-  ctx.beginPath();ctx.moveTo(magX+11,magY+2);ctx.lineTo(nearX-6,nearY);ctx.stroke();
-  ctx.setLineDash([]);
-  _roundRect(ctx,((magX+nearX)/2)-2,((magY+nearY)/2)-18,50,16,4,COLORS.ok+'15',COLORS.ok+'44',1);
-  _label(ctx,'97.8%',((magX+nearX)/2)+23,((magY+nearY)/2)-10,9,COLORS.ok,'center','700');
-
-  // Inter-cluster gaps (A↔B and B↔C)
-  const gaps=[
-    {from:clusters[0],to:clusters[1]},
-    {from:clusters[1],to:clusters[2]},
-  ];
-  for(const g of gaps){
-    const x1=g.from.cx+g.from.r+4,x2=g.to.cx-g.to.r-4;
-    const y=(g.from.cy+g.to.cy)/2;
-    ctx.strokeStyle=COLORS.ink4+'66';ctx.lineWidth=0.8;ctx.setLineDash([2,3]);
-    ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x2,y);ctx.stroke();
-    ctx.setLineDash([]);
-    _label(ctx,'< 80%',(x1+x2)/2,y-8,8,COLORS.ink4,'center','500');
-  }
-
-  // Centroids + 95% ANI radius arrow on Species A
+  // Centroid markers (small +)
   for(const cl of clusters){
-    // Centroid cross
-    ctx.strokeStyle=cl.col;ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.moveTo(cl.cx-4,cl.cy);ctx.lineTo(cl.cx+4,cl.cy);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(cl.cx,cl.cy-4);ctx.lineTo(cl.cx,cl.cy+4);ctx.stroke();
+    ctx.strokeStyle=cl.col+'99';ctx.lineWidth=1.2;
+    ctx.beginPath();ctx.moveTo(cl.cx-5,cl.cy);ctx.lineTo(cl.cx+5,cl.cy);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cl.cx,cl.cy-5);ctx.lineTo(cl.cx,cl.cy+5);ctx.stroke();
   }
-  // Radius arrow on Species A (centroid → edge)
+
+  // 95% ANI radius arrow on Species A (centroid → edge, angled to avoid dots)
   const aCl=clusters[0];
-  const arrowAngle=-0.4; // slight upward angle
-  const edgeX=aCl.cx+Math.cos(arrowAngle)*aCl.r;
-  const edgeY=aCl.cy+Math.sin(arrowAngle)*aCl.r;
-  ctx.strokeStyle=aCl.col;ctx.lineWidth=1.2;
+  const arrowAngle=0.25; // slight downward-right angle — avoids all dots
+  const edgeX=aCl.cx+Math.cos(arrowAngle)*(aCl.r-2);
+  const edgeY=aCl.cy+Math.sin(arrowAngle)*(aCl.r-2);
+  ctx.strokeStyle=aCl.col;ctx.lineWidth=1;
   ctx.beginPath();ctx.moveTo(aCl.cx,aCl.cy);ctx.lineTo(edgeX,edgeY);ctx.stroke();
   // Arrowhead
-  const aLen=8,aAng=0.5;
+  const aLen=7,aAng=0.45;
   ctx.beginPath();
   ctx.moveTo(edgeX,edgeY);
   ctx.lineTo(edgeX-aLen*Math.cos(arrowAngle-aAng),edgeY-aLen*Math.sin(arrowAngle-aAng));
   ctx.moveTo(edgeX,edgeY);
   ctx.lineTo(edgeX-aLen*Math.cos(arrowAngle+aAng),edgeY-aLen*Math.sin(arrowAngle+aAng));
   ctx.stroke();
-  // Label along arrow
-  const midAX=(aCl.cx+edgeX)/2,midAY=(aCl.cy+edgeY)/2;
-  _roundRect(ctx,midAX-28,midAY-18,56,14,3,'#fff',aCl.col+'44',1);
-  _label(ctx,'95% ANI',midAX,midAY-11,8,aCl.col,'center','700');
+  // Label on white pill along arrow
+  const midAX=(aCl.cx+edgeX)/2+2,midAY=(aCl.cy+edgeY)/2+2;
+  _roundRect(ctx,midAX-26,midAY-7,52,14,3,'#ffffffee',aCl.col+'55',1);
+  _label(ctx,'95% ANI',midAX,midAY,8,aCl.col,'center','700');
 
-  // ── 2. Lineage result (bottom) ──
-  const by=265;
-  _roundRect(ctx,30,by,740,60,10,'#fff',COLORS.border,1.5);
-  _label(ctx,'Assigned lineage:',70,by+15,10,COLORS.ink3,'left','600');
+  // MAG: inside Species B — lower-left, clear of all ref dots and centroid
+  const magX=355,magY=178;
+  ctx.shadowColor=COLORS.bad;ctx.shadowBlur=10;
+  ctx.beginPath();ctx.arc(magX,magY,9,0,Math.PI*2);
+  ctx.fillStyle=COLORS.bad+'55';ctx.fill();
+  ctx.strokeStyle=COLORS.bad;ctx.lineWidth=2;ctx.stroke();
+  ctx.shadowBlur=0;
+  _label(ctx,'MAG',magX,magY+1,7.5,COLORS.bad,'center','700');
 
-  // Compact single-line lineage with colored prefixes
-  ctx.font='500 9.5px "DM Mono",Consolas,monospace';
+  // ANI distance line: MAG → nearest ref genome in B (dx:15,dy:-35 → 395,120)
+  // Goes upward to avoid crossing the centroid cross
+  const bCl=clusters[1];
+  const nearX=bCl.cx+15,nearY=bCl.cy-35;
+  ctx.strokeStyle=COLORS.ok;ctx.lineWidth=1;ctx.setLineDash([3,2]);
+  ctx.beginPath();ctx.moveTo(magX+4,magY-9);ctx.lineTo(nearX+2,nearY+dotR+1);ctx.stroke();
+  ctx.setLineDash([]);
+  // 97.8% label on white pill — offset right, clear of centroid at (380,155)
+  const lblX=(magX+nearX)/2+35,lblY=(magY+nearY)/2-8;
+  _roundRect(ctx,lblX-24,lblY-7,48,14,4,'#ffffffee',COLORS.ok+'55',1);
+  _label(ctx,'97.8%',lblX,lblY,8.5,COLORS.ok,'center','700');
+
+  // Inter-cluster gap lines (A↔B and B↔C)
+  const gaps=[
+    {from:clusters[0],to:clusters[1]},
+    {from:clusters[1],to:clusters[2]},
+  ];
+  for(const g of gaps){
+    const x1=g.from.cx+g.from.r+6,x2=g.to.cx-g.to.r-6;
+    const y=(g.from.cy+g.to.cy)/2+2;
+    ctx.strokeStyle=COLORS.ink4+'55';ctx.lineWidth=0.7;ctx.setLineDash([2,3]);
+    ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x2,y);ctx.stroke();
+    ctx.setLineDash([]);
+    _label(ctx,'< 80%',(x1+x2)/2,y-9,8,COLORS.ink4,'center','500');
+  }
+
+  // ── 2. Lineage result ──
+  const by=260;
+  _roundRect(ctx,30,by,740,55,8,'#fff',COLORS.border,1);
+  _label(ctx,'Assigned lineage:',68,by+14,10,COLORS.ink3,'left','600');
+
+  ctx.font='500 9px "DM Mono",Consolas,monospace';
   const lineage='d__Bacteria; p__Bacteroidota; c__Bacteroidia; o__Bacteroidales; f__Bacteroidaceae; g__Bacteroides; s__Bacteroides_A sp003456789';
   const pCols={d:COLORS.ink3,p:COLORS.bad,c:COLORS.warn,o:COLORS.gd,f:COLORS.gb,g:COLORS.gc,s:COLORS.ga};
-  let lx=55;
+  let lx=50;
   const parts=lineage.split(/(;\s*)/);
   for(const part of parts){
     const m=part.match(/^([a-z])__/);
     if(m){
       const pre=m[0],rest=part.slice(pre.length);
       ctx.fillStyle=pCols[m[1]]||COLORS.ink3;ctx.textAlign='left';ctx.textBaseline='middle';
-      ctx.fillText(pre,lx,by+40);lx+=ctx.measureText(pre).width;
+      ctx.fillText(pre,lx,by+37);lx+=ctx.measureText(pre).width;
       ctx.fillStyle=COLORS.ink;
-      ctx.fillText(rest,lx,by+40);lx+=ctx.measureText(rest).width;
+      ctx.fillText(rest,lx,by+37);lx+=ctx.measureText(rest).width;
     } else {
       ctx.fillStyle=COLORS.ink4;ctx.textAlign='left';ctx.textBaseline='middle';
-      ctx.fillText(part,lx,by+40);lx+=ctx.measureText(part).width;
+      ctx.fillText(part,lx,by+37);lx+=ctx.measureText(part).width;
     }
   }
 
-  // ── 3. Key points — equal-width cards ──
-  const ky=by+78;
+  // ── 3. Key-point cards ──
+  const ky=by+70;
   const cardW=230,cardGap=15,totalW=cardW*3+cardGap*2;
   const startX=(800-totalW)/2;
   const points=[
     {icon:'Within species:',val:'ANI > 95%',col:COLORS.ok},
-    {icon:'Between species:',val:'ANI < 80-90%',col:COLORS.ink3},
+    {icon:'Between species:',val:'ANI < 80–90%',col:COLORS.ink3},
     {icon:'Your MAG:',val:'97.8% → s__Bacteroides_A',col:COLORS.bad},
   ];
   for(let i=0;i<points.length;i++){
     const px=startX+i*(cardW+cardGap);
     const p=points[i];
-    _roundRect(ctx,px,ky,cardW,38,6,p.col+'08',p.col+'44',1);
-    _label(ctx,p.icon,px+cardW/2,ky+13,9,p.col,'center','600');
-    _label(ctx,p.val,px+cardW/2,ky+28,10,p.col,'center','700');
+    _roundRect(ctx,px,ky,cardW,36,6,p.col+'08',p.col+'33',1);
+    _label(ctx,p.icon,px+cardW/2,ky+12,9,p.col,'center','600');
+    _label(ctx,p.val,px+cardW/2,ky+26,10,p.col,'center','700');
   }
 
   // ── 4. Bottom note ──
-  _roundRect(ctx,100,ky+52,600,24,6,'#fffbeb',COLORS.gd+'44',1);
-  _label(ctx,'Always report: GTDB version, ANI value, and markers recovered',400,ky+64,9,COLORS.gd,'center','600');
+  _roundRect(ctx,120,ky+48,560,22,5,'#fffbeb',COLORS.gd+'33',1);
+  _label(ctx,'Always report: GTDB version, ANI value, and markers recovered',400,ky+59,8.5,COLORS.gd,'center','600');
 }
 
 /* ═══════════════════════════════════════════════════════════
-   4. GP-CANVAS — Gene prediction (ORFs in reading frames)
+   4. GP-CANVAS — Gene prediction (Prodigal algorithm steps)
    ═══════════════════════════════════════════════════════════ */
 
-function drawGpCanvas(){
+const gpHeaders=[
+  'Step 1: Scan all 6 reading frames for ORFs',
+  'Step 2: Score each ORF by coding potential',
+  'Step 3: Select optimal gene set & refine starts',
+  'Final predicted genes',
+];
+
+function gpHighlight(step){
+  for(let i=0;i<3;i++){
+    const el=document.getElementById('gp-card-'+i);
+    if(el) el.style.opacity=step<=i? (step===i?1:0.35) : (i<step?0.5:0.35);
+  }
+  const h=document.getElementById('gp-header');
+  if(h) h.textContent=gpHeaders[Math.min(step,3)];
+}
+
+function drawGpCanvas(step){
+  step=step||0;
   const ctx=_c('gp-canvas');if(!ctx)return;
   ctx.clearRect(0,0,800,440);
 
   const R=rng(42);
-  const contigX=40,contigY=30,contigW=720,contigH=16;
+  const cX=30,cY=8,cW=740,cH=12;
 
   // Contig backbone
-  _roundRect(ctx,contigX,contigY,contigW,contigH,4,'#e2e8f0','#cbd5e1',1);
-  _label(ctx,'Contig sequence (5\' → 3\')',contigX+contigW/2,contigY+8,9,COLORS.ink3,'center','600');
+  _roundRect(ctx,cX,cY,cW,cH,3,'#e2e8f0','#cbd5e1',1);
+  _label(ctx,'Contig sequence (5\' → 3\')',cX+cW/2,cY+6,7.5,COLORS.ink3,'center','600');
 
-  // Sequence ruler
+  // Scale bar
   for(let i=0;i<=10;i++){
-    const x=contigX+i*(contigW/10);
+    const x=cX+i*(cW/10);
     ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.5;
-    ctx.beginPath();ctx.moveTo(x,contigY+contigH);ctx.lineTo(x,contigY+contigH+5);ctx.stroke();
-    if(i%2===0)_monoLabel(ctx,(i*500)+'',x,contigY+contigH+12,7,COLORS.ink4,'center');
+    ctx.beginPath();ctx.moveTo(x,cY+cH);ctx.lineTo(x,cY+cH+3);ctx.stroke();
+    if(i%2===0)_monoLabel(ctx,(i*500)+'',x,cY+cH+10,6,COLORS.ink4,'center');
   }
 
-  // 6 reading frames (3 forward, 3 reverse)
-  const frameLabels=['+1','+2','+3','-1','-2','-3'];
-  const frameY=contigY+contigH+30;
-  const frameH=28,frameGap=6;
+  const frameLabels=['+1','+2','+3','−1','−2','−3'];
+  // Step description line sits between ruler and frames
+  const descY=cY+cH+22;
+  const fY=descY+14;
+  const fH=24,fGap=3;
 
-  // Predicted ORFs (some real genes, some random)
-  const genes=[
-    // Frame +1
-    {frame:0,start:0.05,end:0.22,real:true,label:'geneA'},
-    {frame:0,start:0.30,end:0.52,real:true,label:'geneB'},
-    {frame:0,start:0.60,end:0.78,real:true,label:'geneC'},
-    {frame:0,start:0.84,end:0.97,real:true,label:'geneD (partial)'},
+  // All candidate ORFs: real genes + random short ORFs
+  // Each has a coding score (0-1) that Prodigal would assign
+  const orfs=[
+    // Frame +1: dense with real genes
+    {f:0,s:0.05,e:0.22,real:true,lbl:'geneA',score:0.92},
+    {f:0,s:0.25,e:0.28,real:false,lbl:'',score:0.12},
+    {f:0,s:0.30,e:0.52,real:true,lbl:'geneB',score:0.95},
+    {f:0,s:0.56,e:0.59,real:false,lbl:'',score:0.08},
+    {f:0,s:0.60,e:0.78,real:true,lbl:'geneC',score:0.88},
+    {f:0,s:0.84,e:0.97,real:true,lbl:'geneD',score:0.85,partial:true},
     // Frame +2
-    {frame:1,start:0.08,end:0.15,real:false,label:''},
-    {frame:1,start:0.42,end:0.58,real:true,label:'geneE'},
+    {f:1,s:0.04,e:0.09,real:false,lbl:'',score:0.15},
+    {f:1,s:0.14,e:0.18,real:false,lbl:'',score:0.10},
+    {f:1,s:0.42,e:0.58,real:true,lbl:'geneE',score:0.90},
+    {f:1,s:0.72,e:0.76,real:false,lbl:'',score:0.11},
     // Frame +3
-    {frame:2,start:0.02,end:0.10,real:false,label:''},
-    {frame:2,start:0.65,end:0.82,real:true,label:'geneF'},
+    {f:2,s:0.02,e:0.07,real:false,lbl:'',score:0.09},
+    {f:2,s:0.20,e:0.24,real:false,lbl:'',score:0.13},
+    {f:2,s:0.65,e:0.82,real:true,lbl:'geneF',score:0.87},
     // Frame -1
-    {frame:3,start:0.12,end:0.35,real:true,label:'geneG'},
-    {frame:3,start:0.55,end:0.70,real:false,label:''},
+    {f:3,s:0.12,e:0.35,real:true,lbl:'geneG',score:0.93},
+    {f:3,s:0.40,e:0.44,real:false,lbl:'',score:0.14},
+    {f:3,s:0.55,e:0.62,real:false,lbl:'',score:0.18},
     // Frame -2
-    {frame:4,start:0.25,end:0.48,real:true,label:'geneH'},
+    {f:4,s:0.10,e:0.14,real:false,lbl:'',score:0.07},
+    {f:4,s:0.25,e:0.48,real:true,lbl:'geneH',score:0.91},
+    {f:4,s:0.68,e:0.72,real:false,lbl:'',score:0.12},
     // Frame -3
-    {frame:5,start:0.40,end:0.55,real:false,label:''},
-    {frame:5,start:0.75,end:0.92,real:true,label:'geneI'}
+    {f:5,s:0.08,e:0.12,real:false,lbl:'',score:0.16},
+    {f:5,s:0.35,e:0.50,real:false,lbl:'',score:0.20},
+    {f:5,s:0.75,e:0.92,real:true,lbl:'geneI',score:0.86},
   ];
 
-  const frameCols=[COLORS.gb,COLORS.gb+'cc',COLORS.gb+'99',COLORS.gc,COLORS.gc+'cc',COLORS.gc+'99'];
+  const fwdCol=COLORS.gb,revCol=COLORS.gc;
 
+  // ── Draw frame tracks ──
   for(let f=0;f<6;f++){
-    const fy=frameY+f*(frameH+frameGap);
+    const fy=fY+f*(fH+fGap);
+    _monoLabel(ctx,frameLabels[f],cX-8,fy+fH/2,9,f<3?fwdCol:revCol,'right');
+    ctx.fillStyle='#f8fafc';ctx.fillRect(cX,fy,cW,fH);
+    ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.4;ctx.strokeRect(cX,fy,cW,fH);
 
-    // Frame label
-    _monoLabel(ctx,frameLabels[f],contigX-10,fy+frameH/2,10,f<3?COLORS.gb:COLORS.gc,'right');
-
-    // Frame track
-    ctx.fillStyle='#f8fafc';ctx.fillRect(contigX,fy,contigW,frameH);
-    ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.5;ctx.strokeRect(contigX,fy,contigW,frameH);
-
-    // Stop codons as small red ticks
-    const stopCount=8+Math.floor(R()*6);
-    for(let s=0;s<stopCount;s++){
-      const sx=contigX+R()*contigW;
-      ctx.strokeStyle=COLORS.bad+'44';ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(sx,fy);ctx.lineTo(sx,fy+frameH);ctx.stroke();
+    // Stop codons as faint red ticks
+    const nStops=7+Math.floor(R()*5);
+    for(let si=0;si<nStops;si++){
+      const sx=cX+R()*cW;
+      ctx.strokeStyle=COLORS.bad+'33';ctx.lineWidth=0.8;
+      ctx.beginPath();ctx.moveTo(sx,fy+1);ctx.lineTo(sx,fy+fH-1);ctx.stroke();
     }
   }
 
-  // Draw genes as directional arrows
-  for(const g of genes){
-    const fy=frameY+g.frame*(frameH+frameGap);
-    const gx=contigX+g.start*contigW;
-    const gw=(g.end-g.start)*contigW;
-    const isForward=g.frame<3;
-    const isPartial=g.label.includes('partial');
+  // ── Helper: draw an ORF arrow ──
+  function drawOrf(o,col,alpha,showLabel,showStart,showScore){
+    const fy=fY+o.f*(fH+fGap);
+    const gx=cX+o.s*cW,gw=(o.e-o.s)*cW;
+    const isFwd=o.f<3;
+    const tipW=Math.min(8,gw*0.3);
 
-    if(g.real){
-      ctx.fillStyle=frameCols[g.frame];
-      ctx.beginPath();
-      if(isForward){
-        ctx.moveTo(gx,fy+2);
-        ctx.lineTo(gx+gw-10,fy+2);ctx.lineTo(gx+gw,fy+frameH/2);
-        ctx.lineTo(gx+gw-10,fy+frameH-2);ctx.lineTo(gx,fy+frameH-2);
-      } else {
-        ctx.moveTo(gx+gw,fy+2);
-        ctx.lineTo(gx+10,fy+2);ctx.lineTo(gx,fy+frameH/2);
-        ctx.lineTo(gx+10,fy+frameH-2);ctx.lineTo(gx+gw,fy+frameH-2);
-      }
-      ctx.closePath();ctx.fill();
-
-      // Partial gene: dashed right edge
-      if(isPartial){
-        ctx.setLineDash([3,2]);ctx.strokeStyle=COLORS.warn;ctx.lineWidth=1.5;
-        ctx.beginPath();ctx.moveTo(gx+gw,fy+2);ctx.lineTo(gx+gw,fy+frameH-2);ctx.stroke();
-        ctx.setLineDash([]);
-      }
-
-      // Label
-      if(g.label){
-        _label(ctx,g.label,gx+gw/2,fy+frameH/2,8,'#fff','center','600');
-      }
-
-      // Start codon mark
-      const startX=isForward?gx:gx+gw;
-      ctx.fillStyle=COLORS.ok;
-      ctx.beginPath();ctx.arc(startX,fy+frameH/2,3,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=alpha;
+    ctx.fillStyle=col;
+    ctx.beginPath();
+    if(isFwd){
+      ctx.moveTo(gx,fy+2);ctx.lineTo(gx+gw-tipW,fy+2);ctx.lineTo(gx+gw,fy+fH/2);
+      ctx.lineTo(gx+gw-tipW,fy+fH-2);ctx.lineTo(gx,fy+fH-2);
     } else {
-      // Random short ORF (gray, thin)
-      ctx.fillStyle='#e2e8f0';
-      ctx.fillRect(gx,fy+6,gw,frameH-12);
+      ctx.moveTo(gx+gw,fy+2);ctx.lineTo(gx+tipW,fy+2);ctx.lineTo(gx,fy+fH/2);
+      ctx.lineTo(gx+tipW,fy+fH-2);ctx.lineTo(gx+gw,fy+fH-2);
+    }
+    ctx.closePath();ctx.fill();
+
+    // Partial gene dashed edge
+    if(o.partial){
+      ctx.setLineDash([3,2]);ctx.strokeStyle=COLORS.warn;ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(gx+gw,fy+2);ctx.lineTo(gx+gw,fy+fH-2);ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    ctx.globalAlpha=1;
+
+    if(showLabel&&o.lbl){
+      _label(ctx,o.lbl+(o.partial?' (partial)':''),gx+gw/2,fy+fH/2,7.5,'#fff','center','600');
+    }
+
+    if(showStart&&o.real){
+      const sx=isFwd?gx:gx+gw;
+      ctx.fillStyle=COLORS.ok;
+      ctx.beginPath();ctx.arc(sx,fy+fH/2,3,0,Math.PI*2);ctx.fill();
+    }
+
+    if(showScore&&gw>25){
+      // Score badge inside the ORF
+      const bx=gx+gw/2,by=fy+fH/2;
+      const txt=o.score.toFixed(2);
+      const badgeCol=o.score>0.7?'#fff':COLORS.bad;
+      ctx.font='600 7px "DM Sans",system-ui,sans-serif';
+      ctx.fillStyle=badgeCol;ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(txt,bx,by);
     }
   }
 
-  // Legend at bottom
-  const ly=frameY+6*(frameH+frameGap)+10;
-  ctx.beginPath();ctx.moveTo(contigX+10,ly+6);ctx.lineTo(contigX+30,ly+2);
-  ctx.lineTo(contigX+35,ly+6);ctx.lineTo(contigX+30,ly+10);ctx.closePath();
-  ctx.fillStyle=COLORS.gb;ctx.fill();
-  _label(ctx,'Predicted gene',contigX+42,ly+6,10,COLORS.ink3,'left','500');
+  // ── Step 0: Show all candidate ORFs (many short random ones) ──
+  if(step===0){
+    _label(ctx,'All start→stop ORF candidates',400,descY,10,COLORS.ink3,'center','600');
+    for(const o of orfs){
+      const col=o.real?(o.f<3?fwdCol:revCol):'#cbd5e1';
+      drawOrf(o,col,o.real?0.5:0.3,false,false,false);
+    }
+    // Count annotation
+    const realCount=orfs.filter(x=>x.real).length;
+    const fakeCount=orfs.filter(x=>!x.real).length;
+    const ly=fY+6*(fH+fGap)+12;
+    _roundRect(ctx,cX,ly,cW,28,6,'#f8fafc',COLORS.border,1);
+    _label(ctx,realCount+fakeCount+' candidate ORFs found across 6 frames',cX+cW/2,ly+10,10,COLORS.ink2,'center','600');
+    _label(ctx,'Most are short random sequences between stop codons',cX+cW/2,ly+22,8.5,COLORS.ink4,'center','500');
+  }
 
-  ctx.fillStyle='#e2e8f0';ctx.fillRect(contigX+160,ly+2,20,8);
-  _label(ctx,'Random ORF (rejected)',contigX+185,ly+6,10,COLORS.ink3,'left','500');
+  // ── Step 1: Score coding potential — show scores ──
+  if(step===1){
+    _label(ctx,'Coding potential score (log-likelihood of codon/hexamer patterns)',400,descY,9,COLORS.ink3,'center','600');
+    for(const o of orfs){
+      const isHigh=o.score>0.7;
+      const col=isHigh?(o.f<3?fwdCol:revCol):'#e2e8f0';
+      const alpha=isHigh?0.85:0.2;
+      drawOrf(o,col,alpha,false,false,true);
+    }
+    // Score threshold line
+    const ly=fY+6*(fH+fGap)+12;
+    _roundRect(ctx,cX,ly,cW,28,6,'#f8fafc',COLORS.border,1);
+    const hiCount=orfs.filter(x=>x.score>0.7).length;
+    _label(ctx,'Trained model scores each ORF: '+hiCount+' pass the coding threshold',cX+cW/2,ly+10,10,COLORS.ink2,'center','600');
+    _label(ctx,'Codon usage + hexamer frequencies + GC frame bias → log-likelihood ratio',cX+cW/2,ly+22,8.5,COLORS.ink4,'center','500');
+  }
 
-  ctx.beginPath();ctx.arc(contigX+330,ly+6,3,0,Math.PI*2);ctx.fillStyle=COLORS.ok;ctx.fill();
-  _label(ctx,'Start codon',contigX+340,ly+6,10,COLORS.ink3,'left','500');
+  // ── Step 2: Final gene calls with start site refinement ──
+  if(step===2){
+    _label(ctx,'Dynamic programming → optimal non-overlapping genes + RBS start refinement',400,descY,9,COLORS.ink3,'center','600');
+    // Draw rejected ORFs very faintly
+    for(const o of orfs){
+      if(!o.real) drawOrf(o,'#e8e8e8',0.15,false,false,false);
+    }
+    // Draw accepted genes prominently
+    for(const o of orfs){
+      if(o.real){
+        const col=o.f<3?fwdCol:revCol;
+        drawOrf(o,col,1,true,true,false);
+      }
+    }
+    // RBS annotation on one gene
+    const eg=orfs[0]; // geneA
+    const egX=cX+eg.s*cW;
+    const egY=fY+eg.f*(fH+fGap);
+    // RBS bracket before start
+    ctx.strokeStyle=COLORS.gd;ctx.lineWidth=1.2;
+    ctx.beginPath();
+    ctx.moveTo(egX-18,egY+fH/2-6);ctx.lineTo(egX-18,egY+fH/2+6);
+    ctx.moveTo(egX-18,egY+fH/2);ctx.lineTo(egX-3,egY+fH/2);
+    ctx.stroke();
+    _label(ctx,'RBS',egX-20,egY+fH/2-8,7,COLORS.gd,'center','700');
 
-  ctx.strokeStyle=COLORS.bad+'44';ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(contigX+430,ly);ctx.lineTo(contigX+430,ly+12);ctx.stroke();
-  _label(ctx,'Stop codon',contigX+438,ly+6,10,COLORS.ink3,'left','500');
+    // Legend
+    const ly=fY+6*(fH+fGap)+12;
+    // mini arrow legend
+    const lx1=cX+10;
+    ctx.fillStyle=fwdCol;ctx.beginPath();
+    ctx.moveTo(lx1,ly+6);ctx.lineTo(lx1+18,ly+6);ctx.lineTo(lx1+22,ly+10);
+    ctx.lineTo(lx1+18,ly+14);ctx.lineTo(lx1,ly+14);ctx.closePath();ctx.fill();
+    _label(ctx,'Predicted gene',lx1+28,ly+10,9,COLORS.ink3,'left','500');
+
+    ctx.fillStyle=COLORS.ok;ctx.beginPath();ctx.arc(lx1+165,ly+10,3,0,Math.PI*2);ctx.fill();
+    _label(ctx,'Start (ATG/GTG/TTG)',lx1+172,ly+10,9,COLORS.ink3,'left','500');
+
+    ctx.strokeStyle=COLORS.gd;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(lx1+330,ly+6);ctx.lineTo(lx1+330,ly+14);
+    ctx.moveTo(lx1+330,ly+10);ctx.lineTo(lx1+340,ly+10);ctx.stroke();
+    _label(ctx,'Ribosome binding site',lx1+345,ly+10,9,COLORS.ink3,'left','500');
+
+    ctx.fillStyle=COLORS.bad+'33';ctx.fillRect(lx1+510,ly+7,14,6);
+    _label(ctx,'Stop codon',lx1+528,ly+10,9,COLORS.ink3,'left','500');
+  }
+
+  // ── Step 3: same as step 2 but fully resolved (for re-entry) ──
+  if(step>=3){
+    drawGpCanvas(2);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2576,7 +2677,7 @@ Reveal.initialize({
     if(i===SID('why-not-16s')){setTimeout(()=>{const f=Reveal.getState().indexf;drawTaxCanvas(f>=0?1:0)},300)}
     if(i===SID('gtdb')){setTimeout(()=>{const f=Reveal.getState().indexf;drawGtdbCanvas(f>=0?f+1:0)},300)}
     if(i===SID('gtdb-tk')){setTimeout(()=>{const f=Reveal.getState().indexf;const s=f>=0?f+1:0;drawTkCanvas(s);tkHighlight(s)},300)}
-    if(i===SID('gene-prediction')){setTimeout(()=>drawGpCanvas(),300)}
+    if(i===SID('gene-prediction')){setTimeout(()=>{const f=Reveal.getState().indexf;const s=f>=0?f+1:0;drawGpCanvas(s);gpHighlight(s)},300)}
     if(i===SID('hmmer-concept')){setTimeout(()=>drawHmmerCanvas(),300)}
     if(i===SID('kegg')){setTimeout(()=>drawKeggCanvas(),300)}
     if(i===SID('pfam')){setTimeout(()=>drawPfamCanvas(),300)}
@@ -2610,6 +2711,10 @@ Reveal.initialize({
     if(si===SID('why-not-16s')){
       drawTaxCanvas(1);
     }
+    if(si===SID('gene-prediction')){
+      const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
+      drawGpCanvas(idx+1);gpHighlight(idx+1);
+    }
   });
 
   Reveal.on('fragmenthidden',e=>{
@@ -2632,6 +2737,10 @@ Reveal.initialize({
     }
     if(si===SID('why-not-16s')){
       drawTaxCanvas(0);
+    }
+    if(si===SID('gene-prediction')){
+      const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
+      drawGpCanvas(idx);gpHighlight(idx);
     }
   });
 

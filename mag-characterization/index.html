@@ -597,22 +597,22 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
 <!-- ═══════════════════ SLIDE 13: GENE PREDICTION ═══════════════════ -->
 <section data-slide-id="gene-prediction">
   <div class="tag tag-gene">Gene prediction</div>
-  <h2 class="stitle">Gene prediction finds likely protein-coding regions</h2>
-  <p class="sub">Prodigal scans each contig for open reading frames with coding-like patterns.</p>
+  <h2 class="stitle">Prodigal finds genes in three steps</h2>
+  <p class="sub">Ab initio gene prediction: no reference needed, trains on the contig itself.</p>
 
   <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
     <div class="f0 col g-10 sidebar sidebar-wide">
-      <div class="card info-card" style="border-left:3px solid var(--gb)">
-        <div class="info-card-title">Long ORFs</div>
-        <div class="info-card-text">Real genes tend to have long open reading frames. Short random ORFs are filtered out by length and coding potential.</div>
+      <div class="card info-card" id="gp-card-0" style="border-left:3px solid var(--ink-4)">
+        <div class="info-card-title">1. Find all ORFs</div>
+        <div class="info-card-text">Scan all 6 reading frames for every start&rarr;stop codon pair. Most are short random ORFs.</div>
       </div>
-      <div class="card info-card" style="border-left:3px solid var(--ga)">
-        <div class="info-card-title">Coding patterns</div>
-        <div class="info-card-text">Codon usage, GC frame bias, and hexamer frequencies distinguish real genes from random sequence.</div>
+      <div class="card info-card" id="gp-card-1" style="border-left:3px solid var(--ga)">
+        <div class="info-card-title">2. Score coding potential</div>
+        <div class="info-card-text">Train a model on the input sequence. Score each ORF by codon usage, hexamer bias, and GC frame pattern. High-scoring ORFs are likely real genes.</div>
       </div>
-      <div class="card info-card" style="border-left:3px solid var(--gd)">
-        <div class="info-card-title">Start site signals</div>
-        <div class="info-card-text">Ribosome binding sites (Shine-Dalgarno) and start codons (ATG, GTG, TTG) help identify the correct translation start.</div>
+      <div class="card info-card" id="gp-card-2" style="border-left:3px solid var(--gb)">
+        <div class="info-card-title">3. Select &amp; refine starts</div>
+        <div class="info-card-text">Dynamic programming picks the best non-overlapping gene set. Ribosome binding sites (Shine-Dalgarno) refine the start codon.</div>
       </div>
       <div style="padding:8px 10px;border-radius:8px;background:#f1f5f9;font-size:10px;color:var(--ink-3);text-align:center;line-height:1.5;font-family:var(--mono)">
         MAG.fna &rarr; genes.gff + proteins.faa
@@ -621,15 +621,19 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
 
     <div class="f1 col" style="min-height:0;">
       <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
-        <div class="card-header">Contig with predicted ORFs in reading frames</div>
+        <div class="card-header" id="gp-header">Prodigal gene prediction</div>
         <div class="canvas-wrap"><canvas id="gp-canvas" class="canvas-fill"></canvas></div>
       </div>
     </div>
   </div>
 
   <div class="takeaways" style="margin-top:8px">
-    <div class="tw tw-b" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Prodigal predicts genes by identifying ORFs with coding-like patterns and plausible start sites.</div>
+    <div class="tw tw-b" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Prodigal is ab initio: it trains on the input DNA, scores ORFs by coding signals, then picks the optimal non-overlapping gene set.</div>
   </div>
+
+  <span class="fragment" data-fragment-index="0"></span>
+  <span class="fragment" data-fragment-index="1"></span>
+  <span class="fragment" data-fragment-index="2"></span>
 </section>
 
 <!-- ═══════════════════ SLIDE 14: GENE PREDICTION CAVEATS ═══════════════════ -->
@@ -1364,5 +1368,5 @@ document.addEventListener('keydown',e=>{
 </script>
 
 <script src="reveal.min.js"></script>
-<script src="slides.js?v=20260502e"></script>
+<script src="slides.js?v=20260503b"></script>
 </body></html>
