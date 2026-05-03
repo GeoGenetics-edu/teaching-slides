@@ -1098,35 +1098,50 @@ function drawKeggStep1(ctx){
   _monoLabel(ctx,'KofamScan / kofam_scan',cx,130,13,COLORS.gd,'center');
   _label(ctx,'HMM search against KOfam profiles',cx,148,10,COLORS.ink3,'center','500');
 
-  /* Two output branches */
-  const ly=184,lw=210,lh=60;
-  _arrow(ctx,cx-50,168,cx-100,ly,COLORS.ok,1.5);
-  _arrow(ctx,cx+50,168,cx+100,ly,COLORS.bad,1.5);
+  /* Two output branches — elbow arrows with two clear 90° corners */
+  const ly=198,lw=200,lh=56,sep=110;
+  const elbowY1=168, elbowMid=183;  /* first corner at 183, second at ly=198 */
+  /* Left elbow: down → left → down into K00001 */
+  (function(){
+    const x1=cx-40,x2=cx-sep,hs=7,c=COLORS.ok;
+    ctx.strokeStyle=c;ctx.lineWidth=1.5;ctx.lineCap='round';ctx.lineJoin='round';
+    ctx.beginPath();ctx.moveTo(x1,elbowY1);ctx.lineTo(x1,elbowMid);ctx.lineTo(x2,elbowMid);ctx.lineTo(x2,ly);ctx.stroke();
+    ctx.fillStyle=c;ctx.beginPath();
+    ctx.moveTo(x2,ly);ctx.lineTo(x2-hs*0.5,ly-hs);ctx.lineTo(x2+hs*0.5,ly-hs);ctx.closePath();ctx.fill();
+  })();
+  /* Right elbow: down → right → down into K00003 */
+  (function(){
+    const x1=cx+40,x2=cx+sep,hs=7,c=COLORS.bad;
+    ctx.strokeStyle=c;ctx.lineWidth=1.5;ctx.lineCap='round';ctx.lineJoin='round';
+    ctx.beginPath();ctx.moveTo(x1,elbowY1);ctx.lineTo(x1,elbowMid);ctx.lineTo(x2,elbowMid);ctx.lineTo(x2,ly);ctx.stroke();
+    ctx.fillStyle=c;ctx.beginPath();
+    ctx.moveTo(x2,ly);ctx.lineTo(x2-hs*0.5,ly-hs);ctx.lineTo(x2+hs*0.5,ly-hs);ctx.closePath();ctx.fill();
+  })();
 
-  /* Hit above adaptive threshold */
-  _roundRect(ctx,cx-100-lw/2,ly,lw,lh,8,'#dcfce7',COLORS.ok,1.5);
-  _monoLabel(ctx,'K00001  ★',cx-100,ly+20,13,COLORS.ok,'center');
-  _label(ctx,'Score > adaptive threshold',cx-100,ly+38,10,COLORS.ok,'center','600');
-  _label(ctx,'Confident assignment',cx-100,ly+52,9,COLORS.ink3,'center','400');
+  /* Hit above adaptive threshold — K00001 box */
+  _roundRect(ctx,cx-sep-lw/2,ly,lw,lh,8,'#dcfce7',COLORS.ok,1.5);
+  _monoLabel(ctx,'K00001  ★',cx-sep,ly+18,13,COLORS.ok,'center');
+  _label(ctx,'Score > adaptive threshold',cx-sep,ly+34,10,COLORS.ok,'center','600');
+  _label(ctx,'Confident assignment',cx-sep,ly+48,9,COLORS.ink3,'center','400');
 
-  /* Hit below threshold */
-  _roundRect(ctx,cx+100-lw/2,ly,lw,lh,8,'#fef2f2',COLORS.bad+'88',1.5);
-  _monoLabel(ctx,'K00003  ?',cx+100,ly+20,13,COLORS.ink4,'center');
-  _label(ctx,'Score < adaptive threshold',cx+100,ly+38,10,COLORS.bad,'center','600');
-  _label(ctx,'No confident KO assigned',cx+100,ly+52,9,COLORS.ink3,'center','400');
+  /* Hit below threshold — K00003 box */
+  _roundRect(ctx,cx+sep-lw/2,ly,lw,lh,8,'#fef2f2',COLORS.bad+'88',1.5);
+  _monoLabel(ctx,'K00003  ?',cx+sep,ly+18,13,COLORS.ink4,'center');
+  _label(ctx,'Score < adaptive threshold',cx+sep,ly+34,10,COLORS.bad,'center','600');
+  _label(ctx,'No confident KO assigned',cx+sep,ly+48,9,COLORS.ink3,'center','400');
 
   /* Flow to downstream — placed above explanation box to avoid arrow overlap */
-  _arrow(ctx,cx-100,ly+lh+6,cx-100,264,COLORS.ink4,1.5);
-  _roundRect(ctx,cx-100-90,266,180,34,8,COLORS.ga+'14',COLORS.ga,1.5);
-  _label(ctx,'Assigned KOs go to',cx-100,278,10,COLORS.ink3,'center','500');
-  _label(ctx,'module completeness',cx-100,292,11,COLORS.ga,'center','700');
+  _arrow(ctx,cx-sep,ly+lh+6,cx-sep,280,COLORS.ink4,1.5);
+  _roundRect(ctx,cx-sep-90,282,180,34,8,COLORS.ga+'14',COLORS.ga,1.5);
+  _label(ctx,'Assigned KOs go to',cx-sep,294,10,COLORS.ink3,'center','500');
+  _label(ctx,'module completeness',cx-sep,308,11,COLORS.ga,'center','700');
 
   /* Explanation of adaptive thresholds */
-  const ey=330;
-  _roundRect(ctx,100,ey,600,66,8,'#f8fafc',COLORS.border,1);
-  _label(ctx,'Adaptive score thresholds',cx,ey+16,12,COLORS.ink2,'center','700');
-  _label(ctx,'Each KO family has its own score cutoff, calibrated on known members.',cx,ey+34,10,COLORS.ink3,'center','400');
-  _label(ctx,'This is better than a single E-value cutoff: fewer false positives, fewer missed hits.',cx,ey+50,10,COLORS.ink3,'center','400');
+  const ey=340;
+  _roundRect(ctx,100,ey,600,60,8,'#f8fafc',COLORS.border,1);
+  _label(ctx,'Adaptive score thresholds',cx,ey+14,12,COLORS.ink2,'center','700');
+  _label(ctx,'Each KO family has its own score cutoff, calibrated on known members.',cx,ey+30,10,COLORS.ink3,'center','400');
+  _label(ctx,'This is better than a single E-value cutoff: fewer false positives, fewer missed hits.',cx,ey+46,10,COLORS.ink3,'center','400');
 
   _label(ctx,'KofamScan assigns KO numbers using family-specific HMM thresholds',cx,424,11,COLORS.ink4,'center','400');
 }
@@ -1138,10 +1153,10 @@ function drawKeggStep2(ctx){
   _label(ctx,'A module defines a metabolic function as a set of enzyme steps',cx,30,14,COLORS.ink,'center','700');
 
   /* Module ID + name */
-  _roundRect(ctx,cx-200,52,400,42,8,COLORS.ga+'14',COLORS.ga,2);
-  _monoLabel(ctx,'M00001',cx-60,68,16,COLORS.ga,'center');
-  _label(ctx,'Glycolysis (Embden-Meyerhof)',cx+60,68,12,COLORS.ga,'left','600');
-  _label(ctx,'pathway',cx+60,82,9,COLORS.ink4,'left','400');
+  _roundRect(ctx,cx-240,52,480,42,8,COLORS.ga+'14',COLORS.ga,2);
+  _monoLabel(ctx,'M00001',cx-100,68,16,COLORS.ga,'center');
+  _label(ctx,'Glycolysis (Embden-Meyerhof)',cx+10,68,12,COLORS.ga,'left','600');
+  _label(ctx,'pathway',cx+10,82,9,COLORS.ink4,'left','400');
 
   /* Definition block */
   const dy=112;
@@ -1198,7 +1213,7 @@ function drawKeggStep3(ctx){
   _monoLabel(ctx,'(K00844,K12407) (K01810) (K00850,K16370) (K01623) (K01803)',cx,defY+14,9.5,COLORS.ga,'center');
 
   /* Pathway visualization */
-  const mets=['Glucose','G6P','F6P','FBP','G3P','1,3BPG'];
+  const mets=[['Glucose'],['Glucose','6-phosphate'],['Fructose','6-phosphate'],['Fructose','1,6-bisP'],['Glyceraldehyde','3-phosphate'],['1,3-Bisphospho-','glycerate']];
   const metX=[50,180,310,440,570,720];
   const metY=150;
 
@@ -1208,7 +1223,8 @@ function drawKeggStep3(ctx){
     ctx.beginPath();ctx.arc(metX[i],metY,r,0,Math.PI*2);
     ctx.fillStyle='#f0fdf4';ctx.fill();
     ctx.strokeStyle=COLORS.ok;ctx.lineWidth=isBig?2:1.2;ctx.stroke();
-    _label(ctx,mets[i],metX[i],metY+(isBig?28:22),isBig?10:9,COLORS.ink3,'center','500');
+    const lines=mets[i],baseY=metY+(isBig?28:22);
+    for(let l=0;l<lines.length;l++) _label(ctx,lines[l],metX[i],baseY+l*11,8,COLORS.ink3,'center','500');
   }
 
   /* Enzyme boxes between metabolites, all present (green) */
@@ -1227,7 +1243,7 @@ function drawKeggStep3(ctx){
   const barY=230;
   _label(ctx,'Module completeness:',cx,barY,13,COLORS.ink2,'center','700');
   const barW=300,barH=24,barX=cx-barW/2;
-  _roundRect(ctx,barX,barY+14,barW,barH,4,'#dcfce7',COLORS.ok,1.5);
+  _roundRect(ctx,barX,barY+14,barW,barH,4,COLORS.ok,COLORS.ok,1.5);
   _label(ctx,'5 / 5 = 100%',cx,barY+26,13,'#fff','center','700');
 
   /* Interpretation */
@@ -1251,7 +1267,7 @@ function drawKeggStep4(ctx){
   _roundRect(ctx,80,defY,640,28,6,COLORS.ga+'0a',COLORS.ga+'44',1);
   _monoLabel(ctx,'(K00844,K12407) (K01810) (K00850,K16370) (K01623) (K01803)',cx,defY+14,9.5,COLORS.ga,'center');
 
-  const mets=['Glucose','G6P','F6P','FBP','G3P','1,3BPG'];
+  const mets=[['Glucose'],['Glucose','6-phosphate'],['Fructose','6-phosphate'],['Fructose','1,6-bisP'],['Glyceraldehyde','3-phosphate'],['1,3-Bisphospho-','glycerate']];
   const metX=[50,180,310,440,570,720];
   const metY=140;
   const present=[true,true,false,true,false];
@@ -1262,7 +1278,8 @@ function drawKeggStep4(ctx){
     ctx.beginPath();ctx.arc(metX[i],metY,r,0,Math.PI*2);
     ctx.fillStyle=isBig?'#f0fdf4':'#f1f5f9';ctx.fill();
     ctx.strokeStyle=isBig?COLORS.ok:COLORS.border;ctx.lineWidth=isBig?2:1.2;ctx.stroke();
-    _label(ctx,mets[i],metX[i],metY+(isBig?28:22),isBig?10:9,COLORS.ink3,'center','500');
+    const lines=mets[i],baseY=metY+(isBig?28:22);
+    for(let l=0;l<lines.length;l++) _label(ctx,lines[l],metX[i],baseY+l*11,8,COLORS.ink3,'center','500');
   }
 
   const kos=['K00844','K01810','K00850','K01623','K01803'];
@@ -1365,14 +1382,10 @@ function drawKeggStep5(ctx){
 function drawKeggStep6(ctx){
   const cx=400;
 
-  _label(ctx,'anvi-estimate-metabolism: module completeness across MAGs',cx,20,14,COLORS.ink,'center','700');
-
-  /* CLI box */
-  _roundRect(ctx,120,36,560,36,6,'#1e293b',null,0);
-  _monoLabel(ctx,'$ anvi-estimate-metabolism -c contigs-db -p profile-db -C collection',cx,54,9,'#a5f3fc','center');
+  _label(ctx,'anvi-estimate-metabolism: module completeness across MAGs',cx,28,14,COLORS.ink,'center','700');
 
   /* Two-algorithm explanation */
-  const alY=82;
+  const alY=52;
   _label(ctx,'Dual completeness algorithms:',cx,alY,11,COLORS.ink2,'center','700');
 
   /* Pathwise box */
@@ -1385,8 +1398,8 @@ function drawKeggStep6(ctx){
   _label(ctx,'Stepwise completeness',565,alY+26,11,COLORS.gb,'center','700');
   _label(ctx,'% of top-level steps with at least one KO present',565,alY+42,9,COLORS.ink3,'center','400');
 
-  /* Heatmap grid — compact */
-  const hx=80,hy=alY+90,cellW=66,cellH=22,gap=2;
+  /* Heatmap grid — spacious */
+  const hx=80,hy=alY+96,cellW=70,cellH=26,gap=3;
   const mags=['MAG-01','MAG-02','MAG-03','MAG-04','MAG-05'];
   const modules=['Glycolysis','TCA','Pentose P.','Ox. phos.','N fixation'];
 
@@ -1397,9 +1410,9 @@ function drawKeggStep6(ctx){
 
   /* Column headers — rotated */
   for(let j=0;j<modules.length;j++){
-    const mx=hx+60+j*(cellW+gap)+cellW/2;
+    const mx=hx+66+j*(cellW+gap)+cellW/2;
     ctx.save();
-    ctx.translate(mx,hy-4);
+    ctx.translate(mx,hy-6);
     ctx.rotate(-Math.PI/6);
     ctx.font='500 9px "DM Sans",system-ui,sans-serif';
     ctx.fillStyle=COLORS.ink2;ctx.textAlign='left';
@@ -1410,13 +1423,13 @@ function drawKeggStep6(ctx){
   /* Row headers */
   for(let i=0;i<mags.length;i++){
     const my=hy+i*(cellH+gap)+cellH/2;
-    _monoLabel(ctx,mags[i],hx+54,my+1,9,COLORS.ink2,'right');
+    _monoLabel(ctx,mags[i],hx+58,my+1,9,COLORS.ink2,'right');
   }
 
   /* Cells */
   for(let i=0;i<mags.length;i++){
     for(let j=0;j<modules.length;j++){
-      const x=hx+60+j*(cellW+gap);
+      const x=hx+66+j*(cellW+gap);
       const y=hy+i*(cellH+gap);
       const v=data[i][j];
       const r2=Math.round(255-(255-13)*v);
@@ -1424,13 +1437,13 @@ function drawKeggStep6(ctx){
       const b2=Math.round(255-(255-136)*v);
       _roundRect(ctx,x,y,cellW,cellH,3,'rgb('+r2+','+g2+','+b2+')',null,0);
       const textCol=v>0.5?'#fff':COLORS.ink3;
-      _label(ctx,(v*100|0)+'%',x+cellW/2,y+cellH/2,9,textCol,'center','600');
+      _label(ctx,(v*100|0)+'%',x+cellW/2,y+cellH/2+1,10,textCol,'center','600');
     }
   }
 
   /* Color legend */
-  const legX=hx+60+modules.length*(cellW+gap)+14;
-  const legY2=hy+6;
+  const legX=hx+66+modules.length*(cellW+gap)+18;
+  const legY2=hy+8;
   _label(ctx,'Module',legX+24,legY2,9,COLORS.ink2,'center','600');
   _label(ctx,'completeness',legX+24,legY2+12,9,COLORS.ink2,'center','600');
   for(let k=0;k<=4;k++){
@@ -1438,18 +1451,18 @@ function drawKeggStep6(ctx){
     const r2=Math.round(255-(255-13)*v);
     const g2=Math.round(255-(255-148)*v);
     const b2=Math.round(255-(255-136)*v);
-    _roundRect(ctx,legX+2,legY2+22+k*18,40,14,3,'rgb('+r2+','+g2+','+b2+')',COLORS.border,0.5);
-    _label(ctx,(v*100)+'%',legX+50,legY2+29+k*18,8,COLORS.ink3,'left','500');
+    _roundRect(ctx,legX+2,legY2+24+k*20,40,16,3,'rgb('+r2+','+g2+','+b2+')',COLORS.border,0.5);
+    _label(ctx,(v*100)+'%',legX+50,legY2+32+k*20,8,COLORS.ink3,'left','500');
   }
 
   /* Threshold note */
-  const thY=hy+mags.length*(cellH+gap)+8;
+  const thY=hy+mags.length*(cellH+gap)+12;
   _roundRect(ctx,80,thY,640,30,8,'#fffbeb',COLORS.gd+'88',1.2);
   _label(ctx,'Default threshold: 0.75 — modules above this are considered complete',cx,thY+15,10,COLORS.gd,'center','700');
 
   /* Key advantages */
-  const ky=thY+40;
-  _roundRect(ctx,80,ky,640,56,8,'#f0fdf4',COLORS.ok+'66',1.2);
+  const ky=thY+42;
+  _roundRect(ctx,80,ky,640,52,8,'#f0fdf4',COLORS.ok+'66',1.2);
   _label(ctx,'Why anvi-estimate-metabolism?',cx,ky+14,11,COLORS.ok,'center','700');
   _label(ctx,'Native anvi\'o integration with contigs-db / profile-db; supports custom modules beyond KEGG,',cx,ky+30,9.5,COLORS.ink3,'center','500');
   _label(ctx,'copy-number estimation, and pangenome-level analysis',cx,ky+44,9.5,COLORS.ink3,'center','500');
@@ -1464,21 +1477,19 @@ const pfamHeaders=[
   'Step 2: Pfam profiles detect domains',
   'Step 3: Domain architecture',
   'Step 4: Same domain, different proteins',
-  'Step 5: Pfam inside InterPro',
-  'Step 6: MAG domain fingerprint',
+  'Step 5: MAG domain fingerprint',
 ];
 const pfamCanvasHeaders=[
   'Protein domains: reusable functional units',
   'Pfam profile HMMs scan your protein',
   'Domain arrangement along a protein',
   'Shared domains across proteins',
-  'Pfam is part of the InterPro consortium',
   'Domain-architecture view of your MAG',
 ];
-const pfamCardMap=[0,0,1,1,2,2];
+const pfamCardMap=[0,0,1,1,2];
 
 function pfamHighlight(step){
-  const active=pfamCardMap[Math.min(step,5)];
+  const active=pfamCardMap[Math.min(step,4)];
   for(let i=0;i<3;i++){
     const el=document.getElementById('pfam-card-'+i);if(!el)continue;
     el.style.opacity=i===active?'1':i<active?'0.5':'0.35';
@@ -1486,16 +1497,16 @@ function pfamHighlight(step){
     el.style.boxShadow=i===active?'0 4px 6px rgba(15,23,42,.04),0 2px 12px rgba(15,23,42,.06)':'0 1px 2px rgba(15,23,42,.04),0 1px 3px rgba(15,23,42,.06)';
   }
   const h=document.getElementById('pfam-header');
-  if(h) h.textContent=pfamHeaders[Math.min(step,5)];
+  if(h) h.textContent=pfamHeaders[Math.min(step,4)];
   const ch=document.getElementById('pfam-canvas-header');
-  if(ch) ch.textContent=pfamCanvasHeaders[Math.min(step,5)];
+  if(ch) ch.textContent=pfamCanvasHeaders[Math.min(step,4)];
 }
 
 function drawPfamCanvas(step){
   step=step||0;
   const ctx=_c('pfam-canvas');if(!ctx)return;
   ctx.clearRect(0,0,800,440);
-  [drawPfamStep0,drawPfamStep1,drawPfamStep2,drawPfamStep3,drawPfamStep4,drawPfamStep5][Math.min(step,5)](ctx);
+  [drawPfamStep0,drawPfamStep1,drawPfamStep2,drawPfamStep3,drawPfamStep5][Math.min(step,4)](ctx);
 }
 
 /* helper: draw a protein backbone with domains */
@@ -1584,86 +1595,133 @@ function drawPfamStep1(ctx){
   const cx=400;
 
   /* Query protein at top */
-  _label(ctx,'Your predicted protein',cx,28,14,COLORS.gb,'center','700');
-  const qx=140,qw=520,qy=44;
+  _label(ctx,'Your predicted protein',cx,24,14,COLORS.gb,'center','700');
+  const qx=120,qw=560,qy=38;
   ctx.strokeStyle=COLORS.border;ctx.lineWidth=2.5;
   ctx.beginPath();ctx.moveTo(qx,qy+12);ctx.lineTo(qx+qw,qy+12);ctx.stroke();
   _label(ctx,'N',qx-14,qy+12,9,COLORS.ink4,'center','600');
   _label(ctx,'C',qx+qw+14,qy+12,9,COLORS.ink4,'center','600');
-  _monoLabel(ctx,'?  ?  ?',cx,qy+12,12,COLORS.ink4,'center');
+  /* Unknown regions with question marks */
+  const qmarks=[{x:180,w:90},{x:340,w:120},{x:520,w:80}];
+  for(const q of qmarks){
+    ctx.fillStyle=COLORS.ink4+'18';
+    _roundRect(ctx,q.x,qy+2,q.w,20,4,COLORS.ink4+'18',null,0);
+    _monoLabel(ctx,'?',q.x+q.w/2,qy+12,11,COLORS.ink4,'center');
+  }
 
   /* Scanning arrow */
-  _arrow(ctx,cx,qy+28,cx,qy+60,COLORS.ink4,2);
+  _arrow(ctx,cx,qy+30,cx,qy+58,COLORS.ink4,2);
   _label(ctx,'hmmsearch',cx+50,qy+44,10,COLORS.gd,'left','600');
 
-  /* Pfam profile boxes */
+  /* Pfam profile HMM library */
+  const py=qy+68;
+  _roundRect(ctx,60,py-4,680,72,10,'#f1f5f9',COLORS.border,1);
+  _label(ctx,'Pfam profile HMM library (~20,000 families)',cx,py+6,11,COLORS.ink2,'center','700');
+
   const profiles=[
     {name:'PF00069',desc:'Protein kinase',col:COLORS.gb},
     {name:'PF00017',desc:'SH2 domain',col:COLORS.ga},
     {name:'PF00018',desc:'SH3 domain',col:COLORS.gc},
   ];
-  const py=qy+70,bw=200,bh=56,gap=20;
+  const bw=180,bh=40,gap=16;
   const totalW=profiles.length*bw+(profiles.length-1)*gap;
   const bx0=cx-totalW/2;
-
-  _label(ctx,'Pfam profile HMM library',cx,py-8,12,COLORS.ink2,'center','700');
 
   for(let i=0;i<profiles.length;i++){
     const p=profiles[i];
     const bx=bx0+i*(bw+gap);
-    _roundRect(ctx,bx,py,bw,bh,8,p.col+'14',p.col,2);
-    _monoLabel(ctx,p.name,bx+bw/2,py+18,12,p.col,'center');
-    _label(ctx,p.desc,bx+bw/2,py+36,10,COLORS.ink2,'center','500');
+    _roundRect(ctx,bx,py+18,bw,bh,8,p.col+'14',p.col,2);
+    _monoLabel(ctx,p.name,bx+bw/2,py+32,11,p.col,'center');
+    _label(ctx,p.desc,bx+bw/2,py+48,9,COLORS.ink2,'center','500');
   }
 
-  /* Result arrow */
-  _arrow(ctx,cx,py+bh+10,cx,py+bh+40,COLORS.ink4,2);
+  /* ── Result section ── */
+  const ry=py+bh+30;
+  const rx=120,rw=560;
 
-  /* Match result */
-  const ry=py+bh+48;
-  _label(ctx,'Matched domains placed on your protein:',cx,ry,12,COLORS.ink2,'center','600');
-  const rx=140,rw=520;
+  /* Domain positions — SH2 centered at cx */
   const rdoms=[
-    {s:30,e:160,l:'Kinase',c:COLORS.gb},
-    {s:200,e:330,l:'SH2',c:COLORS.ga},
-    {s:370,e:470,l:'SH3',c:COLORS.gc},
+    {s:40,e:170,l:'Kinase',c:COLORS.gb,pi:0},
+    {s:215,e:345,l:'SH2',c:COLORS.ga,pi:1},
+    {s:390,e:490,l:'SH3',c:COLORS.gc,pi:2},
   ];
-  /* 1. Draw opaque domain fills FIRST */
+  const domY=ry+20;
+
+  /* Connecting lines from profiles to domains */
+  for(let i=0;i<rdoms.length;i++){
+    const d=rdoms[i],p=profiles[d.pi];
+    const fromX=bx0+d.pi*(bw+gap)+bw/2;
+    const fromY=py+18+bh+4;
+    const toX=rx+(d.s+d.e)/2;
+    const toY=domY;
+    const elbowY=ry;
+    ctx.strokeStyle=p.col+'55';ctx.lineWidth=1.2;ctx.setLineDash([4,3]);
+    ctx.beginPath();ctx.moveTo(fromX,fromY);ctx.lineTo(fromX,elbowY);ctx.lineTo(toX,elbowY);ctx.lineTo(toX,toY);ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  /* "Matched domains" label — left-aligned, outside connector paths */
+  _label(ctx,'Matched domains:',rx-12,domY+4,10,COLORS.ink3,'right','600');
+
+  /* Domain boxes */
   for(const d of rdoms){
     const dx=rx+d.s,dw=d.e-d.s;
-    _roundRect(ctx,dx,ry+10,dw,28,6,d.c,null,0);
-    _roundRect(ctx,dx,ry+10,dw,28,6,null,d.c,1.5);
-    _label(ctx,d.l,dx+dw/2,ry+24,10,'#fff','center','700');
+    _roundRect(ctx,dx,domY,dw,30,6,d.c,null,0);
+    _roundRect(ctx,dx,domY,dw,30,6,null,d.c,1.5);
+    _label(ctx,d.l,dx+dw/2,domY+15,11,'#fff','center','700');
   }
-  /* 2. Draw backbone connectors in gaps, padded from domain edges */
+  /* Backbone connectors */
   ctx.strokeStyle=COLORS.border;ctx.lineWidth=2;
   const pad1=4;
   let cur1=0;
   for(const d of rdoms){
-    if(d.s-cur1>pad1*2){ctx.beginPath();ctx.moveTo(rx+cur1+pad1,ry+24);ctx.lineTo(rx+d.s-pad1,ry+24);ctx.stroke();}
+    if(d.s-cur1>pad1*2){ctx.beginPath();ctx.moveTo(rx+cur1+pad1,domY+15);ctx.lineTo(rx+d.s-pad1,domY+15);ctx.stroke();}
     cur1=d.e;
   }
-  if(rw-cur1>pad1){ctx.beginPath();ctx.moveTo(rx+cur1+pad1,ry+24);ctx.lineTo(rx+rw,ry+24);ctx.stroke();}
-  _label(ctx,'N',rx-14,ry+24,9,COLORS.ink4,'center','600');
-  _label(ctx,'C',rx+rw+14,ry+24,9,COLORS.ink4,'center','600');
+  if(rw-cur1>pad1){ctx.beginPath();ctx.moveTo(rx+cur1+pad1,domY+15);ctx.lineTo(rx+rw,domY+15);ctx.stroke();}
+  _label(ctx,'N',rx+6,domY+28,8,COLORS.ink4,'left','600');
+  _label(ctx,'C',rx+rw-6,domY+28,8,COLORS.ink4,'right','600');
+
+  /* E-value annotations below domains */
+  for(const d of rdoms){
+    const dx=rx+(d.s+d.e)/2;
+    _monoLabel(ctx,'E < 1e-15',dx,domY+42,8,d.c,'center');
+  }
+
+  /* ── Annotation result table ── */
+  const ty=domY+62;
+  _roundRect(ctx,100,ty,600,80,8,'#f8fafc',COLORS.border,1);
+  _label(ctx,'Pfam annotation output',cx,ty+14,11,COLORS.ink2,'center','700');
+  /* Table header */
+  const cols=[{l:'Domain',x:160},{l:'Accession',x:280},{l:'Start',x:390},{l:'End',x:450},{l:'E-value',x:540},{l:'Description',x:650}];
+  for(const c of cols) _label(ctx,c.l,c.x,ty+30,8,COLORS.ink4,'center','700');
+  ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.5;
+  ctx.beginPath();ctx.moveTo(120,ty+35);ctx.lineTo(680,ty+35);ctx.stroke();
+  /* Row 1 */
+  const row1=[{t:'Kinase',x:160,c:COLORS.gb},{t:'PF00069',x:280,c:COLORS.gb},{t:'32',x:390},{t:'136',x:450},{t:'1.2e-42',x:540},{t:'Protein kinase domain',x:650}];
+  for(const c of row1) _monoLabel(ctx,c.t,c.x,ty+46,8,c.c||COLORS.ink3,'center');
+  /* Row 2 */
+  const row2=[{t:'SH2',x:160,c:COLORS.ga},{t:'PF00017',x:280,c:COLORS.ga},{t:'172',x:390},{t:'276',x:450},{t:'3.8e-28',x:540},{t:'SH2 domain',x:650}];
+  for(const c of row2) _monoLabel(ctx,c.t,c.x,ty+60,8,c.c||COLORS.ink3,'center');
+  /* Row 3 */
+  const row3=[{t:'SH3',x:160,c:COLORS.gc},{t:'PF00018',x:280,c:COLORS.gc},{t:'312',x:390},{t:'392',x:450},{t:'7.1e-19',x:540},{t:'SH3 domain',x:650}];
+  for(const c of row3) _monoLabel(ctx,c.t,c.x,ty+74,8,c.c||COLORS.ink3,'center');
 
   /* Caption */
-  _roundRect(ctx,100,380,600,44,8,'#f8fafc',COLORS.border,1);
-  _label(ctx,'Each Pfam family has a profile HMM — same technology as HMMER',cx,398,12,COLORS.ink2,'center','600');
-  _label(ctx,'Your proteins are scanned against ~20,000 Pfam families',cx,414,10,COLORS.ink3,'center','400');
+  _roundRect(ctx,80,ty+92,640,44,8,'#f8fafc',COLORS.border,1);
+  _label(ctx,'Each Pfam family has a profile HMM — same technology as HMMER',cx,ty+108,11,COLORS.ink2,'center','600');
+  _label(ctx,'Domains are functional units that fold and function independently',cx,ty+122,9,COLORS.ink3,'center','400');
 }
 
 /* ── Step 2: Domain architecture ── */
 function drawPfamStep2(ctx){
   const cx=400;
-  _label(ctx,'Domain architecture of a multi-domain protein',cx,30,15,COLORS.ink,'center','700');
+  _label(ctx,'Domain architecture of a multi-domain protein',cx,26,15,COLORS.ink,'center','700');
 
-  /* One protein with 4 domains, showing boundaries */
-  const px=60,pw=680,py=80;
-
-  /* protein name and length */
-  _label(ctx,'ABC transporter permease',px,py-8,13,COLORS.ink,'left','700');
-  _monoLabel(ctx,'573 aa',px+pw,py+38,10,COLORS.ink4,'center');
+  /* ── Protein 1: ABC transporter ── */
+  const px=60,pw=680,py=62;
+  _label(ctx,'ABC transporter permease',px,py-8,12,COLORS.ink,'left','700');
+  _monoLabel(ctx,'573 aa',px+pw+2,py+16,9,COLORS.ink4,'left');
 
   const doms=[
     {s:10,e:150,l:'ABC_tran',c:COLORS.gb,aa:'1-120',desc:'ATP-binding cassette'},
@@ -1672,14 +1730,14 @@ function drawPfamStep2(ctx){
     {s:540,e:660,l:'Peptidase_C39',c:COLORS.gd,aa:'440-535',desc:'Signal peptide cleavage'},
   ];
 
-  /* 1. Draw opaque domain fills FIRST */
+  /* Domain fills */
   for(const d of doms){
     const dx=px+d.s,dw=d.e-d.s;
     _roundRect(ctx,dx,py+2,dw,28,6,d.c,null,0);
     _roundRect(ctx,dx,py+2,dw,28,6,null,d.c,2);
     _label(ctx,d.l,dx+dw/2,py+16,Math.min(11,dw/d.l.length*1.6),'#fff','center','700');
   }
-  /* 2. Backbone connectors in gaps, padded from domain edges */
+  /* Backbone */
   ctx.strokeStyle=COLORS.border;ctx.lineWidth=3;
   const pad2=4;
   let cur2=0;
@@ -1688,206 +1746,321 @@ function drawPfamStep2(ctx){
     cur2=d.e;
   }
   if(pw-cur2>pad2){ctx.beginPath();ctx.moveTo(px+cur2+pad2,py+16);ctx.lineTo(px+pw,py+16);ctx.stroke();}
-  _label(ctx,'N',px-16,py+16,11,COLORS.ink4,'center','600');
-  _label(ctx,'C',px+pw+16,py+16,11,COLORS.ink4,'center','600');
+  _label(ctx,'N',px-14,py+16,10,COLORS.ink4,'center','600');
+  _label(ctx,'C',px+pw+14,py+16,10,COLORS.ink4,'center','600');
 
+  /* Amino acid ranges + descriptions below each domain */
   for(const d of doms){
     const dx=px+d.s,dw=d.e-d.s;
-
-    /* Position labels below */
-    _monoLabel(ctx,d.aa,dx+dw/2,py+42,9,d.c,'center');
-
-    /* Description with connector */
-    const descY=py+62+(doms.indexOf(d)%2)*44;
-    ctx.setLineDash([3,3]);ctx.strokeStyle=d.c+'66';ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(dx+dw/2,py+48);ctx.lineTo(dx+dw/2,descY-6);ctx.stroke();
-    ctx.setLineDash([]);
-    _roundRect(ctx,dx+dw/2-72,descY-4,144,22,5,d.c+'10',d.c+'44',1);
-    _label(ctx,d.desc,dx+dw/2,descY+7,9.5,d.c,'center','500');
+    _monoLabel(ctx,d.aa,dx+dw/2,py+42,8,d.c,'center');
+    _label(ctx,d.desc,dx+dw/2,py+54,8,COLORS.ink3,'center','500');
   }
 
-  /* Reading direction arrow */
-  const ay=py+190;
-  _arrow(ctx,px+20,ay,px+pw-20,ay,COLORS.ink4+'66',1.5);
-  _label(ctx,'N-terminus → C-terminus',cx,ay-10,11,COLORS.ink3,'center','500');
+  /* ── Protein 2: Serine protease (different architecture, shows modularity) ── */
+  const p2y=py+100;
+  _label(ctx,'Subtilisin-like serine protease',px,p2y-8,12,COLORS.ink,'left','700');
+  _monoLabel(ctx,'820 aa',px+pw+2,p2y+16,9,COLORS.ink4,'left');
+
+  const doms2=[
+    {s:20,e:180,l:'Inhibitor_I9',c:COLORS.gc,aa:'16-145',desc:'Propeptide inhibitor'},
+    {s:220,e:460,l:'Peptidase_S8',c:COLORS.bad,aa:'180-370',desc:'Subtilase catalytic'},
+    {s:500,e:650,l:'PA',c:COLORS.gd,aa:'410-535',desc:'Protease-associated'},
+  ];
+
+  for(const d of doms2){
+    const dx=px+d.s,dw=d.e-d.s;
+    _roundRect(ctx,dx,p2y+2,dw,28,6,d.c,null,0);
+    _roundRect(ctx,dx,p2y+2,dw,28,6,null,d.c,2);
+    _label(ctx,d.l,dx+dw/2,p2y+16,Math.min(11,dw/d.l.length*1.6),'#fff','center','700');
+  }
+  ctx.strokeStyle=COLORS.border;ctx.lineWidth=3;
+  let cur3=0;
+  for(const d of doms2){
+    if(d.s-cur3>pad2*2){ctx.beginPath();ctx.moveTo(px+cur3+pad2,p2y+16);ctx.lineTo(px+d.s-pad2,p2y+16);ctx.stroke();}
+    cur3=d.e;
+  }
+  if(pw-cur3>pad2){ctx.beginPath();ctx.moveTo(px+cur3+pad2,p2y+16);ctx.lineTo(px+pw,p2y+16);ctx.stroke();}
+  _label(ctx,'N',px-14,p2y+16,10,COLORS.ink4,'center','600');
+  _label(ctx,'C',px+pw+14,p2y+16,10,COLORS.ink4,'center','600');
+
+  for(const d of doms2){
+    const dx=px+d.s,dw=d.e-d.s;
+    _monoLabel(ctx,d.aa,dx+dw/2,p2y+42,8,d.c,'center');
+    _label(ctx,d.desc,dx+dw/2,p2y+54,8,COLORS.ink3,'center','500');
+  }
+
+  /* ── Key observations ── */
+  const ky=p2y+80;
+  _roundRect(ctx,80,ky,280,60,8,COLORS.gb+'10',COLORS.gb+'44',1);
+  _label(ctx,'Same domain, different proteins',cx-230,ky+16,11,COLORS.gb,'center','700');
+  _label(ctx,'ABC_tran appears twice in the',cx-230,ky+32,9,COLORS.ink3,'center','400');
+  _label(ctx,'first protein (tandem repeat)',cx-230,ky+44,9,COLORS.ink3,'center','400');
+
+  _roundRect(ctx,420,ky,300,60,8,COLORS.gd+'10',COLORS.gd+'44',1);
+  _label(ctx,'Architecture = function',cx+170,ky+16,11,COLORS.gd,'center','700');
+  _label(ctx,'The order and combination of',cx+170,ky+32,9,COLORS.ink3,'center','400');
+  _label(ctx,'domains determines protein role',cx+170,ky+44,9,COLORS.ink3,'center','400');
 
   /* Caption */
-  _roundRect(ctx,100,340,600,50,8,'#f8fafc',COLORS.border,1);
-  _label(ctx,'The arrangement of domains tells you what the protein does',cx,358,13,COLORS.ink2,'center','600');
-  _label(ctx,'Same domain (ABC_tran) can appear twice in one protein',cx,376,11,COLORS.ink3,'center','400');
+  _roundRect(ctx,100,ky+74,600,44,8,'#f8fafc',COLORS.border,1);
+  _label(ctx,'The arrangement of domains tells you what the protein does',cx,ky+90,12,COLORS.ink2,'center','600');
+  _label(ctx,'Same domain (ABC_tran) can appear twice in one protein',cx,ky+104,10,COLORS.ink3,'center','400');
 }
 
 /* ── Step 3: Same domain, different proteins ── */
 function drawPfamStep3(ctx){
   const cx=400;
-  _label(ctx,'Shared domains across different proteins',cx,26,15,COLORS.ink,'center','700');
+  _label(ctx,'Same domain appears in different proteins',cx,22,14,COLORS.ink,'center','700');
 
-  /* Three proteins stacked */
-  const px=100,pw=520;
-  const prots=[
-    {name:'Histidine kinase',y:60,len:pw,doms:[
-      {s:10,e:130,l:'HAMP',c:COLORS.gc},
-      {s:160,e:310,l:'HisKA',c:COLORS.gd},
-      {s:340,e:480,l:'HATPase_c',c:COLORS.bad},
-    ]},
-    {name:'DNA gyrase B',y:170,len:pw,doms:[
-      {s:20,e:190,l:'HATPase_c',c:COLORS.bad},
-      {s:220,e:400,l:'DNA_topoisoIV',c:COLORS.gb},
-    ]},
-    {name:'Chemotaxis receptor',y:280,len:pw,doms:[
-      {s:10,e:130,l:'HAMP',c:COLORS.gc},
-      {s:160,e:340,l:'MCPsignal',c:COLORS.ga},
-    ]},
-  ];
+  /* Layout: left panel = HAMP shared, right panel = HATPase_c shared */
+  const lx=30,rx2=410,pw2=360,ph=180;
 
-  for(const p of prots){
-    _pfamProtein(ctx,p.name,px,p.y,p.len,p.doms,false);
+  /* ── Left panel: HAMP shared ── */
+  _roundRect(ctx,lx,44,pw2,ph,10,COLORS.gc+'08',COLORS.gc+'33',1);
+  _label(ctx,'HAMP domain',lx+pw2/2,60,12,COLORS.gc,'center','700');
+  _label(ctx,'Signal transduction module',lx+pw2/2,74,9,COLORS.ink3,'center','400');
+
+  /* Helper: draw backbone only in gaps between domains */
+  function _gapBackbone(x0,y,totalW,doms,pad){
+    ctx.strokeStyle=COLORS.border;ctx.lineWidth=2;
+    let cur=0;
+    for(const d of doms){
+      if(d.x-cur>pad*2){ctx.beginPath();ctx.moveTo(x0+cur+pad,y);ctx.lineTo(x0+d.x-pad,y);ctx.stroke();}
+      cur=d.x+d.w;
+    }
+    if(totalW-cur>pad){ctx.beginPath();ctx.moveTo(x0+cur+pad,y);ctx.lineTo(x0+totalW,y);ctx.stroke();}
   }
 
-  /* Dashed lines connecting shared domains */
-  function connectDomains(p1idx,d1idx,p2idx,d2idx,col){
-    const p1=prots[p1idx],d1=p1.doms[d1idx];
-    const p2=prots[p2idx],d2=p2.doms[d2idx];
-    const x1=px+(d1.s+d1.e)/2, y1=p1.y+34;
-    const x2=px+(d2.s+d2.e)/2, y2=p2.y+2;
-    ctx.setLineDash([4,4]);ctx.strokeStyle=col;ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
-    ctx.setLineDash([]);
+  /* Chemotaxis receptor */
+  const c1y=92;
+  _label(ctx,'Chemotaxis receptor',lx+16,c1y,9,COLORS.ink2,'left','600');
+  const c1px=lx+16,c1pw=pw2-32;
+  const c1doms=[{x:8,w:80},{x:110,w:120}];
+  _gapBackbone(c1px,c1y+18,c1pw,c1doms,3);
+  /* HAMP highlighted */
+  _roundRect(ctx,c1px+8,c1y+8,80,20,5,COLORS.gc,null,0);
+  _roundRect(ctx,c1px+8,c1y+8,80,20,5,null,COLORS.gc,1.5);
+  _label(ctx,'HAMP',c1px+48,c1y+18,9,'#fff','center','700');
+  /* MCPsignal */
+  _roundRect(ctx,c1px+110,c1y+8,120,20,5,COLORS.ga+'44',COLORS.ga+'66',1);
+  _label(ctx,'MCPsignal',c1px+170,c1y+18,9,COLORS.ga,'center','600');
+
+  /* Histidine kinase */
+  const c2y=150;
+  _label(ctx,'Histidine kinase',lx+16,c2y,9,COLORS.ink2,'left','600');
+  const c2doms=[{x:8,w:80},{x:110,w:100},{x:230,w:94}];
+  _gapBackbone(c1px,c2y+18,c1pw,c2doms,3);
+  /* HAMP highlighted */
+  _roundRect(ctx,c1px+8,c2y+8,80,20,5,COLORS.gc,null,0);
+  _roundRect(ctx,c1px+8,c2y+8,80,20,5,null,COLORS.gc,1.5);
+  _label(ctx,'HAMP',c1px+48,c2y+18,9,'#fff','center','700');
+  /* HisKA dimmed */
+  _roundRect(ctx,c1px+110,c2y+8,100,20,5,COLORS.gd+'44',COLORS.gd+'66',1);
+  _label(ctx,'HisKA',c1px+160,c2y+18,9,COLORS.gd,'center','600');
+  /* HATPase_c dimmed */
+  _roundRect(ctx,c1px+230,c2y+8,94,20,5,COLORS.bad+'22',COLORS.bad+'44',1);
+  _label(ctx,'HATPase_c',c1px+277,c2y+18,8,COLORS.bad+'88','center','600');
+
+  /* Connecting ribbon for HAMP */
+  {
+    const x1=c1px+8, x2=c1px+8+80;   /* domain left/right edges */
+    const top=c1y+28, bot=c2y+8;
+    const mid=(top+bot)/2;
+    const grad=ctx.createLinearGradient(0,top,0,bot);
+    grad.addColorStop(0,COLORS.gc+'44');
+    grad.addColorStop(0.5,COLORS.gc+'18');
+    grad.addColorStop(1,COLORS.gc+'44');
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.moveTo(x1,top);
+    ctx.bezierCurveTo(x1,mid,x1,mid,x1,bot);
+    ctx.lineTo(x2,bot);
+    ctx.bezierCurveTo(x2,mid,x2,mid,x2,top);
+    ctx.closePath();
+    ctx.fill();
   }
 
-  /* HATPase_c: protein 0 dom 2 <-> protein 1 dom 0 */
-  connectDomains(0,2,1,0,COLORS.bad);
-  /* HAMP: protein 0 dom 0 <-> protein 2 dom 0 */
-  connectDomains(0,0,2,0,COLORS.gc);
+  /* ── Right panel: HATPase_c shared ── */
+  _roundRect(ctx,rx2,44,pw2,ph,10,COLORS.bad+'08',COLORS.bad+'33',1);
+  _label(ctx,'HATPase_c domain',rx2+pw2/2,60,12,COLORS.bad,'center','700');
+  _label(ctx,'ATPase catalytic core',rx2+pw2/2,74,9,COLORS.ink3,'center','400');
 
-  /* "Same domain" labels on connecting lines */
-  _label(ctx,'← HATPase_c shared',px+prots[0].doms[2].e+30,130,10,COLORS.bad,'left','600');
-  _label(ctx,'← HAMP shared',px+prots[0].doms[0].e+30,148,10,COLORS.gc,'left','600');
+  /* Histidine kinase */
+  const r1y=92;
+  _label(ctx,'Histidine kinase',rx2+16,r1y,9,COLORS.ink2,'left','600');
+  const r1px=rx2+16,r1pw=pw2-32;
+  const r1doms=[{x:8,w:60},{x:86,w:80},{x:184,w:120}];
+  _gapBackbone(r1px,r1y+18,r1pw,r1doms,3);
+  /* HAMP dimmed */
+  _roundRect(ctx,r1px+8,r1y+8,60,20,5,COLORS.gc+'22',COLORS.gc+'44',1);
+  _label(ctx,'HAMP',r1px+38,r1y+18,8,COLORS.gc+'88','center','600');
+  /* HisKA dimmed */
+  _roundRect(ctx,r1px+86,r1y+8,80,20,5,COLORS.gd+'44',COLORS.gd+'66',1);
+  _label(ctx,'HisKA',r1px+126,r1y+18,8,COLORS.gd,'center','600');
+  /* HATPase_c highlighted */
+  _roundRect(ctx,r1px+184,r1y+8,120,20,5,COLORS.bad,null,0);
+  _roundRect(ctx,r1px+184,r1y+8,120,20,5,null,COLORS.bad,1.5);
+  _label(ctx,'HATPase_c',r1px+244,r1y+18,9,'#fff','center','700');
 
-  /* Caption */
-  _roundRect(ctx,80,370,640,50,8,'#f8fafc',COLORS.border,1);
-  _label(ctx,'Shared domains = shared function. Domain shuffling creates new proteins',cx,388,13,COLORS.ink2,'center','600');
-  _label(ctx,'Evolution reuses domains like building blocks',cx,406,11,COLORS.ink3,'center','400');
+  /* DNA gyrase B */
+  const r2y=150;
+  _label(ctx,'DNA gyrase B',rx2+16,r2y,9,COLORS.ink2,'left','600');
+  const r2doms=[{x:8,w:120},{x:184,w:120}];
+  _gapBackbone(r1px,r2y+18,r1pw,r2doms,3);
+  /* DNA_topoisoIV dimmed */
+  _roundRect(ctx,r1px+8,r2y+8,120,20,5,COLORS.gb+'44',COLORS.gb+'66',1);
+  _label(ctx,'DNA_topoisoIV',r1px+68,r2y+18,8,COLORS.gb,'center','600');
+  /* HATPase_c highlighted */
+  _roundRect(ctx,r1px+184,r2y+8,120,20,5,COLORS.bad,null,0);
+  _roundRect(ctx,r1px+184,r2y+8,120,20,5,null,COLORS.bad,1.5);
+  _label(ctx,'HATPase_c',r1px+244,r2y+18,9,'#fff','center','700');
+
+  /* Connecting ribbon for HATPase_c */
+  {
+    const x1=r1px+184, x2=r1px+184+120; /* domain left/right edges */
+    const top=r1y+28, bot=r2y+8;
+    const mid=(top+bot)/2;
+    const grad=ctx.createLinearGradient(0,top,0,bot);
+    grad.addColorStop(0,COLORS.bad+'44');
+    grad.addColorStop(0.5,COLORS.bad+'18');
+    grad.addColorStop(1,COLORS.bad+'44');
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.moveTo(x1,top);
+    ctx.bezierCurveTo(x1,mid,x1,mid,x1,bot);
+    ctx.lineTo(x2,bot);
+    ctx.bezierCurveTo(x2,mid,x2,mid,x2,top);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  /* ── Bottom: interpretation ── */
+  const by=244;
+  _roundRect(ctx,60,by,330,56,8,COLORS.gc+'0c',COLORS.gc+'44',1);
+  _label(ctx,'Same HAMP domain',60+165,by+16,11,COLORS.gc,'center','700');
+  _label(ctx,'Both proteins sense environmental signals',60+165,by+32,9,COLORS.ink3,'center','400');
+  _label(ctx,'and relay them across the membrane',60+165,by+44,9,COLORS.ink3,'center','400');
+
+  _roundRect(ctx,410,by,330,56,8,COLORS.bad+'0c',COLORS.bad+'44',1);
+  _label(ctx,'Same HATPase_c domain',410+165,by+16,11,COLORS.bad,'center','700');
+  _label(ctx,'Both proteins use ATP hydrolysis',410+165,by+32,9,COLORS.ink3,'center','400');
+  _label(ctx,'to power conformational changes',410+165,by+44,9,COLORS.ink3,'center','400');
+
+  /* Key insight */
+  _roundRect(ctx,100,by+72,600,60,8,COLORS.gd+'0c',COLORS.border,1);
+  _label(ctx,'Shared domains = shared function',cx,by+90,13,COLORS.ink2,'center','700');
+  _label(ctx,'Evolution reuses domains like building blocks.',cx,by+106,10,COLORS.ink3,'center','400');
+  _label(ctx,'Domain shuffling creates new proteins with new combinations of functions.',cx,by+120,10,COLORS.ink3,'center','400');
 }
 
-/* ── Step 4: Pfam inside InterPro (NEW) ── */
-function drawPfamStep4(ctx){
-  const cx=400;
-  _label(ctx,'Pfam is one member of the InterPro consortium',cx,30,14,COLORS.ink,'center','700');
-
-  /* InterPro umbrella */
-  _roundRect(ctx,cx-240,56,480,48,10,COLORS.gc+'14',COLORS.gc,2);
-  _label(ctx,'InterPro',cx,74,18,COLORS.gc,'center','800');
-  _label(ctx,'Unified protein classification database',cx,92,10,COLORS.ink3,'center','500');
-
-  /* Member databases */
-  const dbs=[
-    {name:'Pfam',desc:'Domain families\n(profile HMMs)',col:COLORS.gb,highlight:true},
-    {name:'TIGRFAM',desc:'Curated families\n(full-length)',col:COLORS.ga,highlight:false},
-    {name:'CDD',desc:'Conserved domains\n(NCBI)',col:COLORS.gd,highlight:false},
-    {name:'SMART',desc:'Signalling and\nextracellular',col:COLORS.gc,highlight:false},
-    {name:'PROSITE',desc:'Patterns and\nprofiles',col:COLORS.bad,highlight:false},
-  ];
-
-  const bw=120,bh=80,gap=18;
-  const totalW=dbs.length*bw+(dbs.length-1)*gap;
-  const x0=cx-totalW/2,by=128;
-
-  /* Fan-out lines from InterPro */
-  for(let i=0;i<dbs.length;i++){
-    const bx=x0+i*(bw+gap)+bw/2;
-    ctx.setLineDash([3,3]);ctx.strokeStyle=COLORS.gc+'44';ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(cx,108);ctx.lineTo(bx,by);ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  for(let i=0;i<dbs.length;i++){
-    const d=dbs[i];
-    const bx=x0+i*(bw+gap);
-    const sw=d.highlight?2.5:1.5;
-    _roundRect(ctx,bx,by,bw,bh,8,d.col+(d.highlight?'18':'0a'),d.col,sw);
-    _label(ctx,d.name,bx+bw/2,by+20,d.highlight?14:12,d.col,'center','800');
-    const lines=d.desc.split('\n');
-    for(let j=0;j<lines.length;j++){
-      _label(ctx,lines[j],bx+bw/2,by+38+j*14,9,COLORS.ink3,'center','400');
-    }
-    if(d.highlight){
-      /* Star marker */
-      _label(ctx,'↑ You are here',bx+bw/2,by+bh+14,9,COLORS.gb,'center','600');
-    }
-  }
-
-  /* Why this matters */
-  const wy=by+bh+30;
-  _roundRect(ctx,100,wy,600,80,8,'#f8fafc',COLORS.border,1);
-  _label(ctx,'Why does this matter?',cx,wy+18,12,COLORS.ink2,'center','700');
-  _label(ctx,'InterProScan runs your proteins against ALL member databases at once.',cx,wy+38,10,COLORS.ink3,'center','500');
-  _label(ctx,'You get Pfam domains + TIGRFAM + CDD + SMART + PROSITE in one pass.',cx,wy+54,10,COLORS.ink3,'center','500');
-  _label(ctx,'InterPro merges overlapping hits into a single integrated annotation.',cx,wy+70,10,COLORS.ink3,'center','500');
-
-  /* CLI box */
-  _roundRect(ctx,140,wy+92,520,28,6,'#1e293b',null,0);
-  _monoLabel(ctx,'$ interproscan.sh -i proteins.faa -f tsv -appl Pfam,TIGRFAM',cx,wy+106,9,'#a5f3fc','center');
-}
-
-/* ── Step 5: MAG domain fingerprint (REDESIGNED) ── */
+/* ── Step 4 (was 5): MAG domain fingerprint ── */
 function drawPfamStep5(ctx){
   const cx=400;
-  _label(ctx,'Domain architectures reveal protein functions in your MAG',cx,28,14,COLORS.ink,'center','700');
+  _label(ctx,'From individual proteins to a functional fingerprint',cx,22,14,COLORS.ink,'center','700');
 
-  /* Top 4 proteins with their domain architectures */
+  /* ── Left: MAG protein box ── */
+  const bx=30,bw=340,by=42,bh=195;
+  _roundRect(ctx,bx,by,bw,bh,10,COLORS.gb+'08',COLORS.gb+'33',1);
+  _label(ctx,'Your MAG: 2,847 predicted proteins',bx+bw/2,by+16,10,COLORS.gb,'center','700');
+
+  /* Mini proteins inside the MAG box */
   const prots=[
-    {name:'ABC transporter',y:58,len:500,doms:[
-      {s:10,e:130,l:'ABC_tran',c:COLORS.gb},
-      {s:160,e:330,l:'ABC_membrane',c:COLORS.ga},
-      {s:360,e:480,l:'ABC_tran',c:COLORS.gb},
-    ],fn:'Substrate import'},
-    {name:'Histidine kinase',y:120,len:500,doms:[
-      {s:10,e:110,l:'HAMP',c:COLORS.gc},
-      {s:140,e:280,l:'HisKA',c:COLORS.gd},
-      {s:310,e:440,l:'HATPase_c',c:COLORS.bad},
-    ],fn:'Signal transduction'},
-    {name:'Response regulator',y:182,len:500,doms:[
-      {s:10,e:150,l:'Response_reg',c:COLORS.ga},
-      {s:180,e:340,l:'HTH_1',c:COLORS.gb},
-    ],fn:'Transcription control'},
-    {name:'Radical SAM enzyme',y:244,len:500,doms:[
-      {s:10,e:200,l:'Radical_SAM',c:COLORS.gd},
-      {s:230,e:400,l:'Fer4',c:COLORS.bad},
-    ],fn:'Cofactor synthesis'},
+    {name:'ABC transporter',doms:[
+      {s:4,e:48,l:'ABC_tran',c:COLORS.gb},
+      {s:58,e:120,l:'ABC_mem',c:COLORS.ga},
+      {s:130,e:170,l:'ABC_tran',c:COLORS.gb},
+    ],fn:'Import'},
+    {name:'Histidine kinase',doms:[
+      {s:4,e:40,l:'HAMP',c:COLORS.gc},
+      {s:50,e:105,l:'HisKA',c:COLORS.gd},
+      {s:115,e:170,l:'HATPase_c',c:COLORS.bad},
+    ],fn:'Signalling'},
+    {name:'Response regulator',doms:[
+      {s:4,e:60,l:'Resp_reg',c:COLORS.ga},
+      {s:70,e:130,l:'HTH_1',c:COLORS.gb},
+    ],fn:'Regulation'},
+    {name:'Radical SAM',doms:[
+      {s:4,e:75,l:'Radical_SAM',c:COLORS.gd},
+      {s:85,e:150,l:'Fer4',c:COLORS.bad},
+    ],fn:'Cofactor'},
   ];
 
-  const px=120;
-  for(const p of prots){
-    _pfamProtein(ctx,p.name,px,p.y,p.len,p.doms,false);
-    /* Function label on right */
-    _label(ctx,p.fn,px+p.len+40,p.y+16,9,COLORS.ink3,'left','500');
+  const mpx=bx+14, mpy=by+30, mGap=40, mLen=180;
+  for(let i=0;i<prots.length;i++){
+    const p=prots[i];
+    const py=mpy+i*mGap;
+    _label(ctx,p.name,mpx,py,8,COLORS.ink2,'left','600');
+    /* Mini backbone */
+    ctx.strokeStyle=COLORS.border;ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(mpx,py+12);ctx.lineTo(mpx+mLen,py+12);ctx.stroke();
+    /* Mini domains */
+    for(const d of p.doms){
+      _roundRect(ctx,mpx+d.s,py+5,d.e-d.s,14,3,d.c,null,0);
+      _label(ctx,d.l,mpx+d.s+(d.e-d.s)/2,py+12,Math.min(7,(d.e-d.s)/d.l.length*1.4),'#fff','center','700');
+    }
+    /* Function tag */
+    _roundRect(ctx,mpx+mLen+10,py+3,54,18,4,COLORS.ink4+'14',COLORS.ink4+'44',0.5);
+    _label(ctx,p.fn,mpx+mLen+37,py+12,7,COLORS.ink3,'center','500');
   }
+  /* Ellipsis for more */
+  _label(ctx,'... 2,843 more proteins',bx+bw/2,mpy+4*mGap+6,9,COLORS.ink4,'center','400');
 
-  /* Arrow: from individual to summary */
-  _arrow(ctx,cx,300,cx,320,COLORS.ink4,2);
+  /* ── Arrow from MAG box to bar chart ── */
+  const arrowX=bx+bw+12, arrowEndX=bx+bw+50;
+  const arrowY=by+bh/2;
+  ctx.strokeStyle=COLORS.ink4;ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(arrowX,arrowY);ctx.lineTo(arrowEndX-6,arrowY);ctx.stroke();
+  /* arrowhead */
+  ctx.fillStyle=COLORS.ink4;ctx.beginPath();
+  ctx.moveTo(arrowEndX,arrowY);ctx.lineTo(arrowEndX-8,arrowY-4);ctx.lineTo(arrowEndX-8,arrowY+4);ctx.closePath();ctx.fill();
+  _label(ctx,'Count',arrowX+16,arrowY-8,8,COLORS.ink4,'center','600');
+  _label(ctx,'domains',arrowX+16,arrowY+16,8,COLORS.ink4,'center','600');
 
-  /* Rolled-up family counts */
-  const fy=330;
-  _label(ctx,'Rolled up: domain family counts across 2,847 proteins',cx,fy,11,COLORS.ink2,'center','600');
+  /* ── Right: Domain family bar chart ── */
+  const chartX=430, chartW=340, chartY=by, chartH=bh;
+  _roundRect(ctx,chartX,chartY,chartW,chartH,10,'#f8fafc',COLORS.border,1);
+  _label(ctx,'Domain family counts',chartX+chartW/2,chartY+16,11,COLORS.ink2,'center','700');
+
   const fams=[
-    {name:'ABC_tran',n:87,col:COLORS.gb},{name:'HisKA',n:64,col:COLORS.gd},
-    {name:'Response_reg',n:58,col:COLORS.ga},{name:'HATPase_c',n:52,col:COLORS.bad},
-    {name:'HTH_1',n:38,col:COLORS.gb},{name:'Radical_SAM',n:27,col:COLORS.gd},
+    {name:'ABC_tran',n:87,col:COLORS.gb},
+    {name:'Response_reg',n:72,col:COLORS.ga},
+    {name:'HisKA',n:64,col:COLORS.gd},
+    {name:'HATPase_c',n:52,col:COLORS.bad},
+    {name:'HTH_1',n:38,col:COLORS.gb},
+    {name:'Radical_SAM',n:27,col:COLORS.gd},
   ];
-  const fw=100,fGap=10,fTotal=fams.length*fw+(fams.length-1)*fGap;
-  const fx0=cx-fTotal/2;
+  const maxN=fams[0].n;
+  const barAreaX=chartX+90, barAreaW=220, barH=16, barGap=6;
+  const barY0=chartY+32;
   for(let i=0;i<fams.length;i++){
     const f=fams[i];
-    const fx=fx0+i*(fw+fGap);
-    _roundRect(ctx,fx,fy+12,fw,44,6,f.col+'12',f.col,1);
-    _monoLabel(ctx,f.name,fx+fw/2,fy+28,9,f.col,'center');
-    _label(ctx,''+f.n,fx+fw/2,fy+44,14,f.col,'center','800');
+    const fy=barY0+i*(barH+barGap);
+    const bw2=Math.max(8,(f.n/maxN)*barAreaW);
+    /* Label */
+    _monoLabel(ctx,f.name,barAreaX-6,fy+barH/2+1,8,f.col,'right');
+    /* Bar */
+    _roundRect(ctx,barAreaX,fy,bw2,barH,3,f.col,null,0);
+    /* Count */
+    _label(ctx,''+f.n,barAreaX+bw2+8,fy+barH/2+1,9,f.col,'left','700');
   }
 
-  /* Interpretation */
-  _roundRect(ctx,100,fy+68,600,36,8,'#f8fafc',COLORS.border,1);
-  _label(ctx,'Many ABC transporters + two-component systems = environmental sensing and nutrient uptake',cx,fy+86,10,COLORS.ink2,'center','600');
+  /* ── Bottom: Interpretation ── */
+  const iy=by+bh+16;
+  _roundRect(ctx,30,iy,370,72,8,COLORS.gb+'0c',COLORS.gb+'44',1);
+  _label(ctx,'Transport-rich MAG',30+185,iy+16,11,COLORS.gb,'center','700');
+  _label(ctx,'87 ABC transporters suggest active',30+185,iy+34,9,COLORS.ink3,'center','400');
+  _label(ctx,'substrate import from the environment',30+185,iy+48,9,COLORS.ink3,'center','400');
+  _label(ctx,'Lifestyle: free-living, nutrient scavenger',30+185,iy+62,9,COLORS.ink2,'center','600');
+
+  _roundRect(ctx,420,iy,370,72,8,COLORS.gd+'0c',COLORS.gd+'44',1);
+  _label(ctx,'Two-component systems',420+185,iy+16,11,COLORS.gd,'center','700');
+  _label(ctx,'HisKA + Response_reg = environmental',420+185,iy+34,9,COLORS.ink3,'center','400');
+  _label(ctx,'sensing and gene regulation circuits',420+185,iy+48,9,COLORS.ink3,'center','400');
+  _label(ctx,'Lifestyle: responsive to changing conditions',420+185,iy+62,9,COLORS.ink2,'center','600');
+
+  /* Key insight */
+  _roundRect(ctx,100,iy+84,600,36,8,COLORS.gc+'0c',COLORS.border,1);
+  _label(ctx,'Domain family profile = metabolic fingerprint of your MAG',cx,iy+102,11,COLORS.ink2,'center','700');
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1951,68 +2124,126 @@ function _sugarChain(ctx,x,y,n,unitW,gap,colors){
 /* ── Step 0: What are CAZymes? ── */
 function drawCazyStep0(ctx){
   const cx=400;
-  _label(ctx,'Enzymes that break, build, or modify sugar chains',cx,30,15,COLORS.ink,'center','700');
+  _label(ctx,'Enzymes that process carbohydrate chains',cx,24,15,COLORS.ink,'center','700');
 
-  /* Polysaccharide chain */
-  const chainX=80,chainY=70,nUnits=14,uW=38,uGap=6;
-  const sugColors=['#a7f3d0','#bae6fd','#fde68a'];
-  _label(ctx,'Polysaccharide chain',cx,chainY-10,11,COLORS.ink3,'center','600');
-  _sugarChain(ctx,chainX,chainY,nUnits,uW,uGap,sugColors);
+  /* Three large panels side by side */
+  const pw=220,ph=280,pGap=22;
+  const pTotal=3*pw+2*pGap;
+  const px0=cx-pTotal/2,py=50;
 
-  /* Enzyme scissors cutting a bond */
-  const cutIdx=6;
-  const cutX=chainX+cutIdx*(uW+uGap)+uW+uGap/2;
-  const cutY=chainY+30;
-
-  /* Highlight the bond being cut */
-  ctx.strokeStyle=COLORS.bad;ctx.lineWidth=2.5;
-  ctx.beginPath();ctx.moveTo(cutX-4,chainY+2);ctx.lineTo(cutX-4,chainY+20);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(cutX+4,chainY+2);ctx.lineTo(cutX+4,chainY+20);ctx.stroke();
-
-  /* Scissors arrow */
-  _arrow(ctx,cutX,cutY+55,cutX,cutY+10,COLORS.ga,2);
-
-  /* Enzyme box */
-  _roundRect(ctx,cutX-70,cutY+60,140,50,8,COLORS.ga+'14',COLORS.ga,2);
-  _label(ctx,'CAZyme',cutX,cutY+78,16,COLORS.ga,'center','800');
-  _label(ctx,'(e.g. GH family)',cutX,cutY+96,10,COLORS.ink3,'center','500');
-
-  /* Products on either side */
-  _label(ctx,'Products',cutX-160,cutY+40,11,COLORS.ink3,'center','600');
-  _sugarChain(ctx,cutX-230,cutY+50,4,uW,uGap,sugColors);
-  _label(ctx,'Products',cutX+160,cutY+40,11,COLORS.ink3,'center','600');
-  _sugarChain(ctx,cutX+90,cutY+50,4,uW,uGap,sugColors);
-
-  /* Build and modify examples below */
-  const exY=260;
-  _label(ctx,'CAZymes have three main roles:',cx,exY,13,COLORS.ink2,'center','700');
-
-  const roles=[
-    {label:'Break',desc:'Glycoside hydrolases (GH)\ncleave glycosidic bonds',col:COLORS.ga,icon:'GH'},
-    {label:'Build',desc:'Glycosyltransferases (GT)\nform new glycosidic bonds',col:COLORS.gb,icon:'GT'},
-    {label:'Modify',desc:'Esterases (CE) and others\nremove side groups',col:COLORS.gd,icon:'CE'},
+  const panels=[
+    {title:'Break',abbr:'GH',full:'Glycoside Hydrolases',col:COLORS.ga,
+     nBefore:6,nAfter1:3,nAfter2:3,sym:'scissors'},
+    {title:'Build',abbr:'GT',full:'Glycosyltransferases',col:COLORS.gb,
+     nBefore:4,nAfter1:5,sym:'plus'},
+    {title:'Modify',abbr:'CE',full:'Carbohydrate Esterases',col:COLORS.gd,
+     nBefore:5,nAfter1:5,sym:'strip'},
   ];
-  const rw=210,rGap=25,rTotal=roles.length*rw+(roles.length-1)*rGap;
-  const rx0=cx-rTotal/2;
-  for(let i=0;i<roles.length;i++){
-    const r=roles[i];
-    const rx=rx0+i*(rw+rGap);
-    _roundRect(ctx,rx,exY+18,rw,80,8,r.col+'0c',r.col,1.5);
-    _label(ctx,r.icon,rx+36,exY+50,22,r.col,'center','800');
-    _label(ctx,r.label,rx+rw/2+10,exY+42,14,r.col,'center','700');
-    const lines=r.desc.split('\n');
-    for(let j=0;j<lines.length;j++){
-      _label(ctx,lines[j],rx+rw/2+10,exY+62+j*14,10,COLORS.ink3,'center','400');
+
+  const uW=24,uGap=3;
+  const sugC=['#a7f3d0','#bae6fd','#fde68a'];
+
+  for(let i=0;i<panels.length;i++){
+    const p=panels[i];
+    const px=px0+i*(pw+pGap);
+    const pcx=px+pw/2;
+
+    /* Panel background */
+    _roundRect(ctx,px,py,pw,ph,10,p.col+'06',p.col+'44',1);
+
+    /* Abbreviation circle */
+    ctx.beginPath();ctx.arc(pcx,py+34,22,0,Math.PI*2);
+    ctx.fillStyle=p.col+'14';ctx.fill();
+    ctx.strokeStyle=p.col+'66';ctx.lineWidth=1.5;ctx.stroke();
+    _label(ctx,p.abbr,pcx,py+34,20,p.col,'center','800');
+
+    /* Title + full name */
+    _label(ctx,p.title,pcx,py+68,16,p.col,'center','700');
+    _label(ctx,p.full,pcx,py+86,10,COLORS.ink3,'center','400');
+
+    /* ── Before chain ── */
+    _label(ctx,'Before',pcx,py+112,10,COLORS.ink4,'center','600');
+    const bChainW=p.nBefore*uW+(p.nBefore-1)*uGap;
+    const bx=pcx-bChainW/2;
+
+    if(p.sym==='scissors'){
+      /* Intact chain */
+      _sugarChain(ctx,bx,py+122,p.nBefore,uW,uGap,sugC);
+      /* Bond highlight in middle */
+      const bondX=bx+3*(uW+uGap)-uGap/2;
+      ctx.strokeStyle=p.col+'66';ctx.lineWidth=1;
+      ctx.setLineDash([3,2]);
+      ctx.beginPath();ctx.moveTo(bondX,py+120);ctx.lineTo(bondX,py+146);ctx.stroke();
+      ctx.setLineDash([]);
+    } else if(p.sym==='plus'){
+      /* Shorter chain + gap */
+      _sugarChain(ctx,bx,py+122,p.nBefore,uW,uGap,sugC);
+      /* Incoming unit floating */
+      ctx.setLineDash([3,3]);ctx.strokeStyle=p.col;ctx.lineWidth=1;
+      ctx.beginPath();
+      ctx.moveTo(bx+bChainW+4,py+133);
+      ctx.lineTo(bx+bChainW+14,py+133);
+      ctx.stroke();ctx.setLineDash([]);
+      _roundRect(ctx,bx+bChainW+16,py+122,uW,22,5,sugC[p.nBefore%3],p.col+'88',1.5);
+    } else {
+      /* Chain with side groups dangling below */
+      _sugarChain(ctx,bx,py+120,p.nBefore,uW,uGap,sugC);
+      for(const si of [1,3]){
+        const sgx=bx+si*(uW+uGap)+uW/2;
+        ctx.strokeStyle=p.col;ctx.lineWidth=1.2;
+        ctx.beginPath();ctx.moveTo(sgx,py+142);ctx.lineTo(sgx,py+150);ctx.stroke();
+        _roundRect(ctx,sgx-10,py+150,20,14,3,p.col+'22',p.col,1);
+        _label(ctx,'Ac',sgx,py+157,8,p.col,'center','700');
+      }
     }
+
+    /* Arrow down */
+    _arrow(ctx,pcx,py+156,pcx,py+176,p.col,2);
+
+    /* ── After chain ── */
+    _label(ctx,'After',pcx,py+190,10,COLORS.ink4,'center','600');
+
+    if(p.sym==='scissors'){
+      /* Two fragments separated */
+      const f1w=p.nAfter1*uW+(p.nAfter1-1)*uGap;
+      const f2w=p.nAfter2*uW+(p.nAfter2-1)*uGap;
+      const gap=18;
+      const totalFW=f1w+gap+f2w;
+      const fx=pcx-totalFW/2;
+      _sugarChain(ctx,fx,py+200,p.nAfter1,uW,uGap,sugC);
+      _sugarChain(ctx,fx+f1w+gap,py+200,p.nAfter2,uW,uGap,sugC);
+      /* Gap indicator */
+      _label(ctx,'+',fx+f1w+gap/2,py+210,14,p.col,'center','700');
+    } else if(p.sym==='plus'){
+      /* Longer chain */
+      const aChainW=p.nAfter1*uW+(p.nAfter1-1)*uGap;
+      _sugarChain(ctx,pcx-aChainW/2,py+200,p.nAfter1,uW,uGap,sugC);
+      /* Highlight the new unit */
+      const newX=pcx-aChainW/2+4*(uW+uGap);
+      _roundRect(ctx,newX-1,py+198,uW+2,26,6,null,p.col,2);
+    } else {
+      /* Clean chain — side groups removed */
+      const aChainW=p.nAfter1*uW+(p.nAfter1-1)*uGap;
+      const ax=pcx-aChainW/2;
+      _sugarChain(ctx,ax,py+200,p.nAfter1,uW,uGap,sugC);
+    }
+
+    /* One-line description */
+    const descMap={scissors:'Cleaves glycosidic bonds',plus:'Forms new glycosidic bonds',strip:'Removes ester side groups'};
+    _label(ctx,descMap[p.sym],pcx,py+242,10,COLORS.ink3,'center','400');
+
+    /* Family count */
+    const countMap={scissors:'~180 families',plus:'~120 families',strip:'~20 families'};
+    _monoLabel(ctx,countMap[p.sym],pcx,py+260,10,p.col+'aa','center');
   }
 
-  /* Caption */
-  _roundRect(ctx,100,380,600,44,8,'#f8fafc',COLORS.border,1);
-  _label(ctx,'Carbohydrate-Active enZymes break, build, or modify sugar chains',cx,396,12,COLORS.ink2,'center','600');
-  _label(ctx,'Classified by the CAZy database (www.cazy.org)',cx,412,10,COLORS.ink3,'center','400');
+  /* Key insight */
+  _roundRect(ctx,60,py+ph+16,680,40,8,'#f8fafc',COLORS.border,1);
+  _label(ctx,'CAZy database classifies six enzyme classes — GH, GT, PL, CE, CBM, AA',cx,py+ph+30,11,COLORS.ink2,'center','600');
+  _label(ctx,'Together they break down, synthesize, and remodel all carbohydrate structures',cx,py+ph+46,10,COLORS.ink3,'center','400');
 }
 
-/* ── Step 1: Six CAZyme classes (REDESIGNED — cleaner grid) ── */
+/* ── Step 1: Six CAZyme classes ── */
 function drawCazyStep1(ctx){
   const cx=400;
   _label(ctx,'Six classes of carbohydrate-active enzymes',cx,28,14,COLORS.ink,'center','700');
@@ -2026,7 +2257,7 @@ function drawCazyStep1(ctx){
     {abbr:'AA',name:'Auxiliary Activities',fn:'Redox aids degradation',count:'~18 families',col:COLORS.bad},
   ];
 
-  const cols=3,rows=2,bw=218,bh=84,gx=28,gy=16;
+  const cols=3,rows=2,bw=224,bh=90,gx=24,gy=16;
   const totalW=cols*bw+(cols-1)*gx;
   const x0=cx-totalW/2,y0=50;
 
@@ -2037,53 +2268,57 @@ function drawCazyStep1(ctx){
 
     _roundRect(ctx,bx,by,bw,bh,8,c.col+'0c',c.col,1.5);
 
-    /* Abbreviation on left */
-    const abbrSz=c.abbr.length>2?18:24;
-    _label(ctx,c.abbr,bx+34,by+34,abbrSz,c.col,'center','800');
-
-    /* Vertical separator */
-    ctx.strokeStyle=c.col+'33';ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(bx+64,by+10);ctx.lineTo(bx+64,by+bh-10);ctx.stroke();
+    /* Abbreviation circle on left */
+    const acx=bx+36,acy=by+bh/2;
+    ctx.beginPath();ctx.arc(acx,acy,22,0,Math.PI*2);
+    ctx.fillStyle=c.col+'18';ctx.fill();
+    ctx.strokeStyle=c.col+'44';ctx.lineWidth=1;ctx.stroke();
+    const abbrSz=c.abbr.length>2?14:18;
+    _label(ctx,c.abbr,acx,acy,abbrSz,c.col,'center','800');
 
     /* Text on right */
-    const nameSz=c.name.length>20?9.5:11;
-    _label(ctx,c.name,bx+64+(bw-64)/2,by+28,nameSz,COLORS.ink,'center','700');
-    _label(ctx,c.fn,bx+64+(bw-64)/2,by+46,9.5,COLORS.ink3,'center','400');
-    _monoLabel(ctx,c.count,bx+64+(bw-64)/2,by+64,8.5,c.col,'center');
+    const tx=bx+68+(bw-68)/2;
+    const nameSz=c.name.length>20?10:11;
+    _label(ctx,c.name,tx,by+28,nameSz,COLORS.ink,'center','700');
+    _label(ctx,c.fn,tx,by+46,10,COLORS.ink3,'center','400');
+    _monoLabel(ctx,c.count,tx,by+66,10,c.col,'center');
   }
 
   /* Role grouping */
-  const gy2=y0+rows*bh+(rows-1)*gy+26;
-  _roundRect(ctx,80,gy2,640,80,8,'#f8fafc',COLORS.border,1);
-  _label(ctx,'Catalytic',140,gy2+18,11,COLORS.ga,'center','700');
-  _label(ctx,'GH + GT + PL + CE',140,gy2+34,9,COLORS.ink3,'center','500');
-  _label(ctx,'directly process sugars',140,gy2+48,9,COLORS.ink3,'center','400');
+  const gy2=y0+rows*bh+(rows-1)*gy+24;
+  _roundRect(ctx,60,gy2,680,70,8,'#f8fafc',COLORS.border,1);
 
-  ctx.strokeStyle=COLORS.border;ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(260,gy2+10);ctx.lineTo(260,gy2+70);ctx.stroke();
-
-  _label(ctx,'Substrate binding',400,gy2+18,11,COLORS.ink3,'center','700');
-  _label(ctx,'CBM',400,gy2+34,9,COLORS.ink3,'center','500');
-  _label(ctx,'anchors enzyme to target',400,gy2+48,9,COLORS.ink3,'center','400');
-
-  ctx.beginPath();ctx.moveTo(540,gy2+10);ctx.lineTo(540,gy2+70);ctx.stroke();
-
-  _label(ctx,'Redox helpers',660,gy2+18,11,COLORS.bad,'center','700');
-  _label(ctx,'AA',660,gy2+34,9,COLORS.ink3,'center','500');
-  _label(ctx,'oxidative enzymes aid breakdown',660,gy2+48,9,COLORS.ink3,'center','400');
+  const groups=[
+    {label:'Catalytic',desc:'GH + GT + PL + CE',sub:'directly process sugars',col:COLORS.ga,x:180},
+    {label:'Substrate binding',desc:'CBM',sub:'anchors enzyme to target',col:COLORS.ink3,x:400},
+    {label:'Redox helpers',desc:'AA',sub:'oxidative enzymes aid breakdown',col:COLORS.bad,x:620},
+  ];
+  for(let i=0;i<groups.length;i++){
+    const g=groups[i];
+    _label(ctx,g.label,g.x,gy2+18,12,g.col,'center','700');
+    _label(ctx,g.desc,g.x,gy2+34,10,COLORS.ink3,'center','600');
+    _label(ctx,g.sub,g.x,gy2+50,10,COLORS.ink4,'center','400');
+    if(i<groups.length-1){
+      const sx=g.x+110;
+      ctx.strokeStyle=COLORS.border;ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(sx,gy2+10);ctx.lineTo(sx,gy2+60);ctx.stroke();
+    }
+  }
 }
 
-/* ── Step 2: GH — the largest class (NEW) ── */
+/* ── Step 2: GH — the largest class ── */
 function drawCazyStep2(ctx){
   const cx=400;
   _label(ctx,'Glycoside Hydrolases: the most diverse CAZyme class',cx,28,14,COLORS.ink,'center','700');
 
-  /* GH header */
-  _roundRect(ctx,cx-120,50,240,38,8,COLORS.ga+'18',COLORS.ga,2);
-  _label(ctx,'GH',cx-80,69,20,COLORS.ga,'center','800');
-  _label(ctx,'~180 families, >500k sequences',cx+30,69,10,COLORS.ink3,'center','500');
+  /* GH header pill */
+  _roundRect(ctx,cx-140,52,280,38,8,COLORS.ga+'18',COLORS.ga,2);
+  ctx.beginPath();ctx.arc(cx-100,71,16,0,Math.PI*2);
+  ctx.fillStyle=COLORS.ga+'22';ctx.fill();
+  _label(ctx,'GH',cx-100,71,16,COLORS.ga,'center','800');
+  _label(ctx,'~180 families  |  >500 000 sequences',cx+20,71,11,COLORS.ink2,'center','600');
 
-  /* Three example families as visual cards */
+  /* Three example families */
   const fams=[
     {id:'GH5',sub:'Cellulose',desc:'Endoglucanase cuts\nbeta-1,4-glucan chains',col:'#16a34a',
      chain:['#a7f3d0','#a7f3d0','#a7f3d0','#a7f3d0','#a7f3d0','#a7f3d0']},
@@ -2093,9 +2328,9 @@ function drawCazyStep2(ctx){
      chain:['#e9d5ff','#bae6fd','#e9d5ff','#bae6fd','#e9d5ff','#bae6fd']},
   ];
 
-  const fw=220,fh=140,fGap=20;
+  const fw=224,fh=148,fGap=20;
   const fTotal=fams.length*fw+(fams.length-1)*fGap;
-  const fx0=cx-fTotal/2,fy=108;
+  const fx0=cx-fTotal/2,fy=106;
 
   for(let i=0;i<fams.length;i++){
     const f=fams[i];
@@ -2103,32 +2338,32 @@ function drawCazyStep2(ctx){
 
     _roundRect(ctx,fx,fy,fw,fh,8,f.col+'08',f.col,1.5);
 
-    /* Family ID + substrate */
-    _monoLabel(ctx,f.id,fx+fw/2-30,fy+20,16,f.col,'center');
-    _roundRect(ctx,fx+fw/2,fy+10,fw/2-12,22,4,f.col+'22',null,0);
-    _label(ctx,f.sub,fx+fw/2+(fw/2-12)/2,fy+21,10,f.col,'center','700');
+    /* Family ID + substrate pill */
+    _monoLabel(ctx,f.id,fx+42,fy+22,16,f.col,'center');
+    _roundRect(ctx,fx+fw/2-10,fy+10,fw/2-4,24,5,f.col+'22',null,0);
+    _label(ctx,f.sub,fx+fw/2-10+(fw/2-4)/2,fy+22,11,f.col,'center','700');
 
     /* Mini sugar chain */
-    const chainX=fx+20,chainY=fy+44;
+    const chainX=fx+22,chainY=fy+48;
     _sugarChain(ctx,chainX,chainY,6,24,4,f.chain);
 
     /* Scissors at cut point */
-    const cutX=chainX+3*28+2;
+    const scX=chainX+3*28+2;
     ctx.strokeStyle=f.col;ctx.lineWidth=2;
-    ctx.beginPath();ctx.moveTo(cutX,chainY-4);ctx.lineTo(cutX,chainY+26);ctx.stroke();
-    _label(ctx,'cut',cutX,chainY+34,8,f.col,'center','600');
+    ctx.beginPath();ctx.moveTo(scX,chainY-4);ctx.lineTo(scX,chainY+26);ctx.stroke();
+    _label(ctx,'cut',scX,chainY+36,9,f.col,'center','600');
 
     /* Description */
     const lines=f.desc.split('\n');
     for(let j=0;j<lines.length;j++){
-      _label(ctx,lines[j],fx+fw/2,fy+96+j*14,9.5,COLORS.ink3,'center','400');
+      _label(ctx,lines[j],fx+fw/2,fy+102+j*16,10,COLORS.ink3,'center','400');
     }
   }
 
   /* Key point */
-  _roundRect(ctx,100,fy+fh+20,600,54,8,'#f8fafc',COLORS.border,1);
-  _label(ctx,'Different GH families target different sugar bonds',cx,fy+fh+38,12,COLORS.ink2,'center','700');
-  _label(ctx,'The family number is a strong predictor of substrate specificity',cx,fy+fh+56,10,COLORS.ink3,'center','400');
+  _roundRect(ctx,100,fy+fh+20,600,50,8,'#f8fafc',COLORS.border,1);
+  _label(ctx,'Different GH families target different sugar bonds',cx,fy+fh+36,12,COLORS.ink2,'center','700');
+  _label(ctx,'The family number is a strong predictor of substrate specificity',cx,fy+fh+54,10,COLORS.ink3,'center','400');
 }
 
 /* ── Step 3: Family = substrate specificity ── */
@@ -2136,250 +2371,290 @@ function drawCazyStep3(ctx){
   const cx=400;
   _label(ctx,'Within a class, families predict substrate specificity',cx,28,14,COLORS.ink,'center','700');
 
-  /* Parent class box */
-  _roundRect(ctx,260,50,280,40,8,COLORS.ga+'14',COLORS.ga,2);
-  _label(ctx,'GH',290,70,18,COLORS.ga,'center','800');
-  _label(ctx,'Glycoside Hydrolases (~180 families)',430,70,10,COLORS.ink2,'center','600');
+  /* Parent class pill */
+  _roundRect(ctx,cx-150,52,300,38,8,COLORS.ga+'14',COLORS.ga,2);
+  _label(ctx,'GH',cx-110,71,18,COLORS.ga,'center','800');
+  _label(ctx,'Glycoside Hydrolases  (~180 families)',cx+20,71,11,COLORS.ink2,'center','600');
 
   /* Arrow down */
-  _arrow(ctx,cx,94,cx,114,COLORS.ga,2);
-  _label(ctx,'grouped by sequence similarity',cx,106,9,COLORS.ink4,'center','400');
+  _arrow(ctx,cx,94,cx,116,COLORS.ga,2);
+  _label(ctx,'grouped by sequence similarity',cx+16,108,10,COLORS.ink4,'left','400');
 
-  /* Family boxes */
+  /* Family boxes — 3×2 grid for readability */
   const families=[
     {id:'GH5',substrate:'Cellulose',desc:'Plant cell walls',col:'#16a34a'},
-    {id:'GH9',substrate:'Cellulose',desc:'Endoglucanase',col:'#15803d'},
     {id:'GH13',substrate:'Starch',desc:'Amylase family',col:'#d97706'},
-    {id:'GH48',substrate:'Cellulose',desc:'Exocellulase',col:'#059669'},
     {id:'GH28',substrate:'Pectin',desc:'Polygalacturonase',col:'#dc2626'},
+    {id:'GH9',substrate:'Cellulose',desc:'Endoglucanase',col:'#15803d'},
+    {id:'GH48',substrate:'Cellulose',desc:'Exocellulase',col:'#059669'},
     {id:'GH43',substrate:'Hemicellulose',desc:'Xylan side chains',col:'#7c3aed'},
   ];
-  const fw=104,fh=88,fGap=14;
-  const fTotal=families.length*fw+(families.length-1)*fGap;
+  const gcols=3,fw=210,fh=70,fGap=20,fGy=14;
+  const fTotal=gcols*fw+(gcols-1)*fGap;
   const fx0=cx-fTotal/2,fy=126;
+
+  /* Tree connector — trunk, horizontal branch, vertical drops (no crossing) */
+  {
+    const colCx=[];
+    for(let c=0;c<gcols;c++) colCx.push(fx0+c*(fw+fGap)+fw/2);
+    const brY=118;
+    ctx.setLineDash([3,3]);ctx.strokeStyle=COLORS.ga+'44';ctx.lineWidth=1;
+    /* trunk */
+    ctx.beginPath();ctx.moveTo(cx,94);ctx.lineTo(cx,brY);ctx.stroke();
+    /* horizontal branch */
+    ctx.beginPath();ctx.moveTo(colCx[0],brY);ctx.lineTo(colCx[2],brY);ctx.stroke();
+    /* vertical drops per column */
+    for(let c=0;c<gcols;c++){
+      ctx.beginPath();ctx.moveTo(colCx[c],brY);ctx.lineTo(colCx[c],fy);ctx.stroke();
+      const r0b=fy+fh, r1t=fy+fh+fGy;
+      ctx.beginPath();ctx.moveTo(colCx[c],r0b);ctx.lineTo(colCx[c],r1t);ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  }
 
   for(let i=0;i<families.length;i++){
     const f=families[i];
-    const fx=fx0+i*(fw+fGap);
+    const col=i%gcols,row=Math.floor(i/gcols);
+    const fx=fx0+col*(fw+fGap),fby=fy+row*(fh+fGy);
 
-    ctx.setLineDash([3,3]);ctx.strokeStyle=COLORS.ga+'44';ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(cx,94);ctx.lineTo(fx+fw/2,fy);ctx.stroke();
-    ctx.setLineDash([]);
+    _roundRect(ctx,fx,fby,fw,fh,8,f.col+'10',f.col+'88',1.5);
+    _monoLabel(ctx,f.id,fx+36,fby+22,14,f.col,'center');
 
-    _roundRect(ctx,fx,fy,fw,fh,8,f.col+'10',f.col+'88',1.5);
-    _monoLabel(ctx,f.id,fx+fw/2,fy+20,13,f.col,'center');
+    /* Substrate pill */
+    _roundRect(ctx,fx+68,fby+10,fw-78,24,5,f.col+'22',null,0);
+    _label(ctx,f.substrate,fx+68+(fw-78)/2,fby+22,11,f.col,'center','700');
 
-    _roundRect(ctx,fx+6,fy+32,fw-12,20,4,f.col+'18',null,0);
-    _label(ctx,f.substrate,fx+fw/2,fy+42,10,'#fff','center','700');
-    ctx.globalAlpha=0.8;
-    _roundRect(ctx,fx+6,fy+32,fw-12,20,4,null,f.col+'44',1);
-    ctx.globalAlpha=1;
-
-    _label(ctx,f.desc,fx+fw/2,fy+70,8.5,COLORS.ink3,'center','400');
+    _label(ctx,f.desc,fx+fw/2,fby+54,10,COLORS.ink3,'center','400');
   }
 
   /* Substrate legend */
-  const ly=fy+fh+18;
-  _label(ctx,'Substrate types:',120,ly+8,10,COLORS.ink2,'left','700');
+  const ly=fy+2*(fh+fGy)+12;
+  _roundRect(ctx,60,ly,680,38,8,'#f8fafc',COLORS.border,1);
   const subs=[
     {name:'Cellulose',col:'#16a34a'},{name:'Starch',col:'#d97706'},
     {name:'Pectin',col:'#dc2626'},{name:'Hemicellulose',col:'#7c3aed'},
   ];
-  let lx=226;
+  let lx=100;
   for(const s of subs){
-    _roundRect(ctx,lx,ly,12,12,3,s.col+'33',s.col,1);
-    _label(ctx,s.name,lx+18,ly+7,9,COLORS.ink2,'left','500');
-    lx+=ctx.measureText(s.name).width+40;
+    _roundRect(ctx,lx,ly+13,14,14,4,s.col+'33',s.col,1);
+    _label(ctx,s.name,lx+20,ly+20,10,COLORS.ink2,'left','600');
+    lx+=ctx.measureText(s.name).width+50;
   }
 
-  _roundRect(ctx,100,ly+28,600,40,8,'#f8fafc',COLORS.border,1);
-  _label(ctx,'The family number tells you what substrate the enzyme targets',cx,ly+42,11,COLORS.ink2,'center','600');
-  _label(ctx,'Same class, different families = different substrates',cx,ly+58,10,COLORS.ink3,'center','400');
+  /* Key insight */
+  _roundRect(ctx,100,ly+50,600,38,8,'#ecfdf5',COLORS.ga+'66',1);
+  _label(ctx,'Same class, different families = different substrates',cx,ly+69,12,COLORS.ink2,'center','700');
 }
 
-/* ── Step 4: dbCAN pipeline (POLISHED) ── */
+/* ── Step 4: dbCAN pipeline ── */
 function drawCazyStep4(ctx){
   const cx=400;
-  _label(ctx,'dbCAN: three methods, consensus annotation',cx,28,14,COLORS.ink,'center','700');
+  _label(ctx,'dbCAN: three methods, consensus annotation',cx,24,15,COLORS.ink,'center','700');
+  _label(ctx,'Each query protein is scanned independently by all three methods',cx,44,11,COLORS.ink3,'center','400');
 
-  /* CLI box */
-  _roundRect(ctx,140,48,520,28,6,'#1e293b',null,0);
-  _monoLabel(ctx,'$ run_dbcan proteins.faa --db_dir db/ --out_dir output/',cx,62,9,'#a5f3fc','center');
-
-  /* Input */
-  _roundRect(ctx,cx-90,86,180,34,8,COLORS.gb+'14',COLORS.gb,1.5);
-  _label(ctx,'Query protein',cx,98,11,COLORS.gb,'center','700');
-  _label(ctx,'(from Prodigal)',cx,110,8,COLORS.ink4,'center','400');
-
-  _arrow(ctx,cx,124,cx,144,COLORS.ink4,2);
-
-  /* Three methods */
+  /* Three method panels — side by side like BGC fragmentation */
   const methods=[
-    {name:'HMMER',desc:'Profile HMMs\nvs dbCAN-HMMdb',col:COLORS.ga},
-    {name:'DIAMOND',desc:'Fast homology\nvs CAZy seqs',col:COLORS.gb},
-    {name:'eCAMI',desc:'Conserved peptide\npatterns',col:COLORS.gd},
+    {name:'HMMER',num:'1',approach:'Profile HMMs',db:'dbCAN-HMMdb',
+     how:'Aligns protein to family-specific\nprofile hidden Markov models',col:COLORS.ga},
+    {name:'DIAMOND',num:'2',approach:'Sequence homology',db:'CAZy sequences',
+     how:'BLASTp-like search against all\ncharacterised CAZyme sequences',col:COLORS.gb},
+    {name:'eCAMI',num:'3',approach:'Peptide patterns',db:'Conserved motifs',
+     how:'Scans for short conserved peptide\nsubsequences diagnostic of families',col:COLORS.gd},
   ];
-  const mw=190,mh=72,mGap=16;
-  const mTotal=methods.length*mw+(methods.length-1)*mGap;
-  const mx0=cx-mTotal/2,my=150;
+  const pw=220,ph=180,pGap=18;
+  const pTotal=3*pw+2*pGap;
+  const px0=cx-pTotal/2,py=60;
 
   for(let i=0;i<methods.length;i++){
     const m=methods[i];
-    const mx=mx0+i*(mw+mGap);
-    _arrow(ctx,cx,144,mx+mw/2,my,m.col,1.5);
-    _roundRect(ctx,mx,my,mw,mh,8,m.col+'0c',m.col,1.5);
-    _label(ctx,m.name,mx+mw/2,my+18,13,m.col,'center','800');
-    const lines=m.desc.split('\n');
-    for(let j=0;j<lines.length;j++) _label(ctx,lines[j],mx+mw/2,my+36+j*14,9.5,COLORS.ink3,'center','400');
+    const px=px0+i*(pw+pGap);
+    _roundRect(ctx,px,py,pw,ph,8,m.col+'08',m.col,1.5);
+
+    /* Circle number */
+    ctx.beginPath();ctx.arc(px+pw/2,py+28,18,0,Math.PI*2);
+    ctx.fillStyle=m.col+'18';ctx.fill();
+    _label(ctx,m.num,px+pw/2,py+28,15,m.col,'center','800');
+
+    _label(ctx,m.name,px+pw/2,py+58,15,m.col,'center','700');
+
+    /* Approach + database */
+    _roundRect(ctx,px+14,py+74,pw-28,24,5,m.col+'14',null,0);
+    _label(ctx,m.approach,px+pw/2,py+86,10,m.col,'center','700');
+
+    _label(ctx,'vs '+m.db,px+pw/2,py+110,10,COLORS.ink3,'center','500');
+
+    /* How it works */
+    const lines=m.how.split('\n');
+    for(let j=0;j<lines.length;j++){
+      _label(ctx,lines[j],px+pw/2,py+132+j*14,9,COLORS.ink4,'center','400');
+    }
   }
 
-  /* Converge to consensus */
-  const consY=my+mh+24;
-  for(let i=0;i<3;i++){
-    const mx=mx0+i*(mw+mGap)+mw/2;
-    _arrow(ctx,mx,my+mh+4,cx,consY,COLORS.ink4,1.5);
-  }
-  _roundRect(ctx,cx-120,consY,240,44,8,COLORS.gc+'14',COLORS.gc,2);
-  _label(ctx,'Consensus: 2 of 3 agree',cx,consY+16,12,COLORS.gc,'center','800');
-  _label(ctx,'overview.txt',cx,consY+32,9,COLORS.ink3,'center','500');
+  /* Consensus section */
+  const consY=py+ph+18;
+  _roundRect(ctx,px0,consY,pTotal,52,8,COLORS.gc+'10',COLORS.gc,2);
+  _label(ctx,'Consensus: annotated if 2 of 3 methods agree',cx,consY+22,13,COLORS.gc,'center','800');
+  _monoLabel(ctx,'overview.txt',cx,consY+40,10,COLORS.ink3,'center');
 
   /* Result */
-  _arrow(ctx,cx,consY+48,cx,consY+66,COLORS.ink4,2);
-  _roundRect(ctx,cx-150,consY+70,300,30,8,'#ecfdf5',COLORS.ga,1.5);
-  _monoLabel(ctx,'GH5_4  GT2  CBM6  CE1 ...',cx,consY+85,10,COLORS.ga,'center');
+  const resY=consY+64;
+  _roundRect(ctx,cx-180,resY,360,36,8,'#ecfdf5',COLORS.ga,1.5);
+  _monoLabel(ctx,'GH5_4  GT2  CBM6  CE1 ...',cx,resY+18,12,COLORS.ga,'center');
 
-  _label(ctx,'Three independent methods reduce false positives',cx,consY+116,10,COLORS.ink4,'center','400');
+  /* Takeaway */
+  _roundRect(ctx,100,resY+50,600,34,8,'#f8fafc',COLORS.border,1);
+  _label(ctx,'Three independent methods reduce false positives',cx,resY+67,11,COLORS.ink2,'center','600');
 }
 
-/* ── Step 5: PULs — CAZymes in genomic context (NEW) ── */
+/* ── Step 5: PULs — CAZymes in genomic context ── */
 function drawCazyStep5(ctx){
   const cx=400;
   _label(ctx,'Polysaccharide Utilization Loci (PULs)',cx,28,14,COLORS.ink,'center','700');
   _label(ctx,'CAZymes often cluster with transporters and regulators',cx,48,11,COLORS.ink3,'center','400');
 
   /* Contig backbone */
-  const cy=80,cw=680;
-  _roundRect(ctx,60,cy,cw,5,3,'#e2e8f0','#cbd5e1',1);
+  const cy=74,cw=700;
+  _roundRect(ctx,50,cy,cw,5,3,'#e2e8f0','#cbd5e1',1);
 
   /* Genes in a PUL */
   const genes=[
-    {x:70,w:45,dir:-1,col:'#cbd5e1',label:''},
-    {x:130,w:55,dir:1,col:COLORS.gd,label:'SusR'},
-    {x:200,w:60,dir:1,col:COLORS.gd,label:'SusC'},
-    {x:275,w:50,dir:1,col:COLORS.gd,label:'SusD'},
-    {x:340,w:70,dir:1,col:COLORS.ga,label:'GH13'},
-    {x:425,w:65,dir:-1,col:COLORS.ga,label:'GH97'},
-    {x:505,w:50,dir:1,col:COLORS.ga,label:'GH31'},
-    {x:570,w:40,dir:1,col:COLORS.ink3,label:'CBM'},
-    {x:625,w:55,dir:1,col:'#94a3b8',label:'hyp'},
-    {x:695,w:40,dir:-1,col:'#cbd5e1',label:''},
+    {x:60,w:48,dir:-1,col:'#cbd5e1',label:''},
+    {x:124,w:58,dir:1,col:COLORS.gd,label:'SusR'},
+    {x:198,w:64,dir:1,col:COLORS.gd,label:'SusC'},
+    {x:278,w:52,dir:1,col:COLORS.gd,label:'SusD'},
+    {x:346,w:74,dir:1,col:COLORS.ga,label:'GH13'},
+    {x:436,w:68,dir:-1,col:COLORS.ga,label:'GH97'},
+    {x:520,w:54,dir:1,col:COLORS.ga,label:'GH31'},
+    {x:590,w:44,dir:1,col:COLORS.ink3,label:'CBM'},
+    {x:650,w:40,dir:1,col:'#94a3b8',label:'hyp'},
+    {x:706,w:38,dir:-1,col:'#cbd5e1',label:''},
   ];
 
-  const gY=cy+18,gH=30;
+  const gY=cy+18,gH=32;
   for(const g of genes){
     _geneArrow(ctx,g.x,gY,g.w,gH,g.dir,g.col+'cc',g.col);
-    if(g.label) _label(ctx,g.label,g.x+g.w/2,gY+gH/2,g.label.length>4?8:9,'#fff','center','700');
+    if(g.label) _label(ctx,g.label,g.x+g.w/2,gY+gH/2,g.label.length>4?9:10,'#fff','center','700');
   }
 
   /* Bracket around PUL */
-  const bStart=125,bEnd=620,bY=gY+gH+10;
+  const bStart=118,bEnd=640,bY=gY+gH+12;
   ctx.strokeStyle=COLORS.ga;ctx.lineWidth=2;
   ctx.beginPath();
   ctx.moveTo(bStart,bY-6);ctx.lineTo(bStart,bY);ctx.lineTo(bEnd,bY);ctx.lineTo(bEnd,bY-6);
   ctx.stroke();
-  _label(ctx,'PUL (Starch utilization)',cx-40,bY+14,12,COLORS.ga,'center','700');
+  _label(ctx,'PUL (Starch utilization)',cx-20,bY+14,12,COLORS.ga,'center','700');
 
-  /* Legend below */
-  const legY=bY+30;
+  /* Legend row */
+  const legY=bY+28;
   const legItems=[
-    {label:'Regulators (SusR)',col:COLORS.gd},
-    {label:'Transporters (SusC/D)',col:COLORS.gd},
+    {label:'Regulators / Transporters',col:COLORS.gd},
     {label:'CAZymes (GH)',col:COLORS.ga},
     {label:'Binding (CBM)',col:COLORS.ink3},
   ];
-  const lw=150,lGap=10,lTotal=legItems.length*lw+(legItems.length-1)*lGap;
-  const lx0=cx-lTotal/2;
-  for(let i=0;i<legItems.length;i++){
+  const lTotal=legItems.length;
+  const lGap=30,lw=180;
+  const lx0=cx-(lTotal*lw+(lTotal-1)*lGap)/2;
+  for(let i=0;i<lTotal;i++){
     const it=legItems[i];
     const lx=lx0+i*(lw+lGap);
-    ctx.fillStyle=it.col+'cc';ctx.fillRect(lx,legY+2,12,12);
-    _label(ctx,it.label,lx+18,legY+9,9,COLORS.ink2,'left','500');
+    ctx.fillStyle=it.col+'cc';
+    _roundRect(ctx,lx,legY+2,14,14,3,it.col+'cc',null,0);
+    _label(ctx,it.label,lx+20,legY+10,10,COLORS.ink2,'left','600');
   }
 
-  /* Comparison box */
-  const cmpY=legY+30;
-  _roundRect(ctx,80,cmpY,300,90,8,COLORS.ga+'0c',COLORS.ga,1.5);
-  _label(ctx,'PUL (Carbohydrates)',230,cmpY+16,11,COLORS.ga,'center','700');
-  _label(ctx,'CAZymes + SusC/D transport',230,cmpY+34,10,COLORS.ink3,'center','400');
-  _label(ctx,'+ regulators + binding modules',230,cmpY+50,10,COLORS.ink3,'center','400');
-  _label(ctx,'Found mainly in Bacteroidota',230,cmpY+68,10,COLORS.ink4,'center','500');
+  /* Why PULs matter — two key points */
+  const cmpY=legY+34;
+  _roundRect(ctx,60,cmpY,340,100,8,COLORS.ga+'0c',COLORS.ga,1.5);
+  _label(ctx,'What a PUL tells you',230,cmpY+18,12,COLORS.ga,'center','700');
+  _label(ctx,'The organism can degrade a specific',230,cmpY+40,10,COLORS.ink2,'center','400');
+  _label(ctx,'polysaccharide (e.g. starch, xylan, pectin)',230,cmpY+54,10,COLORS.ink2,'center','400');
+  _label(ctx,'Genes for sensing, binding, transport,',230,cmpY+74,10,COLORS.ink3,'center','400');
+  _label(ctx,'and hydrolysis are co-located',230,cmpY+88,10,COLORS.ink3,'center','400');
 
-  _roundRect(ctx,420,cmpY,300,90,8,COLORS.gc+'0c',COLORS.gc,1.5);
-  _label(ctx,'BGC (Secondary metabolites)',570,cmpY+16,11,COLORS.gc,'center','700');
-  _label(ctx,'Biosynthetic core + tailoring',570,cmpY+34,10,COLORS.ink3,'center','400');
-  _label(ctx,'+ transport + resistance',570,cmpY+50,10,COLORS.ink3,'center','400');
-  _label(ctx,'Found across many phyla',570,cmpY+68,10,COLORS.ink4,'center','500');
+  _roundRect(ctx,420,cmpY,320,100,8,COLORS.gb+'0c',COLORS.gb,1.5);
+  _label(ctx,'Where to find PULs',580,cmpY+18,12,COLORS.gb,'center','700');
+  _label(ctx,'Mainly in Bacteroidota',580,cmpY+40,10,COLORS.ink2,'center','400');
+  _label(ctx,'dbCAN-PUL database links CAZyme',580,cmpY+60,10,COLORS.ink3,'center','400');
+  _label(ctx,'families to known PUL structures',580,cmpY+74,10,COLORS.ink3,'center','400');
+  _label(ctx,'Defined by SusC/SusD-like pairs',580,cmpY+92,10,COLORS.ink4,'center','500');
 
-  _label(ctx,'vs.',400,cmpY+45,14,COLORS.ink4,'center','800');
-
-  _roundRect(ctx,100,cmpY+100,600,34,8,'#f8fafc',COLORS.border,1);
-  _label(ctx,'PULs are to carbohydrate metabolism what BGCs are to specialized metabolites',cx,cmpY+117,10,COLORS.ink2,'center','600');
+  /* Key insight */
+  _roundRect(ctx,80,cmpY+112,640,36,8,'#f8fafc',COLORS.border,1);
+  _label(ctx,'A PUL is a genomic signature of a specific carbohydrate-degrading lifestyle',cx,cmpY+130,11,COLORS.ink2,'center','600');
 }
 
-/* ── Step 6: CAZyme niche prediction (REDESIGNED) ── */
+/* ── Step 6: CAZyme niche prediction ── */
 function drawCazyStep6(ctx){
   const cx=400;
-  _label(ctx,'Group CAZyme families by substrate to predict ecological niche',cx,28,14,COLORS.ink,'center','700');
+  _label(ctx,'Group CAZyme families by substrate to predict ecological niche',cx,24,15,COLORS.ink,'center','700');
 
-  /* Substrate columns */
+  /* Organism label */
+  _roundRect(ctx,cx-130,44,260,24,5,'#0891b2'+'14','#0891b2',1);
+  _label(ctx,'Lentimonas sp. CC4 (Verrucomicrobia)',cx,56,10,'#0891b2','center','600');
+
+  /* Horizontal bar chart — avoids the scale problem */
   const subs=[
-    {name:'Cellulose',families:['GH5','GH9','GH48','CBM3'],count:32,col:'#16a34a'},
-    {name:'Starch',families:['GH13','GH31','GH97','CBM20'],count:28,col:'#d97706'},
-    {name:'Pectin',families:['GH28','PL1','PL9','CE8'],count:16,col:'#dc2626'},
-    {name:'Xylan',families:['GH43','GH10','GH11','CE1'],count:14,col:'#7c3aed'},
-    {name:'Chitin',families:['GH18','GH19','CBM14'],count:4,col:COLORS.gb},
+    {name:'Fucoidan',families:'GH29, GH95, GH141, S1_17',count:284,col:'#0891b2',
+     source:'Brown algae'},
+    {name:'Laminarin',families:'GH16, GH17, GH30',count:42,col:'#16a34a',
+     source:'Brown algae storage'},
+    {name:'Alginate',families:'PL6, PL7, PL17',count:18,col:'#d97706',
+     source:'Algal cell walls'},
+    {name:'Xylan',families:'GH10, GH43',count:8,col:'#7c3aed',
+     source:'Hemicellulose'},
+    {name:'Starch',families:'GH13',count:3,col:'#dc2626',
+     source:'Storage'},
   ];
 
-  const sw=130,sGap=14,sTotal=subs.length*sw+(subs.length-1)*sGap;
-  const sx0=cx-sTotal/2,sy=56;
-
-  /* Max for bar height */
   const maxC=subs[0].count;
-  const maxBarH=140;
+  const labelW=90,barMaxW=340,barH=30,rowGap=10;
+  const bx0=labelW+60,by0=100;
+  const totalH=subs.length*(barH+rowGap)-rowGap;
+
+  /* Dominant marker — dashed rect around first row, label above */
+  _label(ctx,'Dominant substrate',bx0+barMaxW/2,by0-12,9,'#0891b2','center','600');
+  ctx.setLineDash([4,3]);ctx.strokeStyle='#0891b2'+'44';ctx.lineWidth=1.5;
+  ctx.strokeRect(bx0-2,by0-4,barMaxW+160,barH+8);
+  ctx.setLineDash([]);
+
+  /* Axis line */
+  ctx.strokeStyle=COLORS.border;ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(bx0,by0-4);ctx.lineTo(bx0,by0+totalH+4);ctx.stroke();
 
   for(let i=0;i<subs.length;i++){
     const s=subs[i];
-    const sx=sx0+i*(sw+sGap);
-    const barH=maxBarH*(s.count/maxC);
-    const barY=sy+maxBarH-barH+30;
+    const by=by0+i*(barH+rowGap);
+    const bw=barMaxW*(s.count/maxC);
+
+    /* Substrate label left */
+    _label(ctx,s.name,bx0-8,by+barH/2-4,12,s.col,'right','700');
+    _label(ctx,s.source,bx0-8,by+barH/2+10,8,COLORS.ink4,'right','400');
 
     /* Bar */
-    _roundRect(ctx,sx,barY,sw,barH,4,s.col+'33',s.col,1.5);
+    _roundRect(ctx,bx0+2,by,bw,barH,3,s.col+'22',s.col,1.5);
 
-    /* Count label above bar */
-    _label(ctx,''+s.count,sx+sw/2,barY-10,14,s.col,'center','800');
-
-    /* Family names inside bar */
-    for(let j=0;j<s.families.length;j++){
-      const fy=barY+14+j*16;
-      if(fy+8<barY+barH)
-        _monoLabel(ctx,s.families[j],sx+sw/2,fy,9,'#fff','center');
+    /* Count — inside bar if wide, else right of bar */
+    if(bw>80){
+      _label(ctx,''+s.count,bx0+bw-10,by+barH/2,13,COLORS.ink,'right','800');
+    } else {
+      _label(ctx,''+s.count,bx0+bw+10,by+barH/2,13,s.col,'left','800');
     }
 
-    /* Substrate name below */
-    _label(ctx,s.name,sx+sw/2,sy+maxBarH+46,11,s.col,'center','700');
+    /* Families — always at fixed x so they line up neatly */
+    const famX=bx0+barMaxW+14;
+    _monoLabel(ctx,s.families,famX,by+barH/2,9,COLORS.ink3,'left');
   }
 
   /* Interpretation */
-  const iy=sy+maxBarH+70;
-  _roundRect(ctx,80,iy,640,50,8,'#ecfdf5',COLORS.ga+'66',1.2);
-  _label(ctx,'Dominant substrates: cellulose + starch → likely plant-polysaccharide degrader',cx,iy+16,11,COLORS.ga,'center','700');
-  _label(ctx,'Low chitin count rules out chitin specialization',cx,iy+34,10,COLORS.ink3,'center','400');
+  const iy=by0+totalH+20;
+  _roundRect(ctx,60,iy,680,48,8,'#ecfeff','#0891b2'+'66',1.2);
+  _label(ctx,'284 fucoidan-targeting CAZymes — a marine algal polysaccharide specialist',cx,iy+16,12,'#0891b2','center','700');
+  _label(ctx,'~100 enzymes per fucoidan type; mostly on a single 0.89 Mbp plasmid',cx,iy+36,10,COLORS.ink3,'center','400');
 
   /* Caveat */
-  _roundRect(ctx,80,iy+62,640,44,8,'#fffbeb',COLORS.gd+'88',1.2);
-  _label(ctx,'Caveat: family-level predictions can be broad',cx,iy+78,11,COLORS.gd,'center','700');
-  _label(ctx,'GH13 includes both starch-degrading and trehalose-degrading enzymes',cx,iy+96,10,COLORS.ink3,'center','400');
+  _roundRect(ctx,60,iy+58,680,44,8,'#fffbeb',COLORS.gd+'88',1.2);
+  _label(ctx,'Caveat: family-level predictions can be broad',cx,iy+74,12,COLORS.gd,'center','700');
+  _label(ctx,'Always cross-check with PUL context and substrate-binding modules',cx,iy+94,10,COLORS.ink3,'center','400');
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2421,8 +2696,10 @@ function bgcHighlight(step){
   if(ch) ch.textContent=bgcCanvasHeaders[Math.min(step,6)];
 }
 
+let _bgcCurStep=-1;
 function drawBgcCanvas(step){
   step=step||0;
+  _bgcCurStep=step;
   const ctx=_c('bgc-canvas');if(!ctx)return;
   ctx.clearRect(0,0,800,440);
   [drawBgcStep0,drawBgcStep1,drawBgcStep2,drawBgcStep3,drawBgcStep4,drawBgcStep5,drawBgcStep6][Math.min(step,6)](ctx);
@@ -2585,72 +2862,167 @@ function drawBgcStep1(ctx){
   _label(ctx,'Genes are color-coded by their role in the biosynthetic pathway',400,410,11,COLORS.ink3,'center','500');
 }
 
-/* ── Step 2: NRPS and PKS — the big two (REDESIGNED) ── */
+/* ── Step 2: NRPS and PKS — animated assembly line ── */
 function drawBgcStep2(ctx){
-  const cx=400;
-  _label(ctx,'NRPS and PKS: modular assembly-line enzymes',cx,24,14,COLORS.ink,'center','700');
+  let startTime=null;
+  const modules=[
+    {aa:'Leu',col:'#7c3aed'},
+    {aa:'D-Phe',col:'#0891b2'},
+    {aa:'Pro',col:'#d97706'},
+    {aa:'Val',col:'#16a34a'},
+  ];
+  const nMod=modules.length;
+  const stepDur=1500;
+  const holdDur=3500;
+  const totalDur=nMod*stepDur+holdDur;
 
-  /* NRPS side */
-  const nrpsX=60,nrpsW=330,ny=56;
-  _roundRect(ctx,nrpsX,ny,nrpsW,180,8,COLORS.gc+'08',COLORS.gc,1.5);
-  _label(ctx,'NRPS',nrpsX+nrpsW/2,ny+20,16,COLORS.gc,'center','800');
-  _label(ctx,'Nonribosomal Peptide Synthetase',nrpsX+nrpsW/2,ny+38,10,COLORS.ink3,'center','500');
+  function renderFrame(ts){
+    if(_bgcCurStep!==2) return;
+    const c=_c('bgc-canvas');if(!c) return;
+    if(!startTime) startTime=ts;
+    const elapsed=(ts-startTime)%totalDur;
+    const activeIdx=Math.min(Math.floor(elapsed/stepDur),nMod);
+    const t=(elapsed%stepDur)/stepDur;
+    const done=activeIdx>=nMod;
 
-  /* NRPS domain chain: C-A-T modules */
-  const modY=ny+56,modH=28,modGap=6;
-  for(let m=0;m<3;m++){
-    const mx=nrpsX+20+m*102;
-    _roundRect(ctx,mx,modY,96,modH,4,COLORS.gc+'22',COLORS.gc+'66',1);
-    const doms=[{l:'C',w:28},{l:'A',w:28},{l:'T',w:28}];
-    for(let d=0;d<3;d++){
-      const dx=mx+4+d*31;
-      _roundRect(ctx,dx,modY+4,26,20,3,COLORS.gc+'44',null,0);
-      _label(ctx,doms[d].l,dx+13,modY+14,9,'#fff','center','700');
+    c.clearRect(0,0,800,440);
+    const cx=400;
+
+    /* Title */
+    _label(c,'NRPS: one module ≈ one building block',cx,18,15,COLORS.ink,'center','700');
+    _label(c,'Each module typically contains C-A-T domains that together add one amino acid to the chain',cx,36,10,COLORS.ink3,'center','400');
+
+    /* ── Gene arrow row ── */
+    const gw=140,gh=24,gGap=10;
+    const rowW=nMod*gw+(nMod-1)*gGap+66;
+    const gx0=(800-rowW)/2, gy=54;
+
+    for(let i=0;i<nMod;i++){
+      const gx=gx0+i*(gw+gGap);
+      const isDone=i<activeIdx||done;
+      const isActive=i===activeIdx&&!done;
+      _geneArrow(c,gx,gy,gw,gh,1,
+        isActive?COLORS.gc+'dd':isDone?COLORS.gc+'88':COLORS.gc+'33',COLORS.gc);
     }
-    _label(ctx,'Module '+(m+1),mx+48,modY+modH+12,8,COLORS.gc,'center','600');
-  }
+    const teX=gx0+nMod*(gw+gGap);
+    _geneArrow(c,teX,gy,56,gh,1,done?COLORS.gd+'bb':COLORS.gd+'33',COLORS.gd);
+    _label(c,'TE',teX+28,gy+gh/2,9,'#fff','center','700');
 
-  /* NRPS product arrow */
-  _arrow(ctx,nrpsX+nrpsW/2,modY+modH+24,nrpsX+nrpsW/2,modY+modH+44,COLORS.gc,1.5);
-  _label(ctx,'Peptide product',nrpsX+nrpsW/2,modY+modH+56,10,COLORS.gc,'center','600');
-  _label(ctx,'e.g. Vancomycin',nrpsX+nrpsW/2,modY+modH+70,9,COLORS.ink3,'center','400');
+    /* ── Module boxes (the KEY visual unit) ── */
+    const mw=140,mh=80,mGap=10;
+    const my=gy+gh+8;
 
-  /* PKS side */
-  const pksX=410,pksW=330;
-  _roundRect(ctx,pksX,ny,pksW,180,8,COLORS.gb+'08',COLORS.gb,1.5);
-  _label(ctx,'PKS',pksX+pksW/2,ny+20,16,COLORS.gb,'center','800');
-  _label(ctx,'Polyketide Synthase',pksX+pksW/2,ny+38,10,COLORS.ink3,'center','500');
+    for(let i=0;i<nMod;i++){
+      const mx=gx0+i*(mw+mGap);
+      const isDone=i<activeIdx||done;
+      const isActive=i===activeIdx&&!done;
 
-  /* PKS domain chain: KS-AT-ACP modules */
-  for(let m=0;m<3;m++){
-    const mx=pksX+20+m*102;
-    _roundRect(ctx,mx,modY,96,modH,4,COLORS.gb+'22',COLORS.gb+'66',1);
-    const doms=[{l:'KS',w:28},{l:'AT',w:28},{l:'ACP',w:28}];
-    for(let d=0;d<3;d++){
-      const dx=mx+4+d*31;
-      _roundRect(ctx,dx,modY+4,26,20,3,COLORS.gb+'44',null,0);
-      _label(ctx,doms[d].l,dx+13,modY+14,8,'#fff','center','700');
+      /* Module outer box — THIS is the unit */
+      const mFill=isActive?COLORS.gc+'18':isDone?COLORS.gc+'08':'#f8fafc';
+      const mStroke=isActive?COLORS.gc:isDone?COLORS.gc+'88':COLORS.border;
+      _roundRect(c,mx,my,mw,mh,6,mFill,mStroke,isActive?2:1);
+
+      /* Module label at top */
+      _label(c,'Module '+(i+1),mx+mw/2,my+12,10,
+        isActive?COLORS.gc:isDone?COLORS.gc+'88':COLORS.ink4,'center','700');
+
+      /* C-A-T domains as small pills inside the module */
+      const pillW=34,pillH=18,pillGap=4;
+      const px0=mx+(mw-3*pillW-2*pillGap)/2;
+      const py=my+22;
+      const doms=['C','A','T'];
+      const dCols=[COLORS.gc,COLORS.gb,COLORS.gd];
+      for(let d=0;d<3;d++){
+        const px=px0+d*(pillW+pillGap);
+        const pAlpha=isActive||isDone?'55':'22';
+        _roundRect(c,px,py,pillW,pillH,3,dCols[d]+pAlpha,dCols[d]+'88',0.8);
+        _label(c,doms[d],px+pillW/2,py+pillH/2,8,'#fff','center','700');
+      }
+
+      /* Amino acid — the module's product */
+      const aaR=14;
+      const aaCx=mx+mw/2;
+      const aaCy=my+mh-aaR-4;
+
+      if(isDone||(isActive&&t>=0.3)){
+        let scale=1;
+        if(isActive) scale=Math.min((t-0.3)/0.2,1);
+        c.save();c.translate(aaCx,aaCy);c.scale(scale,scale);
+        c.beginPath();c.arc(0,0,aaR,0,Math.PI*2);
+        c.fillStyle=modules[i].col+'22';c.fill();
+        c.strokeStyle=modules[i].col;c.lineWidth=1.5;c.stroke();
+        _label(c,modules[i].aa,0,0,10,modules[i].col,'center','800');
+        c.restore();
+      }
+
+      /* "1 module = 1 amino acid" arrow for active module */
+      if(isActive&&t>=0.5){
+        const arrowAlpha=Math.min((t-0.5)/0.2,1);
+        c.globalAlpha=arrowAlpha;
+        _arrow(c,aaCx,aaCy+aaR+2,aaCx,my+mh+18,modules[i].col,1.5);
+        c.globalAlpha=1;
+      }
     }
-    _label(ctx,'Module '+(m+1),mx+48,modY+modH+12,8,COLORS.gb,'center','600');
+
+    /* ── Growing peptide chain below modules ── */
+    const chainY=my+mh+36;
+    const chainR=16,chainGap=8;
+    const nBuilt=done?nMod:activeIdx;
+
+    if(nBuilt>0){
+      const chainW=nBuilt*(chainR*2+chainGap)-chainGap;
+      const chainX0=cx-chainW/2;
+
+      for(let i=0;i<nBuilt;i++){
+        const ax=chainX0+i*(chainR*2+chainGap)+chainR;
+        c.beginPath();c.arc(ax,chainY,chainR,0,Math.PI*2);
+        c.fillStyle=modules[i].col+'22';c.fill();
+        c.strokeStyle=modules[i].col;c.lineWidth=1.5;c.stroke();
+        _label(c,modules[i].aa,ax,chainY,10,modules[i].col,'center','700');
+        if(i>0){
+          const prevAx=chainX0+(i-1)*(chainR*2+chainGap)+chainR*2;
+          c.strokeStyle=COLORS.ink3+'66';c.lineWidth=2;
+          c.beginPath();c.moveTo(prevAx,chainY);c.lineTo(ax-chainR,chainY);c.stroke();
+        }
+      }
+    }
+
+    /* Status label */
+    const labelY=chainY+chainR+18;
+    if(!done&&nBuilt===0){
+      _label(c,'Module 1 activating...',cx,labelY,10,COLORS.gc,'center','600');
+    } else if(!done){
+      _label(c,'Growing peptide: '+nBuilt+' of '+nMod+' amino acids',cx,labelY,10,COLORS.gc,'center','600');
+    } else {
+      /* Final product */
+      const chainW=nMod*(chainR*2+chainGap)-chainGap;
+      const chainX0=cx-chainW/2;
+      const pulse=0.5+0.5*Math.sin((elapsed-nMod*stepDur)/200);
+      c.save();
+      c.strokeStyle='rgba(124,58,237,'+pulse*0.4+')';c.lineWidth=2.5;
+      c.setLineDash([5,4]);
+      c.strokeRect(chainX0-8,chainY-chainR-4,chainW+16,chainR*2+8);
+      c.setLineDash([]);c.restore();
+
+      _label(c,'Nonribosomal peptide: 4 modules, 4 building blocks',cx,labelY,12,COLORS.gc,'center','700');
+      _label(c,'Module order largely predicts product sequence; TE releases and often cyclises',cx,labelY+16,10,COLORS.ink3,'center','400');
+    }
+
+    /* ── Bottom: PKS comparison + domain key ── */
+    const bY=labelY+36;
+    _roundRect(c,60,bY,340,66,8,COLORS.gb+'0a',COLORS.gb,1);
+    _label(c,'PKS works the same way',60+170,bY+14,11,COLORS.gb,'center','700');
+    _label(c,'Each module (KS-AT-ACP) adds one acyl unit',60+170,bY+30,9,COLORS.ink3,'center','400');
+    _label(c,'e.g. Erythromycin. Hybrid NRPS-PKS also exist.',60+170,bY+46,9,COLORS.ink4,'center','400');
+
+    _roundRect(c,430,bY,320,66,8,'#f8fafc',COLORS.border,1);
+    _label(c,'Inside each module',430+160,bY+14,11,COLORS.ink2,'center','700');
+    _label(c,'C condenses  |  A selects amino acid  |  T carries it',430+160,bY+32,9,COLORS.ink3,'center','400');
+    _label(c,'3 domains cooperate to add one building block',430+160,bY+48,9,COLORS.ink4,'center','400');
+
+    requestAnimationFrame(renderFrame);
   }
-
-  /* PKS product arrow */
-  _arrow(ctx,pksX+pksW/2,modY+modH+24,pksX+pksW/2,modY+modH+44,COLORS.gb,1.5);
-  _label(ctx,'Polyketide product',pksX+pksW/2,modY+modH+56,10,COLORS.gb,'center','600');
-  _label(ctx,'e.g. Erythromycin',pksX+pksW/2,modY+modH+70,9,COLORS.ink3,'center','400');
-
-  /* Key comparison */
-  const ky=ny+194;
-  _roundRect(ctx,80,ky,640,80,8,'#f8fafc',COLORS.border,1);
-  _label(ctx,'Both work like assembly lines:',cx,ky+16,12,COLORS.ink2,'center','700');
-  _label(ctx,'Each module adds one building block. The number and order of modules determines the product.',cx,ky+34,10,COLORS.ink3,'center','500');
-  _label(ctx,'NRPS uses amino acids; PKS uses acyl units (like fatty acid synthesis).',cx,ky+52,10,COLORS.ink3,'center','500');
-  _label(ctx,'Hybrid NRPS-PKS clusters also exist.',cx,ky+68,10,COLORS.ink4,'center','400');
-
-  /* Domain legend */
-  const legY=ky+90;
-  _label(ctx,'NRPS: C = condensation, A = adenylation, T = thiolation',220,legY+8,9,COLORS.gc,'center','500');
-  _label(ctx,'PKS: KS = ketosynthase, AT = acyltransferase, ACP = acyl carrier',580,legY+8,9,COLORS.gb,'center','500');
+  requestAnimationFrame(renderFrame);
 }
 
 /* ── Step 3: Other BGC types (NEW — lighter overview) ── */
@@ -2705,11 +3077,7 @@ function drawBgcStep3(ctx){
 /* ── Step 4: antiSMASH pipeline (POLISHED) ── */
 function drawBgcStep4(ctx){
   const cx=400;
-  _label(ctx,'antiSMASH: rule-based BGC detection',cx,24,14,COLORS.ink,'center','700');
-
-  /* CLI box */
-  _roundRect(ctx,140,44,520,28,6,'#1e293b',null,0);
-  _monoLabel(ctx,'$ antismash genome.fasta --genefinding-tool prodigal',cx,58,9,'#a5f3fc','center');
+  _label(ctx,'antiSMASH: rule-based BGC detection',cx,28,14,COLORS.ink,'center','700');
 
   /* Workflow boxes */
   const steps=[
@@ -2719,7 +3087,7 @@ function drawBgcStep4(ctx){
     {label:'Type\nassignment',x:560,col:COLORS.gd},
     {label:'MIBiG\ncomparison',x:700,col:COLORS.ga},
   ];
-  const wfY=82,bw=112,bh=48;
+  const wfY=52,bw=112,bh=52;
 
   for(let i=0;i<steps.length;i++){
     const s=steps[i];
@@ -2901,6 +3269,173 @@ function drawBgcStep6(ctx){
 
   _roundRect(ctx,100,dy+16+checks.length*36+4,600,30,8,'#fef3c7','#f59e0b66',1.5);
   _label(ctx,'antiSMASH predicts biosynthetic potential, not proof of production',cx,dy+16+checks.length*36+19,11,'#92400e','center','700');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   8b. BGC-FRAG-CANVAS — Three fragmentation scenarios
+   ═══════════════════════════════════════════════════════════ */
+
+function drawBgcFragCanvas(){
+  const ctx=_c('bgc-frag-canvas');if(!ctx)return;
+  ctx.clearRect(0,0,800,440);
+  const cx=400;
+
+  /* Helper: draw a gene arrow */
+  function _gene(x,y,w,h,col,label,flip){
+    const tipW=8;
+    ctx.fillStyle=col;ctx.beginPath();
+    if(!flip){
+      ctx.moveTo(x,y);ctx.lineTo(x+w-tipW,y);ctx.lineTo(x+w,y+h/2);
+      ctx.lineTo(x+w-tipW,y+h);ctx.lineTo(x,y+h);
+    }else{
+      ctx.moveTo(x+w,y);ctx.lineTo(x+tipW,y);ctx.lineTo(x,y+h/2);
+      ctx.lineTo(x+tipW,y+h);ctx.lineTo(x+w,y+h);
+    }
+    ctx.closePath();ctx.fill();
+    if(label) _label(ctx,label,x+w/2,y+h/2+1,Math.min(8,w/label.length*1.5),'#fff','center','600');
+  }
+
+  /* Gene color palette */
+  const gCols={bio:COLORS.gb, bio2:'#2563eb', tail:'#7c3aed', reg:COLORS.gd, res:COLORS.bad, trans:COLORS.ga, dim:'#cbd5e1'};
+  const gH=18, contigH=10;
+
+  /* ── Scenario 1: Complete BGC ── */
+  const s1y=30;
+  _roundRect(ctx,20,s1y,240,130,8,COLORS.ok+'08',COLORS.ok+'44',1);
+  _label(ctx,'Complete BGC',140,s1y+16,12,COLORS.ok,'center','700');
+  _label(ctx,'Highest confidence',140,s1y+30,9,COLORS.ink3,'center','400');
+
+  /* contig bar */
+  const c1x=36,c1w=208;
+  _roundRect(ctx,c1x,s1y+42,c1w,contigH,3,COLORS.border+'44',null,0);
+  _label(ctx,'Contig',c1x+c1w+8,s1y+47,7,COLORS.ink4,'left','500');
+
+  /* genes on contig */
+  const g1y=s1y+58;
+  _gene(c1x+10,g1y,40,gH,gCols.bio,'KS',false);
+  _gene(c1x+54,g1y,36,gH,gCols.bio2,'AT',false);
+  _gene(c1x+94,g1y,30,gH,gCols.tail,'KR',false);
+  _gene(c1x+128,g1y,38,gH,gCols.reg,'Reg',true);
+  _gene(c1x+170,g1y,32,gH,gCols.trans,'Tr',false);
+  /* BGC bracket */
+  ctx.strokeStyle=COLORS.ok;ctx.lineWidth=1.5;ctx.setLineDash([]);
+  const bL=c1x+8,bR=c1x+204;
+  ctx.beginPath();ctx.moveTo(bL,g1y+gH+4);ctx.lineTo(bL,g1y+gH+10);
+  ctx.lineTo(bR,g1y+gH+10);ctx.lineTo(bR,g1y+gH+4);ctx.stroke();
+  _label(ctx,'BGC (all genes present)',140,g1y+gH+22,8,COLORS.ok,'center','600');
+
+  /* checkmarks */
+  _label(ctx,'All core domains',140,s1y+112,8,COLORS.ok,'center','600');
+  _label(ctx,'MIBiG match possible',140,s1y+122,8,COLORS.ok,'center','400');
+
+  /* ── Scenario 2: On contig edge ── */
+  const s2y=s1y;
+  _roundRect(ctx,280,s2y,240,130,8,'#fff7ed','#f59e0b66',1);
+  _label(ctx,'BGC on contig edge',400,s2y+16,12,'#d97706','center','700');
+  _label(ctx,'Medium confidence',400,s2y+30,9,COLORS.ink3,'center','400');
+
+  /* contig — cut at right edge */
+  const c2x=296,c2w=208;
+  _roundRect(ctx,c2x,s2y+42,c2w,contigH,3,COLORS.border+'44',null,0);
+  /* Jagged right edge */
+  ctx.fillStyle='#fff';ctx.beginPath();
+  const jx=c2x+c2w;
+  for(let i=0;i<contigH;i+=3){ctx.rect(jx-2,s2y+42+i,4,1.5);}
+  ctx.fill();
+  _label(ctx,'Edge',jx+6,s2y+47,7,COLORS.bad,'left','600');
+
+  /* genes — last one cut off */
+  const g2y=s2y+58;
+  _gene(c2x+10,g2y,40,gH,gCols.bio,'KS',false);
+  _gene(c2x+54,g2y,36,gH,gCols.bio2,'AT',false);
+  _gene(c2x+94,g2y,30,gH,gCols.tail,'KR',false);
+  _gene(c2x+128,g2y,38,gH,gCols.reg,'Reg',true);
+  /* Truncated gene */
+  ctx.fillStyle=gCols.dim;ctx.beginPath();
+  ctx.moveTo(c2x+170,g2y);ctx.lineTo(c2x+c2w,g2y);ctx.lineTo(c2x+c2w,g2y+gH);
+  ctx.lineTo(c2x+170,g2y+gH);ctx.closePath();ctx.fill();
+  _label(ctx,'?',c2x+190,g2y+gH/2+1,10,COLORS.ink4,'center','700');
+
+  /* bracket */
+  ctx.strokeStyle='#d97706';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);
+  ctx.beginPath();ctx.moveTo(c2x+8,g2y+gH+4);ctx.lineTo(c2x+8,g2y+gH+10);
+  ctx.lineTo(c2x+c2w,g2y+gH+10);ctx.stroke();
+  ctx.setLineDash([]);
+  _label(ctx,'Genes may be missing',400,g2y+gH+22,8,'#d97706','center','600');
+
+  _label(ctx,'Some domains absent',400,s2y+112,8,'#d97706','center','600');
+  _label(ctx,'Classification uncertain',400,s2y+122,8,'#d97706','center','400');
+
+  /* ── Scenario 3: Split across gap ── */
+  const s3y=s1y;
+  _roundRect(ctx,540,s3y,240,130,8,COLORS.bad+'08',COLORS.bad+'44',1);
+  _label(ctx,'BGC split across gap',660,s3y+16,12,COLORS.bad,'center','700');
+  _label(ctx,'Low confidence',660,s3y+30,9,COLORS.ink3,'center','400');
+
+  /* Two contigs with gap */
+  const c3x=556,c3w1=80,c3w2=90,gapW=20;
+  _roundRect(ctx,c3x,s3y+42,c3w1,contigH,3,COLORS.border+'44',null,0);
+  _roundRect(ctx,c3x+c3w1+gapW,s3y+42,c3w2,contigH,3,COLORS.border+'44',null,0);
+  /* Gap indicator */
+  ctx.strokeStyle=COLORS.bad;ctx.lineWidth=1;ctx.setLineDash([2,2]);
+  ctx.beginPath();ctx.moveTo(c3x+c3w1+3,s3y+47);ctx.lineTo(c3x+c3w1+gapW-3,s3y+47);ctx.stroke();
+  ctx.setLineDash([]);
+  _label(ctx,'gap',c3x+c3w1+gapW/2,s3y+40,6,COLORS.bad,'center','600');
+
+  /* Genes split */
+  const g3y=s3y+58;
+  _gene(c3x+4,g3y,36,gH,gCols.bio,'KS',false);
+  _gene(c3x+44,g3y,32,gH,gCols.bio2,'AT',false);
+  /* Cut gene on edge of first contig */
+  ctx.fillStyle=gCols.dim;ctx.beginPath();
+  ctx.moveTo(c3x+c3w1-18,g3y);ctx.lineTo(c3x+c3w1,g3y);ctx.lineTo(c3x+c3w1,g3y+gH);
+  ctx.lineTo(c3x+c3w1-18,g3y+gH);ctx.closePath();ctx.fill();
+  _label(ctx,'?',c3x+c3w1-9,g3y+gH/2+1,8,COLORS.ink4,'center','700');
+
+  /* Second contig genes */
+  const c3x2=c3x+c3w1+gapW;
+  ctx.fillStyle=gCols.dim;ctx.beginPath();
+  ctx.moveTo(c3x2,g3y);ctx.lineTo(c3x2+16,g3y);ctx.lineTo(c3x2+16,g3y+gH);
+  ctx.lineTo(c3x2,g3y+gH);ctx.closePath();ctx.fill();
+  _label(ctx,'?',c3x2+8,g3y+gH/2+1,8,COLORS.ink4,'center','700');
+  _gene(c3x2+20,g3y,36,gH,gCols.reg,'Reg',true);
+  _gene(c3x2+60,g3y,28,gH,gCols.trans,'Tr',false);
+
+  /* Red X in gap */
+  ctx.strokeStyle=COLORS.bad;ctx.lineWidth=2;
+  const gxC=c3x+c3w1+gapW/2, gyC=g3y+gH/2;
+  ctx.beginPath();ctx.moveTo(gxC-5,gyC-5);ctx.lineTo(gxC+5,gyC+5);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(gxC+5,gyC-5);ctx.lineTo(gxC-5,gyC+5);ctx.stroke();
+
+  _label(ctx,'Cannot reconstruct',660,g3y+gH+22,8,COLORS.bad,'center','600');
+  _label(ctx,'Product unknown',660,s3y+112,8,COLORS.bad,'center','600');
+  _label(ctx,'May be false positive',660,s3y+122,8,COLORS.bad,'center','400');
+
+  /* ── Bottom: decision flow ── */
+  const dy=180;
+  _label(ctx,'Checklist for every BGC prediction',cx,dy,12,COLORS.ink2,'center','700');
+
+  const checks=[
+    {q:'Is the cluster complete or on a contig edge?',icon:'1',col:COLORS.gb},
+    {q:'Are all expected core biosynthetic domains present?',icon:'2',col:COLORS.gb},
+    {q:'Does it match a known cluster in MIBiG?',icon:'3',col:COLORS.gb},
+    {q:'Is the MAG itself high quality (>90% comp, <5% cont)?',icon:'4',col:COLORS.gb},
+  ];
+
+  for(let i=0;i<checks.length;i++){
+    const c=checks[i];
+    const cy=dy+18+i*28;
+    /* Circle number */
+    ctx.beginPath();ctx.arc(90,cy+8,9,0,Math.PI*2);
+    ctx.fillStyle=c.col+'18';ctx.fill();ctx.strokeStyle=c.col;ctx.lineWidth=1;ctx.stroke();
+    _label(ctx,c.icon,90,cy+9,9,c.col,'center','700');
+    _label(ctx,c.q,106,cy+9,10,COLORS.ink2,'left','500');
+  }
+
+  /* Warning box */
+  const wy=dy+18+checks.length*28+6;
+  _roundRect(ctx,60,wy,680,28,6,'#fef3c7','#f59e0b66',1.2);
+  _label(ctx,'antiSMASH predicts biosynthetic potential, not proof of production',cx,wy+14,10,'#92400e','center','700');
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -4947,6 +5482,7 @@ Reveal.initialize({
     if(i===SID('pfam')){setTimeout(()=>{const f=Reveal.getState().indexf;const s=f>=0?f+1:0;drawPfamCanvas(s);pfamHighlight(s)},300)}
     if(i===SID('cazymes')){setTimeout(()=>{const f=Reveal.getState().indexf;const s=f>=0?f+1:0;drawCazyCanvas(s);cazyHighlight(s)},300)}
     if(i===SID('bgcs')){setTimeout(()=>{const f=Reveal.getState().indexf;const s=f>=0?f+1:0;drawBgcCanvas(s);bgcHighlight(s)},300)}
+    if(i===SID('bgc-caveats')){setTimeout(()=>drawBgcFragCanvas(),300)}
     if(i===SID('synthesis')){setTimeout(()=>drawSynthCanvas(),300)}
   }
 
