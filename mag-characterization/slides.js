@@ -2393,7 +2393,8 @@ const hmHeaders=[
   'Step 5: Build a Profile HMM from the alignment',
   'Step 6: The HMM has Match, Insert, and Delete states',
   'Step 7: What each state "expects"',
-  'Step 8: Score a new query through the model',
+  'Step 8: Viterbi finds the best path through the model',
+  'Step 9: Score a new query through the model',
 ];
 const hmCanvasHeaders=[
   'BLAST — break query into seed words',
@@ -2403,13 +2404,14 @@ const hmCanvasHeaders=[
   'From alignment columns to HMM states',
   'Profile HMM architecture — M / I / D states',
   'Conserved vs variable positions',
+  'Viterbi algorithm — optimal path through the HMM',
   'Scoring a query through the profile HMM',
 ];
-/* card 0 = BLAST (steps 0-2), card 1 = HMM (steps 3-6), card 2 = comparison (step 7) */
-const hmCardMap=[0,0,0,1,1,1,1,2];
+/* card 0 = BLAST (steps 0-2), card 1 = HMM (steps 3-7), card 2 = comparison (step 8) */
+const hmCardMap=[0,0,0,1,1,1,1,1,2];
 
 function hmHighlight(step){
-  const active=hmCardMap[Math.min(step,7)];
+  const active=hmCardMap[Math.min(step,8)];
   for(let i=0;i<3;i++){
     const el=document.getElementById('hm-card-'+i);if(!el)continue;
     el.style.opacity=i===active?'1':i<active?'0.5':'0.35';
@@ -2417,16 +2419,16 @@ function hmHighlight(step){
     el.style.boxShadow=i===active?'0 4px 6px rgba(15,23,42,.04),0 2px 12px rgba(15,23,42,.06)':'0 1px 2px rgba(15,23,42,.04),0 1px 3px rgba(15,23,42,.06)';
   }
   const h=document.getElementById('hm-header');
-  if(h) h.textContent=hmHeaders[Math.min(step,7)];
+  if(h) h.textContent=hmHeaders[Math.min(step,8)];
   const ch=document.getElementById('hm-canvas-header');
-  if(ch) ch.textContent=hmCanvasHeaders[Math.min(step,7)];
+  if(ch) ch.textContent=hmCanvasHeaders[Math.min(step,8)];
 }
 
 function drawHmmerCanvas(step){
   step=step||0;
   const ctx=_c('hmmer-canvas');if(!ctx)return;
   ctx.clearRect(0,0,800,440);
-  [drawHmSeed,drawHmExtend,drawHmProblem,drawHmMsa,drawHmBuild,drawHmArchitecture,drawHmExpect,drawHmScoreCompare][Math.min(step,7)](ctx);
+  [drawHmSeed,drawHmExtend,drawHmProblem,drawHmMsa,drawHmBuild,drawHmArchitecture,drawHmExpect,drawHmViterbi,drawHmScoreCompare][Math.min(step,8)](ctx);
 }
 
 /* ══════════════════════════════════════════════════
@@ -2703,11 +2705,11 @@ function drawHmArchitecture(ctx){
   _label(ctx,'Profile HMM: three types of state',cx,20,16,COLORS.gc,'center','700');
 
   /* ── Main chain: M states ── */
-  const nSt=4, sR=22, gap=130;
-  const stX0=cx-((nSt-1)*gap)/2, mY=180;
+  const nSt=4, sR=22, gap=140;
+  const stX0=cx-((nSt-1)*gap)/2, mY=170;
 
   /* Begin node */
-  const bX=stX0-80;
+  const bX=stX0-74;
   _roundRect(ctx,bX-16,mY-16,32,32,16,COLORS.ink4+'22',COLORS.ink4,1.5);
   _label(ctx,'B',bX,mY,11,COLORS.ink4,'center','700');
   _arrow(ctx,bX+18,mY,stX0-sR-4,mY,COLORS.ink4+'66',1.5);
@@ -2722,49 +2724,49 @@ function drawHmArchitecture(ctx){
     /* Arrow to next M */
     if(i<nSt-1) _arrow(ctx,x+sR+4,mY,x+gap-sR-4,mY,COLORS.gc+'66',2);
 
-    /* Insert state (small circle above) */
-    const iY=mY-80;
-    ctx.beginPath();ctx.arc(x,iY,14,0,Math.PI*2);
+    /* Insert state (circle above) */
+    const iY=mY-78;
+    ctx.beginPath();ctx.arc(x,iY,15,0,Math.PI*2);
     ctx.fillStyle=COLORS.gb+'22';ctx.fill();
     ctx.strokeStyle=COLORS.gb;ctx.lineWidth=1.5;ctx.stroke();
-    _label(ctx,'I'+(i+1),x,iY,10,COLORS.gb,'center','700');
+    _label(ctx,'I'+(i+1),x,iY,11,COLORS.gb,'center','700');
 
     /* Arrow M→I (up) */
-    _arrow(ctx,x,mY-sR-3,x,iY+16,COLORS.gb+'66',1);
-    /* Arrow I→M (back down, slightly offset) */
-    _arrow(ctx,x+8,iY+16,x+8,mY-sR-3,COLORS.gb+'66',1);
-    /* Self-loop indicator */
-    ctx.beginPath();ctx.arc(x,iY-20,8,0.3*Math.PI,0.7*Math.PI);
+    _arrow(ctx,x-6,mY-sR-3,x-6,iY+17,COLORS.gb+'66',1);
+    /* Arrow I→M (back down, offset right) */
+    _arrow(ctx,x+6,iY+17,x+6,mY-sR-3,COLORS.gb+'66',1);
+    /* Self-loop arc */
+    ctx.beginPath();ctx.arc(x,iY-22,9,0.3*Math.PI,0.7*Math.PI);
     ctx.strokeStyle=COLORS.gb+'88';ctx.lineWidth=1.5;ctx.stroke();
-    /* arrowhead on self-loop */
-    const aX=x+8*Math.cos(0.7*Math.PI), aY=iY-20+8*Math.sin(0.7*Math.PI);
-    ctx.beginPath();ctx.moveTo(aX,aY);ctx.lineTo(aX+5,aY-3);ctx.lineTo(aX+2,aY+4);ctx.fillStyle=COLORS.gb+'88';ctx.fill();
+    const aX2=x+9*Math.cos(0.7*Math.PI), aY2=iY-22+9*Math.sin(0.7*Math.PI);
+    ctx.beginPath();ctx.moveTo(aX2,aY2);ctx.lineTo(aX2+5,aY2-3);ctx.lineTo(aX2+2,aY2+4);ctx.fillStyle=COLORS.gb+'88';ctx.fill();
 
-    /* Delete state (small diamond below) */
+    /* Delete state (diamond below, between this M and next M) */
     if(i<nSt-1){
-      const dY=mY+80;
+      const dY=mY+78, dR=14;
       const dX=x+gap/2;
       ctx.save();ctx.translate(dX,dY);ctx.rotate(Math.PI/4);
-      ctx.fillStyle=COLORS.gd+'22';ctx.fillRect(-10,-10,20,20);
-      ctx.strokeStyle=COLORS.gd;ctx.lineWidth=1.5;ctx.strokeRect(-10,-10,20,20);
+      ctx.fillStyle=COLORS.gd+'22';ctx.fillRect(-dR,-dR,dR*2,dR*2);
+      ctx.strokeStyle=COLORS.gd;ctx.lineWidth=1.5;ctx.strokeRect(-dR,-dR,dR*2,dR*2);
       ctx.restore();
-      _label(ctx,'D'+(i+2),dX,dY,9,COLORS.gd,'center','700');
+      _label(ctx,'D'+(i+2),dX,dY,10,COLORS.gd,'center','700');
 
-      /* M→D and D→M arrows */
-      _arrow(ctx,x+sR/2+6,mY+sR+3,dX-12,dY-12,COLORS.gd+'55',1);
+      /* M→D arrow (from bottom-right of M to top-left of D) */
+      _arrow(ctx,x+sR/2+4,mY+sR+4,dX-dR-2,dY-dR-2,COLORS.gd+'55',1.2);
+      /* D→next M arrow (from top-right of D to bottom-left of next M) */
       const nx=stX0+(i+1)*gap;
-      _arrow(ctx,dX+12,dY-12,nx-sR/2-6,mY+sR+3,COLORS.gd+'55',1);
+      _arrow(ctx,dX+dR+2,dY-dR-2,nx-sR/2-4,mY+sR+4,COLORS.gd+'55',1.2);
     }
   }
 
   /* End node */
-  const eX=stX0+(nSt-1)*gap+80;
+  const eX=stX0+(nSt-1)*gap+74;
   _roundRect(ctx,eX-16,mY-16,32,32,16,COLORS.ink4+'22',COLORS.ink4,1.5);
   _label(ctx,'E',eX,mY,11,COLORS.ink4,'center','700');
   _arrow(ctx,stX0+(nSt-1)*gap+sR+4,mY,eX-18,mY,COLORS.ink4+'66',1.5);
 
   /* ── Legend below ── */
-  const lY=mY+130;
+  const lY=mY+128;
   const items=[
     {col:COLORS.gc, label:'Match (M)', desc:'Emit an amino acid (the expected one)'},
     {col:COLORS.gb, label:'Insert (I)', desc:'Extra AA not in the model (insertion in query)'},
@@ -2778,6 +2780,140 @@ function drawHmArchitecture(ctx){
     _label(ctx,items[i].desc,x,lY+42,10,COLORS.ink3,'center','500');
     _label(ctx,i===0?'(most common)':i===1?'(handles insertions)':'(handles deletions)',x,lY+58,9,COLORS.ink4,'center','500');
   }
+}
+
+/* ── Step 6: Viterbi algorithm — best path through the HMM ── */
+function drawHmViterbi(ctx){
+  const cx=400;
+
+  _label(ctx,'Viterbi algorithm: find the best path',cx,16,16,COLORS.gc,'center','700');
+
+  /* ── Query sequence on top ── */
+  const query=['M','K','G'];
+  const qCW=56, qY=42;
+  const qX0=cx-(query.length*qCW)/2;
+  _label(ctx,'Query (3 AAs):',qX0-14,qY+16,12,COLORS.gb,'right','700');
+  for(let i=0;i<query.length;i++){
+    const x=qX0+i*qCW;
+    _roundRect(ctx,x,qY,qCW-4,34,4,COLORS.gb+'15',COLORS.gb,1.5);
+    _monoLabel(ctx,query[i],x+qCW/2-2,qY+17,18,COLORS.gb,'center');
+  }
+
+  /* ── HMM states (compact version, 4 model positions) ── */
+  const nSt=4, sR=18, gap=120;
+  const stX0=cx-((nSt-1)*gap)/2, mY=148;
+
+  /* B node */
+  const bX=stX0-60;
+  ctx.beginPath();ctx.arc(bX,mY,12,0,Math.PI*2);
+  ctx.fillStyle=COLORS.ink4+'18';ctx.fill();
+  ctx.strokeStyle=COLORS.ink4+'66';ctx.lineWidth=1;ctx.stroke();
+  _label(ctx,'B',bX,mY,10,COLORS.ink4,'center','700');
+
+  /* E node */
+  const eX=stX0+(nSt-1)*gap+60;
+  ctx.beginPath();ctx.arc(eX,mY,12,0,Math.PI*2);
+  ctx.fillStyle=COLORS.ink4+'18';ctx.fill();
+  ctx.strokeStyle=COLORS.ink4+'66';ctx.lineWidth=1;ctx.stroke();
+  _label(ctx,'E',eX,mY,10,COLORS.ink4,'center','700');
+
+  /* Viterbi path: M1→M2→D3→M4 (skip model position 3 = deletion)
+     D3 is at loop index i=1 (diamond between M2 and M3, labelled D(i+2)=D3) */
+  const onPath=[true,true,false,true]; /* which M states are on path */
+  const dOnIdx=1; /* loop index where D state is on path → D3 */
+
+  for(let i=0;i<nSt;i++){
+    const x=stX0+i*gap;
+    const isOn=onPath[i];
+
+    /* Match state */
+    _roundRect(ctx,x-sR,mY-sR,sR*2,sR*2,4,
+      isOn?COLORS.gc+'33':COLORS.gc+'0c',
+      isOn?COLORS.gc:COLORS.gc+'44',
+      isOn?2.5:1);
+    _label(ctx,'M'+(i+1),x,mY,12,isOn?COLORS.gc:COLORS.gc+'55','center','700');
+
+    /* M→M arrows (faded) */
+    if(i<nSt-1){
+      ctx.setLineDash([3,3]);
+      _arrow(ctx,x+sR+3,mY,x+gap-sR-3,mY,COLORS.gc+'22',1);
+      ctx.setLineDash([]);
+    }
+
+    /* Insert state (small, faded — not on path) */
+    const iY=mY-56;
+    ctx.beginPath();ctx.arc(x,iY,10,0,Math.PI*2);
+    ctx.fillStyle=COLORS.gb+'0c';ctx.fill();
+    ctx.strokeStyle=COLORS.gb+'33';ctx.lineWidth=1;ctx.stroke();
+    _label(ctx,'I'+(i+1),x,iY,8,COLORS.gb+'44','center','700');
+
+    /* Delete state diamonds (faded unless on path) */
+    if(i<nSt-1){
+      const dY=mY+58, dR=12, dX=x+gap/2;
+      const dIsOn=(i===dOnIdx);
+      ctx.save();ctx.translate(dX,dY);ctx.rotate(Math.PI/4);
+      ctx.fillStyle=dIsOn?COLORS.gd+'33':COLORS.gd+'0c';
+      ctx.fillRect(-dR,-dR,dR*2,dR*2);
+      ctx.strokeStyle=dIsOn?COLORS.gd:COLORS.gd+'33';
+      ctx.lineWidth=dIsOn?2:1;
+      ctx.strokeRect(-dR,-dR,dR*2,dR*2);
+      ctx.restore();
+      _label(ctx,'D'+(i+2),dX,dY,9,dIsOn?COLORS.gd:COLORS.gd+'44','center','700');
+    }
+  }
+
+  /* ── Draw the Viterbi path (bold amber arrows) ── */
+  const pCol='#f59e0b';
+  /* B → M1 */
+  _arrow(ctx,bX+14,mY,stX0-sR-3,mY,pCol,2.5);
+  /* M1 → M2 */
+  const m1x=stX0, m2x=stX0+gap;
+  _arrow(ctx,m1x+sR+3,mY,m2x-sR-3,mY,pCol,2.5);
+  /* M2 → D3 (down to delete diamond between M2 and M3) */
+  const d3x=m2x+gap/2, d3y=mY+58;
+  _arrow(ctx,m2x+sR/2+4,mY+sR+3,d3x-10,d3y-10,pCol,2.5);
+  /* D3 → M4 (skip M3, go to M4) */
+  const m3x=stX0+2*gap, m4x=stX0+3*gap;
+  _arrow(ctx,d3x+10,d3y-10,m4x-sR/2-4,mY+sR+3,pCol,2.5);
+  /* M4 → E */
+  _arrow(ctx,m4x+sR+3,mY,eX-14,mY,pCol,2.5);
+
+  /* Path label */
+  _label(ctx,'Best path (highest score):  B → M1 → M2 → D3 → M4 → E',cx,mY+96,13,pCol,'center','700');
+
+  /* ── Resulting alignment ── */
+  const alY=mY+122;
+  _label(ctx,'Resulting alignment:',cx,alY,14,COLORS.gc,'center','700');
+
+  const alData=[
+    {pos:'1',query:'M', model:'M', type:'match'},
+    {pos:'2',query:'K', model:'K', type:'match'},
+    {pos:'3',query:'—', model:'T', type:'delete'},
+    {pos:'4',query:'G', model:'G', type:'match'},
+  ];
+  const aCW=90, aX0=cx-(alData.length*aCW)/2;
+
+  /* Column headers */
+  _label(ctx,'Position',aX0-14,alY+26,10,COLORS.ink4,'right','600');
+  _label(ctx,'Query',aX0-14,alY+48,10,COLORS.gb,'right','600');
+  _label(ctx,'Model',aX0-14,alY+70,10,COLORS.gc,'right','600');
+
+  for(let i=0;i<alData.length;i++){
+    const d=alData[i], x=aX0+i*aCW;
+    const isDel=d.type==='delete';
+    const bg=isDel?COLORS.gd+'12':'#f0fdf4';
+    const border=isDel?COLORS.gd:COLORS.gc;
+    _roundRect(ctx,x,alY+16,aCW-6,64,6,bg,border,1.5);
+    _label(ctx,d.pos,x+aCW/2-3,alY+28,10,COLORS.ink4,'center','600');
+    _monoLabel(ctx,d.query,x+aCW/2-3,alY+48,16,isDel?COLORS.gd:COLORS.gb,'center');
+    _monoLabel(ctx,d.model,x+aCW/2-3,alY+68,16,isDel?COLORS.gd:COLORS.gc,'center');
+  }
+
+  /* Explanation */
+  const exY=alY+92;
+  _roundRect(ctx,cx-300,exY,600,44,8,COLORS.gc+'0c',COLORS.gc+'33',1);
+  _label(ctx,'Position 3: query has no AA → the model skips it (delete state)',cx,exY+16,12,COLORS.gd,'center','600');
+  _label(ctx,'Viterbi picks the path that maximises the total log-odds score',cx,exY+34,11,COLORS.ink3,'center','500');
 }
 
 /* ── Step 6: What each state "expects" ── */
