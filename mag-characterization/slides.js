@@ -1431,20 +1431,8 @@ function drawPfamStep1(ctx){
     const p=profiles[i];
     const bx=bx0+i*(bw+gap);
     _roundRect(ctx,bx,py,bw,bh,8,p.col+'14',p.col,2);
-    _monoLabel(ctx,p.name,bx+bw/2,py+20,12,p.col,'center');
-    _label(ctx,p.desc,bx+bw/2,py+38,10,COLORS.ink2,'center','500');
-
-    /* Profile HMM icon (small chain of states) */
-    for(let s=0;s<3;s++){
-      const sx=bx+bw/2-16+s*16,sy=py+bh-12;
-      ctx.beginPath();ctx.arc(sx,sy,4,0,Math.PI*2);
-      ctx.fillStyle=p.col+'44';ctx.fill();
-      ctx.strokeStyle=p.col;ctx.lineWidth=1;ctx.stroke();
-      if(s<2){
-        ctx.beginPath();ctx.moveTo(sx+5,sy);ctx.lineTo(sx+11,sy);
-        ctx.strokeStyle=p.col+'66';ctx.lineWidth=1;ctx.stroke();
-      }
-    }
+    _monoLabel(ctx,p.name,bx+bw/2,py+18,12,p.col,'center');
+    _label(ctx,p.desc,bx+bw/2,py+36,10,COLORS.ink2,'center','500');
   }
 
   /* Result arrow */
@@ -1822,15 +1810,7 @@ function drawCazyStep1(ctx){
     _label(ctx,c.fn,bx+70+(bw-70)/2,by+50,10,COLORS.ink3,'center','400');
     _monoLabel(ctx,c.count,bx+70+(bw-70)/2,by+72,9,c.col,'center');
 
-    /* Small icon: 3 circles for catalytic classes, square for CBM */
-    if(c.abbr!=='CBM'){
-      for(let s=0;s<3;s++){
-        ctx.beginPath();ctx.arc(bx+28+s*10,by+bh-18,3,0,Math.PI*2);
-        ctx.fillStyle=c.col+'44';ctx.fill();ctx.strokeStyle=c.col;ctx.lineWidth=0.8;ctx.stroke();
-      }
-    }else{
-      _roundRect(ctx,bx+22,by+bh-24,32,12,3,c.col+'22',c.col+'66',1);
-    }
+    /* (decorative icons removed — visual clutter) */
   }
 
   /* Caption */
