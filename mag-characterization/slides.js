@@ -1115,18 +1115,18 @@ function drawKeggStep1(ctx){
   _label(ctx,'Score < adaptive threshold',cx+100,ly+38,10,COLORS.bad,'center','600');
   _label(ctx,'No confident KO assigned',cx+100,ly+52,9,COLORS.ink3,'center','400');
 
+  /* Flow to downstream — placed above explanation box to avoid arrow overlap */
+  _arrow(ctx,cx-100,ly+lh+6,cx-100,274,COLORS.ink4,1.5);
+  _roundRect(ctx,cx-100-90,276,180,34,8,COLORS.ga+'14',COLORS.ga,1.5);
+  _label(ctx,'Assigned KOs go to',cx-100,288,10,COLORS.ink3,'center','500');
+  _label(ctx,'module completeness',cx-100,302,11,COLORS.ga,'center','700');
+
   /* Explanation of adaptive thresholds */
-  const ey=270;
+  const ey=326;
   _roundRect(ctx,100,ey,600,70,8,'#f8fafc',COLORS.border,1);
   _label(ctx,'Adaptive score thresholds',cx,ey+18,12,COLORS.ink2,'center','700');
   _label(ctx,'Each KO family has its own score cutoff, calibrated on known members.',cx,ey+36,10,COLORS.ink3,'center','400');
   _label(ctx,'This is better than a single E-value cutoff: fewer false positives, fewer missed hits.',cx,ey+52,10,COLORS.ink3,'center','400');
-
-  /* Flow to downstream */
-  _arrow(ctx,cx-100,ly+lh+6,cx,360,COLORS.ink4,1.5);
-  _roundRect(ctx,cx-90,362,180,34,8,COLORS.ga+'14',COLORS.ga,1.5);
-  _label(ctx,'Assigned KOs go to',cx,374,10,COLORS.ink3,'center','500');
-  _label(ctx,'module completeness',cx,388,11,COLORS.ga,'center','700');
 
   _label(ctx,'KofamScan assigns KO numbers using family-specific HMM thresholds',cx,424,11,COLORS.ink4,'center','400');
 }
