@@ -806,7 +806,7 @@ function drawGpCanvas(step){
   // Step description line sits between ruler and frames
   const descY=cY+cH+22;
   const fY=descY+14;
-  const fH=24,fGap=3;
+  const fH=38,fGap=5;
 
   // All candidate ORFs: real genes + random short ORFs
   // Each has a coding score (0-1) that Prodigal would assign
@@ -841,14 +841,14 @@ function drawGpCanvas(step){
     {f:5,s:0.75,e:0.92,real:true,lbl:'geneI',score:0.86},
   ];
 
-  const fwdCol=COLORS.gb,revCol=COLORS.gc;
+  const fwdCol='#4371e6',revCol='#16a085';
 
   // ── Draw frame tracks ──
   for(let f=0;f<6;f++){
     const fy=fY+f*(fH+fGap);
-    _monoLabel(ctx,frameLabels[f],cX-8,fy+fH/2,9,f<3?fwdCol:revCol,'right');
-    ctx.fillStyle='#f8fafc';ctx.fillRect(cX,fy,cW,fH);
-    ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.4;ctx.strokeRect(cX,fy,cW,fH);
+    _monoLabel(ctx,frameLabels[f],cX-8,fy+fH/2,10,f<3?fwdCol:revCol,'right');
+    ctx.fillStyle=f<3?'#eef2fb':'#edf7f5';ctx.fillRect(cX,fy,cW,fH);
+    ctx.strokeStyle=f<3?fwdCol+'22':revCol+'22';ctx.lineWidth=0.5;ctx.strokeRect(cX,fy,cW,fH);
 
     // Stop codons as faint red ticks
     const nStops=7+Math.floor(R()*5);
@@ -888,7 +888,7 @@ function drawGpCanvas(step){
     ctx.globalAlpha=1;
 
     if(showLabel&&o.lbl){
-      _label(ctx,o.lbl+(o.partial?' (partial)':''),gx+gw/2,fy+fH/2,7.5,'#fff','center','600');
+      _label(ctx,o.lbl+(o.partial?' (partial)':''),gx+gw/2,fy+fH/2,9,'#fff','center','600');
     }
 
     if(showStart&&o.real){
@@ -897,12 +897,12 @@ function drawGpCanvas(step){
       ctx.beginPath();ctx.arc(sx,fy+fH/2,3,0,Math.PI*2);ctx.fill();
     }
 
-    if(showScore&&gw>25){
+    if(showScore&&gw>30){
       // Score badge inside the ORF
       const bx=gx+gw/2,by=fy+fH/2;
       const txt=o.score.toFixed(2);
-      const badgeCol=o.score>0.7?'#fff':COLORS.bad;
-      ctx.font='600 7px "DM Sans",system-ui,sans-serif';
+      const badgeCol=o.score>0.7?'#fff':COLORS.ink3;
+      ctx.font='600 9px "DM Sans",system-ui,sans-serif';
       ctx.fillStyle=badgeCol;ctx.textAlign='center';ctx.textBaseline='middle';
       ctx.fillText(txt,bx,by);
     }
