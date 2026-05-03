@@ -830,22 +830,22 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
   <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
     <div class="f0 col g-10 sidebar sidebar-wide">
       <div class="card info-card" id="kegg-card-0" style="border-left:3px solid var(--gd)">
-        <div class="info-card-title">KEGG hierarchy</div>
-        <div class="info-card-text">Genes get KO numbers. KOs map to reactions, pathways, and modules.</div>
+        <div class="info-card-title">Hierarchy and KO assignment</div>
+        <div class="info-card-text">Genes get KO numbers via KofamScan. KOs map to modules and pathways. Modules define metabolic functions with boolean logic.</div>
       </div>
       <div class="card info-card" id="kegg-card-1" style="border-left:3px solid var(--ga)">
-        <div class="info-card-title">Pathway mapping</div>
-        <div class="info-card-text">Each KO maps to reactions in metabolic pathways. Module completeness tells you how much of a pathway is present.</div>
+        <div class="info-card-title">Module completeness</div>
+        <div class="info-card-text">A module is complete when every step has at least one KO. Steps may have alternative enzymes (OR logic). Gaps need careful interpretation.</div>
       </div>
       <div class="card info-card" id="kegg-card-2" style="border-left:3px solid var(--gc)">
-        <div class="info-card-title">Interpretation</div>
-        <div class="info-card-text">Missing annotations have multiple explanations. Never over-interpret gaps in pathway completeness.</div>
+        <div class="info-card-title">Interpretation and output</div>
+        <div class="info-card-text">Missing KOs have multiple explanations. KEGG-decoder produces heatmaps showing module completeness across all MAGs.</div>
       </div>
     </div>
 
     <div class="f1 col" style="min-height:0;">
       <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
-        <div class="card-header" id="kegg-canvas-header">KEGG hierarchy: Gene to Pathway</div>
+        <div class="card-header" id="kegg-canvas-header">KEGG hierarchy: Gene → KO → Module → Pathway</div>
         <div class="canvas-wrap"><canvas id="kegg-canvas" class="canvas-fill"></canvas></div>
       </div>
     </div>
@@ -855,9 +855,11 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
   <span class="fragment" data-fragment-index="1"></span>
   <span class="fragment" data-fragment-index="2"></span>
   <span class="fragment" data-fragment-index="3"></span>
+  <span class="fragment" data-fragment-index="4"></span>
+  <span class="fragment" data-fragment-index="5"></span>
 
   <div class="takeaways" style="margin-top:8px">
-    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Missing annotation is not always missing biology. The gene may be absent, fragmented, divergent, or replaced.</div>
+    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Missing annotation is not always missing biology. Use KEGG-decoder to compare module completeness across MAGs.</div>
   </div>
 </section>
 
@@ -871,15 +873,15 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
     <div class="f0 col g-10 sidebar sidebar-wide">
       <div class="card info-card" id="pfam-card-0" style="border-left:3px solid var(--gb)">
         <div class="info-card-title">Protein domains</div>
-        <div class="info-card-text">Proteins are built from reusable modules called domains. Each domain folds and functions independently.</div>
+        <div class="info-card-text">Proteins are built from reusable modules called domains. Each folds and functions independently. Pfam uses profile HMMs to detect them.</div>
       </div>
       <div class="card info-card" id="pfam-card-1" style="border-left:3px solid var(--ga)">
         <div class="info-card-title">Domain architecture</div>
-        <div class="info-card-text">The combination of domains in a protein determines its function. Same domain can appear in many different proteins.</div>
+        <div class="info-card-text">The arrangement of domains determines protein function. Same domain can appear in many proteins: evolution reuses building blocks.</div>
       </div>
       <div class="card info-card" id="pfam-card-2" style="border-left:3px solid var(--gc)">
-        <div class="info-card-title">MAG interpretation</div>
-        <div class="info-card-text">Pfam annotation gives a functional fingerprint. Domain families reveal metabolic capabilities.</div>
+        <div class="info-card-title">InterPro and MAG fingerprint</div>
+        <div class="info-card-text">Pfam is part of InterPro. InterProScan runs all member databases at once. Domain family counts reveal metabolic capabilities.</div>
       </div>
     </div>
 
@@ -895,9 +897,10 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
   <span class="fragment" data-fragment-index="1"></span>
   <span class="fragment" data-fragment-index="2"></span>
   <span class="fragment" data-fragment-index="3"></span>
+  <span class="fragment" data-fragment-index="4"></span>
 
   <div class="takeaways" style="margin-top:8px">
-    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Proteins are modular. The same domain can appear in many proteins, and domain shuffling creates new functions.</div>
+    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Proteins are modular. Domain families give a functional fingerprint of your MAG.</div>
   </div>
 </section>
 
@@ -910,16 +913,16 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
   <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
     <div class="f0 col g-10 sidebar sidebar-wide">
       <div class="card info-card" id="cazy-card-0" style="border-left:3px solid var(--ga)">
-        <div class="info-card-title">CAZyme classes</div>
-        <div class="info-card-text">Six classes of enzymes that process carbohydrates: GH, GT, PL, CE, CBM, AA.</div>
+        <div class="info-card-title">Classes and families</div>
+        <div class="info-card-text">Six classes (GH, GT, PL, CE, CBM, AA). GH is the largest. Each class is split into numbered families that predict substrate specificity.</div>
       </div>
       <div class="card info-card" id="cazy-card-1" style="border-left:3px solid var(--gb)">
-        <div class="info-card-title">Families and substrates</div>
-        <div class="info-card-text">Each class contains numbered families. The family predicts which substrate the enzyme acts on.</div>
+        <div class="info-card-title">Detection by dbCAN</div>
+        <div class="info-card-text">dbCAN uses three methods (HMMER, DIAMOND, eCAMI) and takes the consensus. Family number predicts which substrate the enzyme targets.</div>
       </div>
       <div class="card info-card" id="cazy-card-2" style="border-left:3px solid var(--gc)">
-        <div class="info-card-title">Metabolic niche</div>
-        <div class="info-card-text">The CAZyme profile of a MAG suggests what carbohydrates it can use. But family-level predictions can be broad.</div>
+        <div class="info-card-title">PULs and ecological niche</div>
+        <div class="info-card-text">CAZymes cluster in PULs with transporters. Grouping families by substrate predicts ecological niche. But predictions can be broad.</div>
       </div>
     </div>
 
@@ -935,9 +938,11 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
   <span class="fragment" data-fragment-index="1"></span>
   <span class="fragment" data-fragment-index="2"></span>
   <span class="fragment" data-fragment-index="3"></span>
+  <span class="fragment" data-fragment-index="4"></span>
+  <span class="fragment" data-fragment-index="5"></span>
 
   <div class="takeaways" style="margin-top:8px">
-    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> CAZyme profiles suggest what substrates a MAG might use, but families can be broad.</div>
+    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Group CAZyme families by substrate to predict what your MAG can eat.</div>
   </div>
 </section>
 
@@ -951,15 +956,15 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
     <div class="f0 col g-10 sidebar sidebar-wide">
       <div class="card info-card" id="bgc-card-0" style="border-left:3px solid var(--ga)">
         <div class="info-card-title">Gene clusters</div>
-        <div class="info-card-text">BGCs are physically linked genes that cooperate to produce a metabolite. The cluster encodes everything needed: biosynthesis, transport, regulation, resistance.</div>
+        <div class="info-card-text">BGCs are physically linked genes that cooperate to produce a metabolite: biosynthesis, transport, regulation, resistance.</div>
       </div>
       <div class="card info-card" id="bgc-card-1" style="border-left:3px solid var(--gb)">
-        <div class="info-card-title">BGC types and detection</div>
-        <div class="info-card-text">BGCs are classified by their biosynthetic machinery (NRPS, PKS, RiPP, etc.). antiSMASH detects them using domain signatures and rules.</div>
+        <div class="info-card-title">Types and detection</div>
+        <div class="info-card-text">NRPS and PKS use modular assembly lines. RiPPs, terpenes, and siderophores are simpler but ecologically important. antiSMASH detects all types.</div>
       </div>
       <div class="card info-card" id="bgc-card-2" style="border-left:3px solid var(--gc)">
-        <div class="info-card-title">MAG interpretation</div>
-        <div class="info-card-text">BGC predictions reveal specialized metabolic potential. But fragmented MAGs may split clusters across contigs.</div>
+        <div class="info-card-title">MIBiG and interpretation</div>
+        <div class="info-card-text">Most BGCs are novel (no MIBiG match). Interpret predictions using completeness, domain content, and MAG quality. Prediction is not proof.</div>
       </div>
     </div>
 
@@ -975,9 +980,11 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
   <span class="fragment" data-fragment-index="1"></span>
   <span class="fragment" data-fragment-index="2"></span>
   <span class="fragment" data-fragment-index="3"></span>
+  <span class="fragment" data-fragment-index="4"></span>
+  <span class="fragment" data-fragment-index="5"></span>
 
   <div class="takeaways" style="margin-top:8px">
-    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> antiSMASH predicts biosynthetic potential. It does not prove the compound is produced.</div>
+    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> antiSMASH predicts potential, not production. Most BGCs are novel. Assess confidence before interpreting.</div>
   </div>
 </section>
 
@@ -1386,5 +1393,5 @@ document.addEventListener('keydown',e=>{
 </script>
 
 <script src="reveal.min.js"></script>
-<script src="slides.js?v=20260504aj"></script>
+<script src="slides.js?v=20260503al"></script>
 </body></html>
