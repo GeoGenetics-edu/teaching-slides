@@ -995,350 +995,1459 @@ function drawGpCanvas(step){
 }
 
 /* ═══════════════════════════════════════════════════════════
-   5. KEGG-CANVAS — Simplified pathway with present/missing
+   5. KEGG-CANVAS — 5-step pedagogical animation
    ═══════════════════════════════════════════════════════════ */
 
-function drawKeggCanvas(){
+const keggHeaders=[
+  'Step 1: KEGG organizes biology in a hierarchy',
+  'Step 2: Your gene gets a KO number',
+  'Step 3: KO maps to metabolic reactions',
+  'Step 4: Check module completeness',
+  'Step 5: Missing gene does not equal missing function',
+];
+const keggCanvasHeaders=[
+  'KEGG hierarchy: Gene to Pathway',
+  'KO assignment by profile search',
+  'Mapping KOs onto a metabolic pathway',
+  'Module completeness check',
+  'Why genes can appear missing',
+];
+const keggCardMap=[0,0,1,1,2];
+
+function keggHighlight(step){
+  const active=keggCardMap[Math.min(step,4)];
+  for(let i=0;i<3;i++){
+    const el=document.getElementById('kegg-card-'+i);if(!el)continue;
+    el.style.opacity=i===active?'1':i<active?'0.5':'0.35';
+    el.style.transform=i===active?'scale(1.02)':'scale(1)';
+    el.style.boxShadow=i===active?'0 4px 6px rgba(15,23,42,.04),0 2px 12px rgba(15,23,42,.06)':'0 1px 2px rgba(15,23,42,.04),0 1px 3px rgba(15,23,42,.06)';
+  }
+  const h=document.getElementById('kegg-header');
+  if(h) h.textContent=keggHeaders[Math.min(step,4)];
+  const ch=document.getElementById('kegg-canvas-header');
+  if(ch) ch.textContent=keggCanvasHeaders[Math.min(step,4)];
+}
+
+function drawKeggCanvas(step){
+  step=step||0;
   const ctx=_c('kegg-canvas');if(!ctx)return;
   ctx.clearRect(0,0,800,440);
+  [drawKeggStep0,drawKeggStep1,drawKeggStep2,drawKeggStep3,drawKeggStep4][Math.min(step,4)](ctx);
+}
 
-  _label(ctx,'Simplified metabolic pathway',400,25,13,COLORS.ink2,'center','700');
+/* ── Step 0: KEGG hierarchy flow ── */
+function drawKeggStep0(ctx){
+  const cx=400,boxW=130,boxH=52,gap=50;
+  const levels=['Gene','KO','Reaction','Pathway'];
+  const colors=[COLORS.gb,COLORS.gd,COLORS.ga,COLORS.gc];
+  const descs=['Your predicted ORF','KEGG Orthology ID','Biochemical step','Complete route'];
+  const totalW=levels.length*boxW+(levels.length-1)*gap;
+  const x0=cx-totalW/2;
+  const y=160;
 
-  // Pathway: A → B → C → D → E (linear), with branch F → G
-  const enzymes=[
-    {id:'K00001',name:'Enzyme A',x:80,y:180,present:true},
-    {id:'K00002',name:'Enzyme B',x:220,y:180,present:true},
-    {id:'K00003',name:'Enzyme C',x:360,y:180,present:false},
-    {id:'K00004',name:'Enzyme D',x:500,y:180,present:true},
-    {id:'K00005',name:'Enzyme E',x:640,y:180,present:true},
-    // Branch
-    {id:'K00006',name:'Enzyme F',x:360,y:300,present:true},
-    {id:'K00007',name:'Enzyme G',x:500,y:300,present:false}
-  ];
+  _label(ctx,'KEGG organizes genes into a functional hierarchy',cx,60,16,COLORS.ink,'center','700');
+  _label(ctx,'Every gene gets placed in this chain:',cx,88,13,COLORS.ink3,'center','400');
 
-  // Metabolites
-  const metabolites=[
-    {name:'Substrate',x:20,y:180},
-    {name:'M1',x:150,y:180},
-    {name:'M2',x:290,y:180},
-    {name:'M3',x:430,y:180},
-    {name:'M4',x:570,y:180},
-    {name:'Product',x:720,y:180},
-    {name:'M5',x:430,y:300},
-    {name:'Side product',x:590,y:300}
-  ];
+  for(let i=0;i<levels.length;i++){
+    const bx=x0+i*(boxW+gap);
+    _roundRect(ctx,bx,y,boxW,boxH,10,colors[i]+'18',colors[i],2);
+    _label(ctx,levels[i],bx+boxW/2,y+20,15,colors[i],'center','700');
+    _label(ctx,descs[i],bx+boxW/2,y+38,9.5,COLORS.ink3,'center','400');
 
-  // Draw metabolite nodes
-  for(const m of metabolites){
-    const isBig=m.name==='Substrate'||m.name==='Product'||m.name==='Side product';
-    const r=isBig?14:10;
-    ctx.beginPath();ctx.arc(m.x,m.y,r,0,Math.PI*2);
-    ctx.fillStyle=isBig?'#f0fdf4':'#f1f5f9';ctx.fill();
-    ctx.strokeStyle=isBig?COLORS.ok:COLORS.border;ctx.lineWidth=isBig?2:1;ctx.stroke();
-    _label(ctx,m.name,m.x,m.y+(isBig?22:18),isBig?10:8,COLORS.ink3,'center','500');
-  }
-
-  // Arrows between metabolites
-  const arrows=[
-    [0,1],[1,2],[2,3],[3,4],[4,5],
-    [2,6],[6,7] // branch
-  ];
-  for(const[a,b] of arrows){
-    const ma=metabolites[a],mb=metabolites[b];
-    const dx=mb.x-ma.x,dy=mb.y-ma.y,d=Math.sqrt(dx*dx+dy*dy);
-    const r1=(ma.name==='Substrate'||ma.name==='Product'||ma.name==='Side product')?16:12;
-    const r2=(mb.name==='Substrate'||mb.name==='Product'||mb.name==='Side product')?16:12;
-    _arrow(ctx,ma.x+dx/d*r1,ma.y+dy/d*r1,mb.x-dx/d*r2,mb.y-dy/d*r2,COLORS.border,1.5);
-  }
-
-  // Draw enzyme boxes on arrows
-  for(const e of enzymes){
-    const col=e.present?COLORS.ok:COLORS.ink4;
-    const bg=e.present?'#dcfce7':'#f1f5f9';
-    _roundRect(ctx,e.x-38,e.y-50,76,32,8,bg,col,1.5);
-    _monoLabel(ctx,e.id,e.x,e.y-40,9,col,'center');
-    _label(ctx,e.name,e.x,e.y-28,8,col,'center','600');
-
-    if(!e.present){
-      // Question mark
-      _label(ctx,'?',e.x+30,e.y-44,14,COLORS.warn,'center','800');
+    if(i<levels.length-1){
+      _arrow(ctx,bx+boxW+4,y+boxH/2,bx+boxW+gap-4,y+boxH/2,COLORS.ink4,2);
     }
   }
 
-  // Decision box for missing enzyme
-  _roundRect(ctx,180,350,440,70,10,'#fffbeb',COLORS.gd+'88',1);
-  _label(ctx,'Missing annotation could mean:',400,368,11,COLORS.gd,'center','700');
-  const reasons=['Truly absent','Too divergent','Missing contig','Broken gene','Alternative enzyme'];
-  for(let i=0;i<5;i++){
-    const rx=210+i*88;
-    _label(ctx,(i+1)+'. '+reasons[i],rx,390,8,COLORS.ink2,'center','500');
+  /* Example annotation below */
+  const ey=280;
+  _label(ctx,'Example:',cx,ey,13,COLORS.ink2,'center','700');
+
+  const exLabels=['adh gene','K00001','R00623','Glycolysis'];
+  const exColors=[COLORS.gb,COLORS.gd,COLORS.ga,COLORS.gc];
+  for(let i=0;i<4;i++){
+    const bx=x0+i*(boxW+gap);
+    _roundRect(ctx,bx,ey+16,boxW,36,8,exColors[i]+'10',exColors[i]+'66',1.2);
+    _monoLabel(ctx,exLabels[i],bx+boxW/2,ey+34,11,exColors[i],'center');
+    if(i<3) _arrow(ctx,bx+boxW+4,ey+34,bx+boxW+gap-4,ey+34,COLORS.ink4+'88',1.5);
   }
+
+  _label(ctx,'KEGG also groups pathways into modules (sets of reactions that form a functional unit)',cx,380,11,COLORS.ink4,'center','400');
+}
+
+/* ── Step 1: KO assignment ── */
+function drawKeggStep1(ctx){
+  const cx=400;
+
+  /* Query protein */
+  _label(ctx,'Your predicted protein sequence',cx,40,14,COLORS.gb,'center','700');
+  const seq='MSTVKL IAGGAS VGQAL ...';
+  _roundRect(ctx,cx-200,56,400,34,6,'#eff6ff',COLORS.gb,1.5);
+  _monoLabel(ctx,seq,cx,73,12,COLORS.gb,'center');
+
+  /* Arrow down */
+  _arrow(ctx,cx,96,cx,130,COLORS.ink4,2);
+  _label(ctx,'BLAST / HMMER search',cx-4,114,10,COLORS.ink3,'right','500');
+  _label(ctx,'against KOfam profiles',cx-4,128,10,COLORS.ink3,'right','500');
+
+  /* KO result box */
+  const koY=140;
+  _roundRect(ctx,cx-120,koY,240,70,10,COLORS.gd+'14',COLORS.gd,2);
+  _monoLabel(ctx,'K00001',cx,koY+22,22,COLORS.gd,'center');
+  _label(ctx,'alcohol dehydrogenase',cx,koY+48,12,COLORS.ink2,'center','600');
+
+  /* Arrow to reaction */
+  _arrow(ctx,cx,koY+76,cx,koY+100,COLORS.ink4,2);
+
+  /* Reaction box */
+  const rxY=koY+106;
+  _roundRect(ctx,cx-150,rxY,300,44,8,COLORS.ga+'12',COLORS.ga,1.5);
+  _monoLabel(ctx,'R00623',cx-60,rxY+22,12,COLORS.ga,'center');
+  _label(ctx,'ethanol + NAD+  =  acetaldehyde + NADH',cx+30,rxY+22,10,COLORS.ink2,'center','500');
+
+  /* Arrow to pathway */
+  _arrow(ctx,cx,rxY+50,cx,rxY+74,COLORS.ink4,2);
+
+  /* Pathway box */
+  const pwY=rxY+80;
+  _roundRect(ctx,cx-130,pwY,260,40,8,COLORS.gc+'12',COLORS.gc,1.5);
+  _label(ctx,'Glycolysis / Gluconeogenesis (map00010)',cx,pwY+20,12,COLORS.gc,'center','600');
+
+  _label(ctx,'One gene links to one KO, which connects to reactions and pathways',cx,420,11,COLORS.ink4,'center','400');
+}
+
+/* ── Step 2: KOs on a pathway ── */
+function drawKeggStep2(ctx){
+  const cx=400;
+  _label(ctx,'A simplified metabolic module',cx,30,15,COLORS.ink,'center','700');
+  _label(ctx,'5 enzymes convert a substrate into a product',cx,52,12,COLORS.ink3,'center','400');
+
+  /* Metabolites: 6 nodes for 5 enzyme gaps */
+  const mets=['Substrate','M1','M2','M3','M4','Product'];
+  const metX=[40,165,290,415,555,730];
+  const metY=210;
+
+  for(let i=0;i<mets.length;i++){
+    const isBig=i===0||i===5;
+    const r=isBig?20:14;
+    ctx.beginPath();ctx.arc(metX[i],metY,r,0,Math.PI*2);
+    ctx.fillStyle=isBig?'#f0fdf4':'#f1f5f9';ctx.fill();
+    ctx.strokeStyle=isBig?COLORS.ok:COLORS.border;ctx.lineWidth=isBig?2:1.2;ctx.stroke();
+    _label(ctx,mets[i],metX[i],metY+(isBig?30:24),isBig?11:9.5,COLORS.ink3,'center','500');
+  }
+
+  /* Arrows + enzyme boxes between metabolites */
+  const kos=['K00001','K00002','K00003','K00004','K00005'];
+  const names=['adh','pfkA','fbaA','tpiA','gapA'];
+  for(let i=0;i<5;i++){
+    const ax=metX[i]+22, bx=metX[i+1]-22;
+    _arrow(ctx,ax,metY,bx,metY,COLORS.ink4,1.5);
+    const emx=(metX[i]+metX[i+1])/2;
+    _roundRect(ctx,emx-44,metY-60,88,36,8,'#dcfce7',COLORS.ok,1.5);
+    _monoLabel(ctx,kos[i],emx,metY-48,10,COLORS.ok,'center');
+    _label(ctx,names[i],emx,metY-34,9,COLORS.ok,'center','600');
+  }
+
+  /* Legend */
+  _roundRect(ctx,280,320,40,20,4,'#dcfce7',COLORS.ok,1.2);
+  _label(ctx,'= enzyme present in your MAG',340,330,10,COLORS.ink3,'left','500');
+
+  _label(ctx,'All 5 enzymes found: this module is complete!',cx,380,13,COLORS.ok,'center','700');
+}
+
+/* ── Step 3: Module completeness with gaps ── */
+function drawKeggStep3(ctx){
+  const cx=400;
+  _label(ctx,'Same module, but now with gaps',cx,30,15,COLORS.ink,'center','700');
+
+  const mets=['Substrate','M1','M2','M3','M4','Product'];
+  const metX=[40,165,290,415,555,730];
+  const metY=190;
+  const present=[true,true,false,true,false]; /* 3 out of 5 */
+
+  for(let i=0;i<mets.length;i++){
+    const isBig=i===0||i===5;
+    const r=isBig?20:14;
+    ctx.beginPath();ctx.arc(metX[i],metY,r,0,Math.PI*2);
+    ctx.fillStyle=isBig?'#f0fdf4':'#f1f5f9';ctx.fill();
+    ctx.strokeStyle=isBig?COLORS.ok:COLORS.border;ctx.lineWidth=isBig?2:1.2;ctx.stroke();
+    _label(ctx,mets[i],metX[i],metY+(isBig?30:24),isBig?11:9.5,COLORS.ink3,'center','500');
+  }
+
+  const kos=['K00001','K00002','K00003','K00004','K00005'];
+  const names=['adh','pfkA','fbaA','tpiA','gapA'];
+  for(let i=0;i<5;i++){
+    const ax=metX[i]+22, bx=metX[i+1]-22;
+    const col=present[i]?COLORS.ok:COLORS.ink4;
+    const arrowCol=present[i]?COLORS.ink4:COLORS.bad+'55';
+    _arrow(ctx,ax,metY,bx,metY,arrowCol,1.5);
+    const emx=(metX[i]+metX[i+1])/2;
+    const bg=present[i]?'#dcfce7':'#f1f5f9';
+    _roundRect(ctx,emx-44,metY-60,88,36,8,bg,col,1.5);
+    _monoLabel(ctx,kos[i],emx,metY-48,10,col,'center');
+    _label(ctx,present[i]?names[i]:'?',emx,metY-34,present[i]?9:14,col,'center',present[i]?'600':'800');
+    if(!present[i]){
+      /* Red X overlay */
+      ctx.save();ctx.globalAlpha=0.15;
+      ctx.strokeStyle=COLORS.bad;ctx.lineWidth=3;
+      ctx.beginPath();ctx.moveTo(emx-20,metY-56);ctx.lineTo(emx+20,metY-32);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(emx+20,metY-56);ctx.lineTo(emx-20,metY-32);ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  /* Completeness indicator */
+  const barY=290;
+  _label(ctx,'Module completeness:',cx,barY,13,COLORS.ink2,'center','700');
+
+  /* Progress bar */
+  const barW=300,barH=22,barX=cx-barW/2;
+  _roundRect(ctx,barX,barY+14,barW,barH,4,'#f1f5f9',COLORS.border,1);
+  _roundRect(ctx,barX,barY+14,barW*0.6,barH,4,COLORS.gd,null,0);
+  _label(ctx,'3 / 5 = 60%',cx,barY+25,12,'#fff','center','700');
+
+  /* Warning */
+  _roundRect(ctx,cx-180,barY+54,360,36,8,'#fef2f2',COLORS.bad+'55',1);
+  _label(ctx,'Incomplete module: 2 enzymes not annotated',cx,barY+72,12,COLORS.bad,'center','600');
+
+  /* Legend */
+  _roundRect(ctx,180,400,40,18,4,'#dcfce7',COLORS.ok,1.2);
+  _label(ctx,'present',232,409,9,COLORS.ok,'left','600');
+  _roundRect(ctx,290,400,40,18,4,'#f1f5f9',COLORS.ink4,1.2);
+  _label(ctx,'missing',342,409,9,COLORS.ink4,'left','600');
+}
+
+/* ── Step 4: Why genes appear missing ── */
+function drawKeggStep4(ctx){
+  const cx=400;
+
+  /* Show the gap from step 3 at top — just the missing enzyme box */
+  _roundRect(ctx,cx-56,30,112,40,8,'#f1f5f9',COLORS.ink4,2);
+  _monoLabel(ctx,'K00003',cx,44,12,COLORS.ink4,'center');
+  _label(ctx,'?',cx+42,44,16,COLORS.warn,'center','800');
+  _label(ctx,'Missing from your annotation',cx,82,13,COLORS.ink2,'center','700');
+
+  /* Five reasons radiating outward */
+  const reasons=[
+    {txt:'1. Truly absent',desc:'The organism lacks the gene',col:COLORS.bad},
+    {txt:'2. Too divergent',desc:'Sequence too different to match profile',col:COLORS.gd},
+    {txt:'3. On a missing contig',desc:'Genome is incomplete (draft MAG)',col:COLORS.gc},
+    {txt:'4. Broken gene',desc:'Frameshift or contig edge split it',col:COLORS.gb},
+    {txt:'5. Alternative enzyme',desc:'Non-homologous replacement exists',col:COLORS.ga},
+  ];
+
+  const startY=120;
+  const boxW=130,boxH=64,gapX=16;
+  const totalW=reasons.length*boxW+(reasons.length-1)*gapX;
+  const x0=cx-totalW/2;
+
+  for(let i=0;i<reasons.length;i++){
+    const bx=x0+i*(boxW+gapX);
+    const by=startY+50;
+
+    /* Arrow from center to box */
+    const targetX=bx+boxW/2;
+    _arrow(ctx,cx,startY,targetX,by-4,reasons[i].col+'88',1.5);
+
+    _roundRect(ctx,bx,by,boxW,boxH,8,reasons[i].col+'10',reasons[i].col+'66',1.2);
+    _label(ctx,reasons[i].txt,bx+boxW/2,by+18,11,reasons[i].col,'center','700');
+
+    /* Word-wrap description */
+    ctx.font='400 9px "DM Sans",system-ui,sans-serif';
+    const words=reasons[i].desc.split(' ');
+    let line='',ly=by+36;
+    for(const w of words){
+      const test=line?line+' '+w:w;
+      if(ctx.measureText(test).width>boxW-12&&line){
+        _label(ctx,line,bx+boxW/2,ly,9,COLORS.ink3,'center','400');
+        line=w;ly+=13;
+      } else line=test;
+    }
+    if(line) _label(ctx,line,bx+boxW/2,ly,9,COLORS.ink3,'center','400');
+  }
+
+  /* Bottom message */
+  _roundRect(ctx,cx-220,340,440,44,10,'#fffbeb',COLORS.gd+'88',1.2);
+  _label(ctx,'Absence of evidence is not evidence of absence',cx,356,13,COLORS.gd,'center','700');
+  _label(ctx,'Always consider alternative explanations before concluding a gene is missing',cx,374,10,COLORS.ink3,'center','400');
 }
 
 /* ═══════════════════════════════════════════════════════════
    6. PFAM-CANVAS — Protein domain architectures
    ═══════════════════════════════════════════════════════════ */
 
-function drawPfamCanvas(){
+/* ═══════════════════════════════════════════════════════════
+   6b. PFAM-CANVAS — 5-step pedagogical animation
+   ═══════════════════════════════════════════════════════════ */
+
+const pfamHeaders=[
+  'Step 1: What is a protein domain?',
+  'Step 2: Pfam profiles detect domains',
+  'Step 3: Domain architecture',
+  'Step 4: Same domain, different proteins',
+  'Step 5: What Pfam tells you about your MAG',
+];
+const pfamCanvasHeaders=[
+  'Protein domains: reusable functional units',
+  'Pfam profile HMMs scan your protein',
+  'Domain arrangement along a protein',
+  'Shared domains across proteins',
+  'Pfam summary for a MAG',
+];
+const pfamCardMap=[0,0,1,1,2];
+
+function pfamHighlight(step){
+  const active=pfamCardMap[Math.min(step,4)];
+  for(let i=0;i<3;i++){
+    const el=document.getElementById('pfam-card-'+i);if(!el)continue;
+    el.style.opacity=i===active?'1':i<active?'0.5':'0.35';
+    el.style.transform=i===active?'scale(1.02)':'scale(1)';
+    el.style.boxShadow=i===active?'0 4px 6px rgba(15,23,42,.04),0 2px 12px rgba(15,23,42,.06)':'0 1px 2px rgba(15,23,42,.04),0 1px 3px rgba(15,23,42,.06)';
+  }
+  const h=document.getElementById('pfam-header');
+  if(h) h.textContent=pfamHeaders[Math.min(step,4)];
+  const ch=document.getElementById('pfam-canvas-header');
+  if(ch) ch.textContent=pfamCanvasHeaders[Math.min(step,4)];
+}
+
+function drawPfamCanvas(step){
+  step=step||0;
   const ctx=_c('pfam-canvas');if(!ctx)return;
   ctx.clearRect(0,0,800,440);
+  [drawPfamStep0,drawPfamStep1,drawPfamStep2,drawPfamStep3,drawPfamStep4][Math.min(step,4)](ctx);
+}
 
-  _label(ctx,'Domain architectures of three proteins',400,25,13,COLORS.ink2,'center','700');
-
-  const proteins=[
-    {
-      name:'ABC transporter',length:600,y:80,
-      domains:[
-        {start:20,end:180,label:'ABC_tran',col:COLORS.gb},
-        {start:220,end:380,label:'ABC_membrane',col:COLORS.ga},
-        {start:420,end:560,label:'ABC_tran_2',col:COLORS.gb}
-      ]
-    },
-    {
-      name:'Two-component sensor',length:550,y:190,
-      domains:[
-        {start:10,end:200,label:'HAMP',col:COLORS.gc},
-        {start:230,end:370,label:'HisKA',col:COLORS.gd},
-        {start:400,end:520,label:'HATPase_c',col:COLORS.bad}
-      ]
-    },
-    {
-      name:'Modular CAZyme',length:650,y:300,
-      domains:[
-        {start:10,end:120,label:'CBM3',col:COLORS.ink3},
-        {start:150,end:310,label:'GH5',col:COLORS.ga},
-        {start:340,end:420,label:'CBM3',col:COLORS.ink3},
-        {start:450,end:620,label:'GH9',col:COLORS.ok}
-      ]
+/* helper: draw a protein backbone with domains */
+function _pfamProtein(ctx,name,x,y,len,domains,showBounds){
+  ctx.strokeStyle=COLORS.border;ctx.lineWidth=2.5;
+  ctx.beginPath();ctx.moveTo(x,y+16);ctx.lineTo(x+len,y+16);ctx.stroke();
+  _label(ctx,'N',x-14,y+16,10,COLORS.ink4,'center','600');
+  _label(ctx,'C',x+len+14,y+16,10,COLORS.ink4,'center','600');
+  if(name) _label(ctx,name,x,y-6,12,COLORS.ink,'left','700');
+  for(const d of domains){
+    const dx=x+d.s,dw=d.e-d.s;
+    ctx.globalAlpha=0.75;
+    _roundRect(ctx,dx,y+2,dw,28,6,d.c,null,0);
+    ctx.globalAlpha=1;
+    _roundRect(ctx,dx,y+2,dw,28,6,null,d.c,1.5);
+    _label(ctx,d.l,dx+dw/2,y+16,Math.min(10,dw/d.l.length*1.6),'#fff','center','700');
+    if(showBounds){
+      _monoLabel(ctx,d.s+'',dx,y+38,8,COLORS.ink4,'center');
+      _monoLabel(ctx,d.e+'',dx+dw,y+38,8,COLORS.ink4,'center');
     }
+  }
+}
+
+/* ── Step 0: What is a protein domain? ── */
+function drawPfamStep0(ctx){
+  const cx=400;
+  _label(ctx,'A single protein with three distinct domains',cx,36,15,COLORS.ink,'center','700');
+
+  /* Long protein backbone */
+  const px=80,pw=640,py=120;
+  ctx.strokeStyle=COLORS.border;ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(px,py+20);ctx.lineTo(px+pw,py+20);ctx.stroke();
+  _label(ctx,'N',px-16,py+20,11,COLORS.ink4,'center','600');
+  _label(ctx,'C',px+pw+16,py+20,11,COLORS.ink4,'center','600');
+  _monoLabel(ctx,'~480 aa',px+pw+40,py+20,10,COLORS.ink4,'left');
+
+  /* Three colored domain regions */
+  const doms=[
+    {s:40,e:190,l:'Kinase',c:COLORS.gb,desc:'Phosphorylates targets'},
+    {s:240,e:400,l:'SH2',c:COLORS.ga,desc:'Binds phosphotyrosine'},
+    {s:450,e:580,l:'SH3',c:COLORS.gc,desc:'Binds proline-rich motifs'},
   ];
+  for(const d of doms){
+    const dx=px+d.s,dw=d.e-d.s;
+    ctx.globalAlpha=0.75;
+    _roundRect(ctx,dx,py+4,dw,32,8,d.c,null,0);
+    ctx.globalAlpha=1;
+    _roundRect(ctx,dx,py+4,dw,32,8,null,d.c,2);
+    _label(ctx,d.l,dx+dw/2,py+20,13,'#fff','center','700');
 
-  for(const p of proteins){
-    const px=400-p.length/2;
-    // Protein backbone (thin line)
-    ctx.strokeStyle=COLORS.border;ctx.lineWidth=2;
-    ctx.beginPath();ctx.moveTo(px,p.y+18);ctx.lineTo(px+p.length,p.y+18);ctx.stroke();
+    /* Description below each domain */
+    _arrow(ctx,dx+dw/2,py+40,dx+dw/2,py+60,d.c,1.5);
+    _roundRect(ctx,dx+dw/2-70,py+64,140,28,6,d.c+'12',d.c,1);
+    _label(ctx,d.desc,dx+dw/2,py+78,10,d.c,'center','500');
+  }
 
-    // N and C termini
-    _label(ctx,'N',px-12,p.y+18,9,COLORS.ink4,'center','600');
-    _label(ctx,'C',px+p.length+12,p.y+18,9,COLORS.ink4,'center','600');
+  /* Linker regions */
+  _label(ctx,'linker',px+215,py+6,9,COLORS.ink4,'center','400');
+  _label(ctx,'linker',px+425,py+6,9,COLORS.ink4,'center','400');
 
-    // Protein name
-    _label(ctx,p.name,px,p.y-8,12,COLORS.ink,'left','700');
+  /* Caption */
+  _roundRect(ctx,100,320,600,50,8,'#f8fafc',COLORS.border,1);
+  _label(ctx,'Proteins are modular — built from reusable functional units',cx,338,13,COLORS.ink2,'center','600');
+  _label(ctx,'Each domain folds independently and has its own function',cx,358,11,COLORS.ink3,'center','400');
+}
 
-    // Length
-    _monoLabel(ctx,Math.round(p.length*0.8)+'aa',px+p.length+30,p.y+18,9,COLORS.ink4,'left');
+/* ── Step 1: Pfam profiles detect domains ── */
+function drawPfamStep1(ctx){
+  const cx=400;
 
-    // Domains
-    for(const d of p.domains){
-      const dx=px+d.start,dw=d.end-d.start;
-      _roundRect(ctx,dx,p.y+4,dw,28,6,d.col+'22',d.col,2);
-      _label(ctx,d.label,dx+dw/2,p.y+18,10,'#fff','center','700');
+  /* Query protein at top */
+  _label(ctx,'Your predicted protein',cx,28,14,COLORS.gb,'center','700');
+  const qx=140,qw=520,qy=44;
+  ctx.strokeStyle=COLORS.border;ctx.lineWidth=2.5;
+  ctx.beginPath();ctx.moveTo(qx,qy+12);ctx.lineTo(qx+qw,qy+12);ctx.stroke();
+  _label(ctx,'N',qx-14,qy+12,9,COLORS.ink4,'center','600');
+  _label(ctx,'C',qx+qw+14,qy+12,9,COLORS.ink4,'center','600');
+  _monoLabel(ctx,'?  ?  ?',cx,qy+12,12,COLORS.ink4,'center');
 
-      // Fill for visibility
-      ctx.globalAlpha=0.7;
-      _roundRect(ctx,dx,p.y+4,dw,28,6,d.col,null,0);
-      ctx.globalAlpha=1;
-      _label(ctx,d.label,dx+dw/2,p.y+18,10,'#fff','center','700');
+  /* Scanning arrow */
+  _arrow(ctx,cx,qy+28,cx,qy+60,COLORS.ink4,2);
+  _label(ctx,'hmmsearch',cx+50,qy+44,10,COLORS.gd,'left','600');
+
+  /* Pfam profile boxes */
+  const profiles=[
+    {name:'PF00069',desc:'Protein kinase',col:COLORS.gb},
+    {name:'PF00017',desc:'SH2 domain',col:COLORS.ga},
+    {name:'PF00018',desc:'SH3 domain',col:COLORS.gc},
+  ];
+  const py=qy+70,bw=200,bh=56,gap=20;
+  const totalW=profiles.length*bw+(profiles.length-1)*gap;
+  const bx0=cx-totalW/2;
+
+  _label(ctx,'Pfam profile HMM library',cx,py-8,12,COLORS.ink2,'center','700');
+
+  for(let i=0;i<profiles.length;i++){
+    const p=profiles[i];
+    const bx=bx0+i*(bw+gap);
+    _roundRect(ctx,bx,py,bw,bh,8,p.col+'14',p.col,2);
+    _monoLabel(ctx,p.name,bx+bw/2,py+20,12,p.col,'center');
+    _label(ctx,p.desc,bx+bw/2,py+38,10,COLORS.ink2,'center','500');
+
+    /* Profile HMM icon (small chain of states) */
+    for(let s=0;s<3;s++){
+      const sx=bx+bw/2-16+s*16,sy=py+bh-12;
+      ctx.beginPath();ctx.arc(sx,sy,4,0,Math.PI*2);
+      ctx.fillStyle=p.col+'44';ctx.fill();
+      ctx.strokeStyle=p.col;ctx.lineWidth=1;ctx.stroke();
+      if(s<2){
+        ctx.beginPath();ctx.moveTo(sx+5,sy);ctx.lineTo(sx+11,sy);
+        ctx.strokeStyle=p.col+'66';ctx.lineWidth=1;ctx.stroke();
+      }
     }
   }
 
-  // Legend
-  _roundRect(ctx,120,390,560,35,8,'#f1f5f9',COLORS.border,1);
-  _label(ctx,'Same domain can appear in different proteins (e.g. ABC_tran, CBM3). One protein can have multiple domains.',400,407,10,COLORS.ink3,'center','500');
+  /* Result arrow */
+  _arrow(ctx,cx,py+bh+10,cx,py+bh+40,COLORS.ink4,2);
+
+  /* Match result */
+  const ry=py+bh+48;
+  _label(ctx,'Matched domains placed on your protein:',cx,ry,12,COLORS.ink2,'center','600');
+  const rx=140,rw=520;
+  ctx.strokeStyle=COLORS.border;ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(rx,ry+24);ctx.lineTo(rx+rw,ry+24);ctx.stroke();
+  const rdoms=[
+    {s:30,e:160,l:'Kinase',c:COLORS.gb},
+    {s:200,e:330,l:'SH2',c:COLORS.ga},
+    {s:370,e:470,l:'SH3',c:COLORS.gc},
+  ];
+  for(const d of rdoms){
+    const dx=rx+d.s,dw=d.e-d.s;
+    ctx.globalAlpha=0.75;
+    _roundRect(ctx,dx,ry+10,dw,28,6,d.c,null,0);
+    ctx.globalAlpha=1;
+    _roundRect(ctx,dx,ry+10,dw,28,6,null,d.c,1.5);
+    _label(ctx,d.l,dx+dw/2,ry+24,10,'#fff','center','700');
+  }
+
+  /* Caption */
+  _roundRect(ctx,100,380,600,44,8,'#f8fafc',COLORS.border,1);
+  _label(ctx,'Each Pfam family has a profile HMM — same technology as HMMER',cx,398,12,COLORS.ink2,'center','600');
+  _label(ctx,'Your proteins are scanned against ~20,000 Pfam families',cx,414,10,COLORS.ink3,'center','400');
+}
+
+/* ── Step 2: Domain architecture ── */
+function drawPfamStep2(ctx){
+  const cx=400;
+  _label(ctx,'Domain architecture of a multi-domain protein',cx,30,15,COLORS.ink,'center','700');
+
+  /* One protein with 4 domains, showing boundaries */
+  const px=60,pw=680,py=80;
+
+  /* protein name and length */
+  _label(ctx,'ABC transporter permease',px,py-8,13,COLORS.ink,'left','700');
+  _monoLabel(ctx,'573 aa',px+pw+20,py+16,10,COLORS.ink4,'left');
+
+  /* backbone */
+  ctx.strokeStyle=COLORS.border;ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(px,py+16);ctx.lineTo(px+pw,py+16);ctx.stroke();
+  _label(ctx,'N',px-16,py+16,11,COLORS.ink4,'center','600');
+  _label(ctx,'C',px+pw+16,py+16,11,COLORS.ink4,'center','600');
+
+  const doms=[
+    {s:10,e:150,l:'ABC_tran',c:COLORS.gb,aa:'1-120',desc:'ATP-binding cassette'},
+    {s:180,e:360,l:'ABC_membrane',c:COLORS.ga,aa:'145-290',desc:'Transmembrane domain'},
+    {s:390,e:510,l:'ABC_tran',c:COLORS.gb,aa:'315-430',desc:'Second ATP cassette'},
+    {s:540,e:660,l:'Peptidase_C39',c:COLORS.gd,aa:'440-535',desc:'Signal peptide cleavage'},
+  ];
+
+  for(const d of doms){
+    const dx=px+d.s,dw=d.e-d.s;
+    ctx.globalAlpha=0.75;
+    _roundRect(ctx,dx,py+2,dw,28,6,d.c,null,0);
+    ctx.globalAlpha=1;
+    _roundRect(ctx,dx,py+2,dw,28,6,null,d.c,2);
+    _label(ctx,d.l,dx+dw/2,py+16,Math.min(11,dw/d.l.length*1.6),'#fff','center','700');
+
+    /* Position labels below */
+    _monoLabel(ctx,d.aa,dx+dw/2,py+42,9,d.c,'center');
+
+    /* Description with connector */
+    const descY=py+62+(doms.indexOf(d)%2)*44;
+    ctx.setLineDash([3,3]);ctx.strokeStyle=d.c+'66';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(dx+dw/2,py+48);ctx.lineTo(dx+dw/2,descY-6);ctx.stroke();
+    ctx.setLineDash([]);
+    _roundRect(ctx,dx+dw/2-72,descY-4,144,22,5,d.c+'10',d.c+'44',1);
+    _label(ctx,d.desc,dx+dw/2,descY+7,9.5,d.c,'center','500');
+  }
+
+  /* Reading direction arrow */
+  const ay=py+190;
+  _arrow(ctx,px+20,ay,px+pw-20,ay,COLORS.ink4+'66',1.5);
+  _label(ctx,'N-terminus → C-terminus',cx,ay-10,11,COLORS.ink3,'center','500');
+
+  /* Caption */
+  _roundRect(ctx,100,340,600,50,8,'#f8fafc',COLORS.border,1);
+  _label(ctx,'The arrangement of domains tells you what the protein does',cx,358,13,COLORS.ink2,'center','600');
+  _label(ctx,'Same domain (ABC_tran) can appear twice in one protein',cx,376,11,COLORS.ink3,'center','400');
+}
+
+/* ── Step 3: Same domain, different proteins ── */
+function drawPfamStep3(ctx){
+  const cx=400;
+  _label(ctx,'Shared domains across different proteins',cx,26,15,COLORS.ink,'center','700');
+
+  /* Three proteins stacked */
+  const px=100,pw=520;
+  const prots=[
+    {name:'Histidine kinase',y:60,len:pw,doms:[
+      {s:10,e:130,l:'HAMP',c:COLORS.gc},
+      {s:160,e:310,l:'HisKA',c:COLORS.gd},
+      {s:340,e:480,l:'HATPase_c',c:COLORS.bad},
+    ]},
+    {name:'DNA gyrase B',y:170,len:pw,doms:[
+      {s:20,e:190,l:'HATPase_c',c:COLORS.bad},
+      {s:220,e:400,l:'DNA_topoisoIV',c:COLORS.gb},
+    ]},
+    {name:'Chemotaxis receptor',y:280,len:pw,doms:[
+      {s:10,e:130,l:'HAMP',c:COLORS.gc},
+      {s:160,e:340,l:'MCPsignal',c:COLORS.ga},
+    ]},
+  ];
+
+  for(const p of prots){
+    _pfamProtein(ctx,p.name,px,p.y,p.len,p.doms,false);
+  }
+
+  /* Dashed lines connecting shared domains */
+  function connectDomains(p1idx,d1idx,p2idx,d2idx,col){
+    const p1=prots[p1idx],d1=p1.doms[d1idx];
+    const p2=prots[p2idx],d2=p2.doms[d2idx];
+    const x1=px+(d1.s+d1.e)/2, y1=p1.y+34;
+    const x2=px+(d2.s+d2.e)/2, y2=p2.y+2;
+    ctx.setLineDash([4,4]);ctx.strokeStyle=col;ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  /* HATPase_c: protein 0 dom 2 <-> protein 1 dom 0 */
+  connectDomains(0,2,1,0,COLORS.bad);
+  /* HAMP: protein 0 dom 0 <-> protein 2 dom 0 */
+  connectDomains(0,0,2,0,COLORS.gc);
+
+  /* "Same domain" labels on connecting lines */
+  _label(ctx,'← HATPase_c shared',px+prots[0].doms[2].e+30,130,10,COLORS.bad,'left','600');
+  _label(ctx,'← HAMP shared',px+prots[0].doms[0].e+30,185,10,COLORS.gc,'left','600');
+
+  /* Caption */
+  _roundRect(ctx,80,370,640,50,8,'#f8fafc',COLORS.border,1);
+  _label(ctx,'Shared domains = shared function. Domain shuffling creates new proteins',cx,388,13,COLORS.ink2,'center','600');
+  _label(ctx,'Evolution reuses domains like building blocks',cx,406,11,COLORS.ink3,'center','400');
+}
+
+/* ── Step 4: What Pfam tells you about your MAG ── */
+function drawPfamStep4(ctx){
+  const cx=400;
+  _label(ctx,'Pfam annotation summary for your MAG',cx,30,15,COLORS.ink,'center','700');
+
+  /* Summary stats */
+  const sy=60;
+  const stats=[
+    {label:'Predicted proteins',val:'2,847',col:COLORS.gb},
+    {label:'With Pfam domains',val:'1,923 (68%)',col:COLORS.ga},
+    {label:'Unique Pfam families',val:'412',col:COLORS.gc},
+  ];
+  const sw=200,sg=24,stotalW=stats.length*sw+(stats.length-1)*sg;
+  const sx0=cx-stotalW/2;
+  for(let i=0;i<stats.length;i++){
+    const s=stats[i];
+    const bx=sx0+i*(sw+sg);
+    _roundRect(ctx,bx,sy,sw,52,8,s.col+'12',s.col,1.5);
+    _label(ctx,s.val,bx+sw/2,sy+20,16,s.col,'center','700');
+    _label(ctx,s.label,bx+sw/2,sy+38,10,COLORS.ink3,'center','500');
+  }
+
+  /* Arrow down */
+  _arrow(ctx,cx,sy+60,cx,sy+80,COLORS.ink4,2);
+
+  /* Bar chart: top domain families */
+  const by=sy+90;
+  _label(ctx,'Top 8 most frequent Pfam families:',cx,by,12,COLORS.ink2,'center','600');
+  const families=[
+    {name:'ABC_tran',count:87,col:COLORS.gb},
+    {name:'HisKA',count:64,col:COLORS.gd},
+    {name:'Response_reg',count:58,col:COLORS.ga},
+    {name:'HATPase_c',count:52,col:COLORS.bad},
+    {name:'AAA',count:45,col:COLORS.gc},
+    {name:'HTH_1',count:38,col:COLORS.gb},
+    {name:'Aminotran_1_2',count:31,col:COLORS.ga},
+    {name:'Radical_SAM',count:27,col:COLORS.gd},
+  ];
+  const maxCount=families[0].count;
+  const barX=200,barMaxW=380,barH=22,barGap=6;
+  const chartY=by+14;
+
+  for(let i=0;i<families.length;i++){
+    const f=families[i];
+    const yy=chartY+i*(barH+barGap);
+    const bw=barMaxW*(f.count/maxCount);
+
+    /* Label on left */
+    _monoLabel(ctx,f.name,barX-6,yy+barH/2+1,9.5,COLORS.ink2,'right');
+
+    /* Bar */
+    _roundRect(ctx,barX,yy,bw,barH,3,f.col+'55',null,0);
+    _roundRect(ctx,barX,yy,bw,barH,3,null,f.col+'44',1);
+
+    /* Count on right of bar */
+    _monoLabel(ctx,f.count+'',barX+bw+8,yy+barH/2+1,9,f.col,'left');
+  }
+
+  /* Caption */
+  _roundRect(ctx,100,388,600,40,8,'#f8fafc',COLORS.border,1);
+  _label(ctx,'Pfam gives a functional fingerprint of your MAG',cx,403,12,COLORS.ink2,'center','600');
+  _label(ctx,'Domain families reveal metabolic capabilities and lifestyle',cx,418,10,COLORS.ink3,'center','400');
 }
 
 /* ═══════════════════════════════════════════════════════════
-   7. CAZY-CANVAS — Polysaccharide degradation
+   7. CAZY-CANVAS — 5-step pedagogical animation
    ═══════════════════════════════════════════════════════════ */
 
-function drawCazyCanvas(){
+const cazyHeaders=[
+  'Step 1: What are CAZymes?',
+  'Step 2: Six CAZyme classes',
+  'Step 3: Family = substrate specificity',
+  'Step 4: dbCAN finds CAZymes in your MAG',
+  'Step 5: CAZyme profile reveals metabolic niche',
+];
+const cazyCanvasHeaders=[
+  'Carbohydrate-Active enZymes',
+  'Six classes of carbohydrate enzymes',
+  'Families within a class target specific substrates',
+  'dbCAN annotation workflow',
+  'CAZyme repertoire of a MAG',
+];
+const cazyCardMap=[0,0,1,1,2];
+
+function cazyHighlight(step){
+  const active=cazyCardMap[Math.min(step,4)];
+  for(let i=0;i<3;i++){
+    const el=document.getElementById('cazy-card-'+i);if(!el)continue;
+    el.style.opacity=i===active?'1':i<active?'0.5':'0.35';
+    el.style.transform=i===active?'scale(1.02)':'scale(1)';
+    el.style.boxShadow=i===active?'0 4px 6px rgba(15,23,42,.04),0 2px 12px rgba(15,23,42,.06)':'0 1px 2px rgba(15,23,42,.04),0 1px 3px rgba(15,23,42,.06)';
+  }
+  const h=document.getElementById('cazy-header');
+  if(h) h.textContent=cazyHeaders[Math.min(step,4)];
+  const ch=document.getElementById('cazy-canvas-header');
+  if(ch) ch.textContent=cazyCanvasHeaders[Math.min(step,4)];
+}
+
+function drawCazyCanvas(step){
+  step=step||0;
   const ctx=_c('cazy-canvas');if(!ctx)return;
   ctx.clearRect(0,0,800,440);
+  [drawCazyStep0,drawCazyStep1,drawCazyStep2,drawCazyStep3,drawCazyStep4][Math.min(step,4)](ctx);
+}
 
-  // Polysaccharide chain at the top
-  _label(ctx,'Polysaccharide chain',400,22,12,COLORS.ink2,'center','700');
+/* helper: draw a sugar chain */
+function _sugarChain(ctx,x,y,n,unitW,gap,colors){
+  for(let i=0;i<n;i++){
+    const ux=x+i*(unitW+gap);
+    const col=colors[i%colors.length];
+    _roundRect(ctx,ux,y,unitW,22,5,col,COLORS.border,1);
+    if(i<n-1){
+      ctx.strokeStyle=COLORS.ink4;ctx.lineWidth=1.2;
+      ctx.beginPath();ctx.moveTo(ux+unitW,y+11);ctx.lineTo(ux+unitW+gap,y+11);ctx.stroke();
+    }
+  }
+}
 
-  const chainY=55,chainH=26,unitW=36,chainStart=100;
-  const nUnits=16;
+/* ── Step 0: What are CAZymes? ── */
+function drawCazyStep0(ctx){
+  const cx=400;
+  _label(ctx,'Enzymes that break, build, or modify sugar chains',cx,30,15,COLORS.ink,'center','700');
 
-  // Draw sugar units
-  for(let i=0;i<nUnits;i++){
-    const ux=chainStart+i*(unitW+4);
-    const col=i%3===0?'#a7f3d0':i%3===1?'#bae6fd':'#fde68a';
-    _roundRect(ctx,ux,chainY,unitW,chainH,6,col,COLORS.border,1);
+  /* Polysaccharide chain */
+  const chainX=80,chainY=70,nUnits=14,uW=38,uGap=6;
+  const sugColors=['#a7f3d0','#bae6fd','#fde68a'];
+  _label(ctx,'Polysaccharide chain',cx,chainY-10,11,COLORS.ink3,'center','600');
+  _sugarChain(ctx,chainX,chainY,nUnits,uW,uGap,sugColors);
 
-    // Glycosidic bond
-    if(i<nUnits-1){
-      const bx=ux+unitW;
-      ctx.strokeStyle=COLORS.ink4;ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(bx,chainY+chainH/2);ctx.lineTo(bx+4,chainY+chainH/2);ctx.stroke();
+  /* Enzyme scissors cutting a bond */
+  const cutIdx=6;
+  const cutX=chainX+cutIdx*(uW+uGap)+uW+uGap/2;
+  const cutY=chainY+30;
+
+  /* Highlight the bond being cut */
+  ctx.strokeStyle=COLORS.bad;ctx.lineWidth=2.5;
+  ctx.beginPath();ctx.moveTo(cutX-4,chainY+2);ctx.lineTo(cutX-4,chainY+20);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cutX+4,chainY+2);ctx.lineTo(cutX+4,chainY+20);ctx.stroke();
+
+  /* Scissors arrow */
+  _arrow(ctx,cutX,cutY+55,cutX,cutY+10,COLORS.ga,2);
+
+  /* Enzyme box */
+  _roundRect(ctx,cutX-70,cutY+60,140,50,8,COLORS.ga+'14',COLORS.ga,2);
+  _label(ctx,'CAZyme',cutX,cutY+78,16,COLORS.ga,'center','800');
+  _label(ctx,'(e.g. GH family)',cutX,cutY+96,10,COLORS.ink3,'center','500');
+
+  /* Products on either side */
+  _label(ctx,'Products',cutX-160,cutY+40,11,COLORS.ink3,'center','600');
+  _sugarChain(ctx,cutX-230,cutY+50,4,uW,uGap,sugColors);
+  _label(ctx,'Products',cutX+160,cutY+40,11,COLORS.ink3,'center','600');
+  _sugarChain(ctx,cutX+90,cutY+50,4,uW,uGap,sugColors);
+
+  /* Build and modify examples below */
+  const exY=260;
+  _label(ctx,'CAZymes have three main roles:',cx,exY,13,COLORS.ink2,'center','700');
+
+  const roles=[
+    {label:'Break',desc:'Glycoside hydrolases (GH)\ncleave glycosidic bonds',col:COLORS.ga,icon:'GH'},
+    {label:'Build',desc:'Glycosyltransferases (GT)\nform new glycosidic bonds',col:COLORS.gb,icon:'GT'},
+    {label:'Modify',desc:'Esterases (CE) and others\nremove side groups',col:COLORS.gd,icon:'CE'},
+  ];
+  const rw=210,rGap=25,rTotal=roles.length*rw+(roles.length-1)*rGap;
+  const rx0=cx-rTotal/2;
+  for(let i=0;i<roles.length;i++){
+    const r=roles[i];
+    const rx=rx0+i*(rw+rGap);
+    _roundRect(ctx,rx,exY+18,rw,80,8,r.col+'0c',r.col,1.5);
+    _label(ctx,r.icon,rx+36,exY+50,22,r.col,'center','800');
+    _label(ctx,r.label,rx+rw/2+10,exY+42,14,r.col,'center','700');
+    const lines=r.desc.split('\n');
+    for(let j=0;j<lines.length;j++){
+      _label(ctx,lines[j],rx+rw/2+10,exY+62+j*14,10,COLORS.ink3,'center','400');
     }
   }
 
-  // Enzymes acting on the chain
-  const enzymes=[
-    {x:180,label:'GH',sub:'Hydrolase',col:COLORS.ga,action:'Cuts bond'},
-    {x:360,label:'PL',sub:'Lyase',col:COLORS.gc,action:'Cleaves via elimination'},
-    {x:540,label:'CE',sub:'Esterase',col:COLORS.gd,action:'Removes ester'}
+  /* Caption */
+  _roundRect(ctx,100,380,600,44,8,'#f8fafc',COLORS.border,1);
+  _label(ctx,'Carbohydrate-Active enZymes break, build, or modify sugar chains',cx,396,12,COLORS.ink2,'center','600');
+  _label(ctx,'Classified by the CAZy database (www.cazy.org)',cx,412,10,COLORS.ink3,'center','400');
+}
+
+/* ── Step 1: Six CAZyme classes ── */
+function drawCazyStep1(ctx){
+  const cx=400;
+  _label(ctx,'Six classes of carbohydrate-active enzymes',cx,28,15,COLORS.ink,'center','700');
+
+  const classes=[
+    {abbr:'GH',name:'Glycoside Hydrolases',fn:'Break glycosidic bonds',count:'~180 families',col:COLORS.ga},
+    {abbr:'GT',name:'Glycosyltransferases',fn:'Form glycosidic bonds',count:'~120 families',col:COLORS.gb},
+    {abbr:'PL',name:'Polysaccharide Lyases',fn:'Cleave via elimination',count:'~40 families',col:COLORS.gc},
+    {abbr:'CE',name:'Carbohydrate Esterases',fn:'Remove ester groups',count:'~20 families',col:COLORS.gd},
+    {abbr:'CBM',name:'Carbohydrate-Binding Modules',fn:'Target enzyme to substrate',count:'~90 families',col:COLORS.ink3},
+    {abbr:'AA',name:'Auxiliary Activities',fn:'Redox enzymes aid degradation',count:'~18 families',col:COLORS.bad},
   ];
 
-  for(const e of enzymes){
-    // Arrow from enzyme to chain
-    ctx.strokeStyle=e.col;ctx.lineWidth=1.5;ctx.setLineDash([3,2]);
-    ctx.beginPath();ctx.moveTo(e.x,chainY+chainH+10);ctx.lineTo(e.x,chainY+chainH+40);ctx.stroke();
+  const cols=3,rows=2,bw=220,bh=110,gx=30,gy=20;
+  const totalW=cols*bw+(cols-1)*gx;
+  const x0=cx-totalW/2,y0=52;
+
+  for(let i=0;i<classes.length;i++){
+    const c=classes[i];
+    const col=i%cols,row=Math.floor(i/cols);
+    const bx=x0+col*(bw+gx),by=y0+row*(bh+gy);
+
+    _roundRect(ctx,bx,by,bw,bh,8,c.col+'0c',c.col,2);
+
+    /* Abbreviation */
+    _label(ctx,c.abbr,bx+38,by+36,26,c.col,'center','800');
+
+    /* Vertical separator */
+    ctx.strokeStyle=c.col+'44';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(bx+70,by+12);ctx.lineTo(bx+70,by+bh-12);ctx.stroke();
+
+    /* Full name and description */
+    _label(ctx,c.name,bx+70+(bw-70)/2,by+30,11,COLORS.ink,'center','700');
+    _label(ctx,c.fn,bx+70+(bw-70)/2,by+50,10,COLORS.ink3,'center','400');
+    _monoLabel(ctx,c.count,bx+70+(bw-70)/2,by+72,9,c.col,'center');
+
+    /* Small icon: 3 circles for catalytic classes, square for CBM */
+    if(c.abbr!=='CBM'){
+      for(let s=0;s<3;s++){
+        ctx.beginPath();ctx.arc(bx+28+s*10,by+bh-18,3,0,Math.PI*2);
+        ctx.fillStyle=c.col+'44';ctx.fill();ctx.strokeStyle=c.col;ctx.lineWidth=0.8;ctx.stroke();
+      }
+    }else{
+      _roundRect(ctx,bx+22,by+bh-24,32,12,3,c.col+'22',c.col+'66',1);
+    }
+  }
+
+  /* Caption */
+  _roundRect(ctx,100,390,600,38,8,'#f8fafc',COLORS.border,1);
+  _label(ctx,'GH, GT, PL, CE are catalytic; CBM binds substrate; AA uses redox chemistry',cx,408,11,COLORS.ink2,'center','600');
+}
+
+/* ── Step 2: Family = substrate specificity ── */
+function drawCazyStep2(ctx){
+  const cx=400;
+  _label(ctx,'GH families target specific substrates',cx,28,15,COLORS.ink,'center','700');
+
+  /* Parent class box */
+  _roundRect(ctx,280,50,240,44,8,COLORS.ga+'14',COLORS.ga,2);
+  _label(ctx,'GH',310,72,20,COLORS.ga,'center','800');
+  _label(ctx,'Glycoside Hydrolases (~180 families)',420,72,12,COLORS.ink2,'center','600');
+
+  /* Arrow down */
+  _arrow(ctx,cx,98,cx,120,COLORS.ga,2);
+  _label(ctx,'broken into families by sequence',cx,110,10,COLORS.ink4,'center','400');
+
+  /* Family boxes */
+  const families=[
+    {id:'GH5',substrate:'Cellulose',desc:'Plant cell walls',col:'#16a34a'},
+    {id:'GH9',substrate:'Cellulose',desc:'Endoglucanase',col:'#15803d'},
+    {id:'GH13',substrate:'Starch',desc:'Amylase superfamily',col:'#d97706'},
+    {id:'GH48',substrate:'Cellulose',desc:'Exocellulase',col:'#059669'},
+    {id:'GH28',substrate:'Pectin',desc:'Polygalacturonase',col:'#dc2626'},
+    {id:'GH43',substrate:'Hemicellulose',desc:'Xylan side chains',col:'#7c3aed'},
+  ];
+  const fw=110,fh=100,fGap=16;
+  const fTotal=families.length*fw+(families.length-1)*fGap;
+  const fx0=cx-fTotal/2,fy=136;
+
+  for(let i=0;i<families.length;i++){
+    const f=families[i];
+    const fx=fx0+i*(fw+fGap);
+
+    /* Connector from parent */
+    ctx.setLineDash([3,3]);ctx.strokeStyle=COLORS.ga+'66';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(cx,98);ctx.lineTo(fx+fw/2,fy);ctx.stroke();
     ctx.setLineDash([]);
 
-    // Enzyme scissors icon
-    _label(ctx,'✂',e.x,chainY+chainH+18,16,e.col,'center','400');
+    _roundRect(ctx,fx,fy,fw,fh,8,f.col+'10',f.col+'88',1.5);
 
-    // Enzyme box
-    _roundRect(ctx,e.x-55,chainY+chainH+45,110,50,8,e.col+'11',e.col,1.5);
-    _label(ctx,e.label,e.x,chainY+chainH+62,14,e.col,'center','800');
-    _label(ctx,e.sub,e.x,chainY+chainH+80,9,e.col,'center','500');
+    /* Family ID */
+    _monoLabel(ctx,f.id,fx+fw/2,fy+22,14,f.col,'center');
+
+    /* Substrate */
+    _roundRect(ctx,fx+8,fy+36,fw-16,22,4,f.col+'18',null,0);
+    _label(ctx,f.substrate,fx+fw/2,fy+47,11,'#fff','center','700');
+    ctx.globalAlpha=0.8;
+    _roundRect(ctx,fx+8,fy+36,fw-16,22,4,null,f.col+'44',1);
+    ctx.globalAlpha=1;
+
+    /* Description */
+    _label(ctx,f.desc,fx+fw/2,fy+76,9,COLORS.ink3,'center','400');
   }
 
-  // Other CAZyme categories below
-  const catY=220;
-  _label(ctx,'CAZyme families',400,catY,12,COLORS.ink2,'center','700');
-
-  const categories=[
-    {label:'GH',name:'Glycoside\nHydrolases',col:COLORS.ga,desc:'Break glycosidic bonds',count:'~180 families'},
-    {label:'GT',name:'Glycosyl\nTransferases',col:COLORS.gb,desc:'Form glycosidic bonds',count:'~120 families'},
-    {label:'PL',name:'Polysaccharide\nLyases',col:COLORS.gc,desc:'Cleave via elimination',count:'~40 families'},
-    {label:'CE',name:'Carbohydrate\nEsterases',col:COLORS.gd,desc:'Remove ester groups',count:'~20 families'},
-    {label:'CBM',name:'Carbohydrate\nBinding Modules',col:COLORS.ink3,desc:'Target substrates',count:'~90 families'},
-    {label:'AA',name:'Auxiliary\nActivities',col:COLORS.bad,desc:'Redox enzymes',count:'~18 families'}
+  /* Substrate legend */
+  const ly=fy+fh+24;
+  _label(ctx,'Substrate types:',120,ly+10,11,COLORS.ink2,'left','700');
+  const subs=[
+    {name:'Cellulose',col:'#16a34a'},
+    {name:'Starch',col:'#d97706'},
+    {name:'Pectin',col:'#dc2626'},
+    {name:'Hemicellulose',col:'#7c3aed'},
   ];
-
-  const catW=110,catH=95,catGap=12;
-  const totalW=categories.length*catW+(categories.length-1)*catGap;
-  const catStartX=400-totalW/2;
-
-  for(let i=0;i<categories.length;i++){
-    const c=categories[i];
-    const cx=catStartX+i*(catW+catGap);
-
-    _roundRect(ctx,cx,catY+20,catW,catH,8,c.col+'0a',c.col+'66',1.5);
-
-    // Big label
-    _label(ctx,c.label,cx+catW/2,catY+45,18,c.col,'center','800');
-
-    // Description
-    const lines=c.desc.split('\n');
-    _label(ctx,c.desc,cx+catW/2,catY+68,8,COLORS.ink3,'center','500');
-    _monoLabel(ctx,c.count,cx+catW/2,catY+85,7,COLORS.ink4,'center');
+  let lx=230;
+  for(const s of subs){
+    _roundRect(ctx,lx,ly+2,14,14,3,s.col+'33',s.col,1);
+    _label(ctx,s.name,lx+22,ly+10,10,COLORS.ink2,'left','500');
+    lx+=ctx.measureText(s.name).width+44;
   }
 
-  // Substrate arrow
-  _roundRect(ctx,160,catY+130,480,30,6,'#ecfdf5',COLORS.ga+'66',1);
-  _label(ctx,'CAZyme profiles reveal carbohydrate metabolism potential — substrate specificity varies by family',400,catY+145,10,COLORS.ga,'center','600');
+  /* Caption */
+  _roundRect(ctx,100,380,600,44,8,'#f8fafc',COLORS.border,1);
+  _label(ctx,'The family number tells you what substrate the enzyme targets',cx,396,12,COLORS.ink2,'center','600');
+  _label(ctx,'Same class, different families = different substrates',cx,412,10,COLORS.ink3,'center','400');
+}
+
+/* ── Step 3: dbCAN finds CAZymes in your MAG ── */
+function drawCazyStep3(ctx){
+  const cx=400;
+  _label(ctx,'dbCAN annotation pipeline',cx,28,15,COLORS.ink,'center','700');
+
+  /* Input: query protein */
+  _roundRect(ctx,300,52,200,40,8,COLORS.gb+'14',COLORS.gb,2);
+  _label(ctx,'Query protein',cx,66,13,COLORS.gb,'center','700');
+  _label(ctx,'(from Prodigal/Pyrodigal)',cx,80,9,COLORS.ink4,'center','400');
+
+  /* Arrow down to three methods */
+  _arrow(ctx,cx,96,cx,120,COLORS.ink4,2);
+
+  /* Three parallel methods */
+  const methods=[
+    {name:'HMMER',desc:'Profile HMM scan\nvs dbCAN HMMs',col:COLORS.ga,icon:'HMM'},
+    {name:'DIAMOND',desc:'Fast homology search\nvs CAZy sequences',col:COLORS.gb,icon:'BLASTp'},
+    {name:'eCAMI',desc:'Conserved peptide\npattern search',col:COLORS.gd,icon:'k-mer'},
+  ];
+  const mw=200,mh=100,mGap=24;
+  const mTotal=methods.length*mw+(methods.length-1)*mGap;
+  const mx0=cx-mTotal/2,my=130;
+
+  for(let i=0;i<methods.length;i++){
+    const m=methods[i];
+    const mx=mx0+i*(mw+mGap);
+
+    /* Fan-out arrow from center */
+    _arrow(ctx,cx,120,mx+mw/2,my,m.col,1.5);
+
+    _roundRect(ctx,mx,my,mw,mh,8,m.col+'0c',m.col,2);
+    _label(ctx,m.name,mx+mw/2,my+22,14,m.col,'center','800');
+
+    /* Icon badge */
+    _roundRect(ctx,mx+mw/2-24,my+32,48,18,4,m.col+'22',null,0);
+    _monoLabel(ctx,m.icon,mx+mw/2,my+41,9,m.col,'center');
+
+    /* Description */
+    const lines=m.desc.split('\n');
+    for(let j=0;j<lines.length;j++){
+      _label(ctx,lines[j],mx+mw/2,my+62+j*14,10,COLORS.ink3,'center','400');
+    }
+  }
+
+  /* Converge arrows to consensus */
+  const consY=my+mh+30;
+  for(let i=0;i<methods.length;i++){
+    const mx=mx0+i*(mw+mGap)+mw/2;
+    _arrow(ctx,mx,my+mh+4,cx,consY,COLORS.ink4,1.5);
+  }
+
+  /* Consensus box */
+  _roundRect(ctx,cx-130,consY,260,50,8,COLORS.gc+'14',COLORS.gc,2);
+  _label(ctx,'Consensus annotation',cx,consY+18,14,COLORS.gc,'center','800');
+  _label(ctx,'Agree on at least 2 of 3 methods',cx,consY+36,10,COLORS.ink3,'center','500');
+
+  /* Output arrow */
+  _arrow(ctx,cx,consY+54,cx,consY+74,COLORS.ink4,2);
+
+  /* Result */
+  _roundRect(ctx,cx-160,consY+78,320,36,8,'#ecfdf5',COLORS.ga,1.5);
+  _label(ctx,'GH5_4, GT2, CBM6, CE1, ...',cx,consY+96,12,COLORS.ga,'center','700');
+
+  /* Caption */
+  _roundRect(ctx,100,394,600,36,8,'#f8fafc',COLORS.border,1);
+  _label(ctx,'dbCAN uses three methods and takes the consensus',cx,412,12,COLORS.ink2,'center','600');
+}
+
+/* ── Step 4: CAZyme profile reveals metabolic niche ── */
+function drawCazyStep4(ctx){
+  const cx=400;
+  _label(ctx,'CAZyme repertoire of a polysaccharide-degrading MAG',cx,28,14,COLORS.ink,'center','700');
+
+  /* Summary stats */
+  const sy=50;
+  const stats=[
+    {label:'Predicted proteins',val:'3,124',col:COLORS.gb},
+    {label:'CAZymes found',val:'186 (6%)',col:COLORS.ga},
+    {label:'Unique families',val:'47',col:COLORS.gc},
+  ];
+  const sw=190,sg=20,stotalW=stats.length*sw+(stats.length-1)*sg;
+  const sx0=cx-stotalW/2;
+  for(let i=0;i<stats.length;i++){
+    const s=stats[i];
+    const bx=sx0+i*(sw+sg);
+    _roundRect(ctx,bx,sy,sw,46,8,s.col+'12',s.col,1.5);
+    _label(ctx,s.val,bx+sw/2,sy+17,15,s.col,'center','700');
+    _label(ctx,s.label,bx+sw/2,sy+34,10,COLORS.ink3,'center','500');
+  }
+
+  /* Arrow down */
+  _arrow(ctx,cx,sy+52,cx,sy+68,COLORS.ink4,2);
+
+  /* Bar chart: top CAZyme families */
+  const by=sy+76;
+  _label(ctx,'Top 10 CAZyme families found:',cx,by,12,COLORS.ink2,'center','600');
+  const families=[
+    {name:'GH13',count:28,desc:'Starch',col:COLORS.ga},
+    {name:'GT2',count:22,desc:'Glycosyl-T',col:COLORS.gb},
+    {name:'GH5',count:18,desc:'Cellulose',col:COLORS.ga},
+    {name:'CE1',count:15,desc:'Ester',col:COLORS.gd},
+    {name:'GH43',count:14,desc:'Xylan',col:COLORS.ga},
+    {name:'CBM6',count:12,desc:'Binding',col:COLORS.ink3},
+    {name:'GH28',count:11,desc:'Pectin',col:COLORS.ga},
+    {name:'GT4',count:10,desc:'Glycosyl-T',col:COLORS.gb},
+    {name:'AA3',count:8,desc:'Redox',col:COLORS.bad},
+    {name:'PL1',count:6,desc:'Pectin lyase',col:COLORS.gc},
+  ];
+  const maxCount=families[0].count;
+  const barX=180,barMaxW=360,barH=20,barGap=4;
+  const chartY=by+12;
+
+  for(let i=0;i<families.length;i++){
+    const f=families[i];
+    const yy=chartY+i*(barH+barGap);
+    const bw=barMaxW*(f.count/maxCount);
+
+    /* Label on left */
+    _monoLabel(ctx,f.name,barX-6,yy+barH/2,10,f.col,'right');
+
+    /* Bar */
+    _roundRect(ctx,barX,yy,bw,barH,3,f.col+'28',f.col,1);
+
+    /* Count inside bar */
+    if(bw>40) _label(ctx,f.count+'',barX+bw-16,yy+barH/2,10,'#fff','center','700');
+
+    /* Substrate tag on right */
+    _label(ctx,f.desc,barX+bw+8,yy+barH/2,9,COLORS.ink4,'left','400');
+  }
+
+  /* Interpretation box */
+  const iy=chartY+families.length*(barH+barGap)+10;
+  _roundRect(ctx,80,iy,640,44,8,'#ecfdf5',COLORS.ga+'66',1);
+  _label(ctx,'Many GH families + diverse substrates = polysaccharide degrader',cx,iy+16,12,COLORS.ga,'center','700');
+  _label(ctx,'The CAZyme repertoire suggests what substrates the organism can use',cx,iy+32,10,COLORS.ink3,'center','400');
 }
 
 /* ═══════════════════════════════════════════════════════════
    8. BGC-CANVAS — Biosynthetic gene cluster
    ═══════════════════════════════════════════════════════════ */
 
-function drawBgcCanvas(){
+/* ── BGC arrays and highlight ── */
+const bgcHeaders=[
+  'Step 1: What is a BGC?',
+  'Step 2: Anatomy of a gene cluster',
+  'Step 3: Common BGC types',
+  'Step 4: antiSMASH detects BGCs',
+  'Step 5: What BGCs tell you about your MAG',
+];
+const bgcCanvasHeaders=[
+  'Biosynthetic Gene Clusters',
+  'Gene types inside a BGC',
+  'Major BGC classes',
+  'antiSMASH detection workflow',
+  'BGC profile of a MAG',
+];
+const bgcCardMap=[0,0,1,1,2];
+
+function bgcHighlight(step){
+  const active=bgcCardMap[Math.min(step,4)];
+  for(let i=0;i<3;i++){
+    const el=document.getElementById('bgc-card-'+i);if(!el)continue;
+    el.style.opacity=i===active?'1':i<active?'0.5':'0.35';
+    el.style.transform=i===active?'scale(1.02)':'scale(1)';
+    el.style.boxShadow=i===active?'0 4px 6px rgba(15,23,42,.04),0 2px 12px rgba(15,23,42,.06)':'0 1px 2px rgba(15,23,42,.04),0 1px 3px rgba(15,23,42,.06)';
+  }
+  const h=document.getElementById('bgc-header');
+  if(h) h.textContent=bgcHeaders[Math.min(step,4)];
+  const ch=document.getElementById('bgc-canvas-header');
+  if(ch) ch.textContent=bgcCanvasHeaders[Math.min(step,4)];
+}
+
+function drawBgcCanvas(step){
+  step=step||0;
   const ctx=_c('bgc-canvas');if(!ctx)return;
   ctx.clearRect(0,0,800,440);
+  [drawBgcStep0,drawBgcStep1,drawBgcStep2,drawBgcStep3,drawBgcStep4][Math.min(step,4)](ctx);
+}
 
-  _label(ctx,'Biosynthetic gene cluster (BGC) on a contig',400,22,12,COLORS.ink2,'center','700');
+/* helper: draw a directional gene arrow */
+function _geneArrow(ctx,x,y,w,h,dir,fill,stroke){
+  ctx.fillStyle=fill;
+  ctx.beginPath();
+  if(dir===1){
+    ctx.moveTo(x,y);ctx.lineTo(x+w-10,y);ctx.lineTo(x+w,y+h/2);
+    ctx.lineTo(x+w-10,y+h);ctx.lineTo(x,y+h);
+  } else {
+    ctx.moveTo(x+w,y);ctx.lineTo(x+10,y);ctx.lineTo(x,y+h/2);
+    ctx.lineTo(x+10,y+h);ctx.lineTo(x+w,y+h);
+  }
+  ctx.closePath();ctx.fill();
+  if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke();}
+}
 
-  // Contig backbone
-  const cx=40,cy=60,cw=720,ch=8;
+/* ── Step 0: What is a BGC? ── */
+function drawBgcStep0(ctx){
+  _label(ctx,'A BGC is a physically linked cluster of genes',400,24,14,COLORS.ink,'center','700');
+  _label(ctx,'that together produce a specialized metabolite',400,44,14,COLORS.ink,'center','700');
+
+  /* Contig backbone */
+  const cx=40,cy=90,cw=720,ch=6;
   _roundRect(ctx,cx,cy,cw,ch,3,'#e2e8f0','#cbd5e1',1);
+  _label(ctx,'Contig',cx+cw+10,cy+3,11,COLORS.ink3,'left','600');
 
-  // Scale bar
-  _monoLabel(ctx,'0 kb',cx,cy+20,8,COLORS.ink4,'left');
-  _monoLabel(ctx,'45 kb',cx+cw,cy+20,8,COLORS.ink4,'right');
-  for(let i=0;i<=9;i++){
-    const x=cx+i*(cw/9);
-    ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.5;
-    ctx.beginPath();ctx.moveTo(x,cy+ch);ctx.lineTo(x,cy+ch+4);ctx.stroke();
+  /* Scattered individual genes outside the cluster */
+  const scatterGenes=[
+    {x:50,w:40,dir:1},{x:110,w:35,dir:-1},{x:620,w:45,dir:1},{x:690,w:30,dir:-1}
+  ];
+  const geneY=cy+20,geneH=28;
+  for(const g of scatterGenes){
+    _geneArrow(ctx,g.x,geneY,g.w,geneH,g.dir,'#cbd5e1cc','#94a3b8');
   }
 
-  // BGC region bracket
-  const bgcStart=cx+80,bgcEnd=cx+640,bgcY=cy+35;
+  /* BGC cluster genes in the middle */
+  const clusterGenes=[
+    {x:200,w:55,dir:1,col:COLORS.gc},
+    {x:265,w:70,dir:1,col:COLORS.gc},
+    {x:345,w:50,dir:-1,col:COLORS.gb},
+    {x:405,w:80,dir:1,col:COLORS.gc},
+    {x:495,w:45,dir:1,col:COLORS.gd},
+    {x:550,w:40,dir:-1,col:COLORS.bad},
+  ];
+  for(const g of clusterGenes){
+    _geneArrow(ctx,g.x,geneY,g.w,geneH,g.dir,g.col+'cc',g.col);
+  }
+
+  /* Bracket around the cluster */
+  const bStart=195,bEnd=595,bY=geneY+geneH+12;
   ctx.strokeStyle=COLORS.gc;ctx.lineWidth=2;
   ctx.beginPath();
-  ctx.moveTo(bgcStart,bgcY);ctx.lineTo(bgcStart,bgcY-10);ctx.lineTo(bgcEnd,bgcY-10);ctx.lineTo(bgcEnd,bgcY);
+  ctx.moveTo(bStart,bY-8);ctx.lineTo(bStart,bY);ctx.lineTo(bEnd,bY);ctx.lineTo(bEnd,bY-8);
   ctx.stroke();
-  _label(ctx,'BGC region (~35 kb)',cx+360,bgcY-18,10,COLORS.gc,'center','700');
+  _label(ctx,'BGC',395,bY+14,16,COLORS.gc,'center','800');
 
-  // Genes as directional arrows on the contig
+  /* Arrow down to metabolite */
+  _arrow(ctx,395,bY+28,395,bY+52,COLORS.gc,2);
+
+  /* Metabolite product */
+  _roundRect(ctx,310,bY+56,170,40,10,COLORS.gc+'14',COLORS.gc,2);
+  _label(ctx,'Specialized metabolite',395,bY+76,12,COLORS.gc,'center','700');
+
+  /* Explanatory boxes at the bottom */
+  const boxY=260;
+  const boxes=[
+    {label:'Biosynthesis',desc:'Enzymes that build\nthe core scaffold',col:COLORS.gc,x:120},
+    {label:'Tailoring',desc:'Enzymes that modify\nthe product',col:COLORS.gb,x:310},
+    {label:'Transport & regulation',desc:'Export the product,\ncontrol expression',col:COLORS.gd,x:500},
+    {label:'Resistance',desc:'Self-protection against\nthe toxic product',col:COLORS.bad,x:690},
+  ];
+  for(const b of boxes){
+    _roundRect(ctx,b.x-80,boxY,160,80,8,b.col+'0c',b.col,1.5);
+    _label(ctx,b.label,b.x,boxY+18,12,b.col,'center','700');
+    const lines=b.desc.split('\n');
+    _label(ctx,lines[0],b.x,boxY+40,10,COLORS.ink3,'center','500');
+    if(lines[1])_label(ctx,lines[1],b.x,boxY+55,10,COLORS.ink3,'center','500');
+  }
+
+  _label(ctx,'A single cluster encodes everything needed to make one compound',400,370,12,COLORS.ink2,'center','600');
+}
+
+/* ── Step 1: Anatomy of a gene cluster ── */
+function drawBgcStep1(ctx){
+  _label(ctx,'Anatomy of a biosynthetic gene cluster',400,24,14,COLORS.ink,'center','700');
+
+  /* Contig backbone */
+  const cx=40,cy=70,cw=720,ch=6;
+  _roundRect(ctx,cx,cy,cw,ch,3,'#e2e8f0','#cbd5e1',1);
+
+  /* Gene definitions with types */
   const genes=[
-    {x:90,w:55,label:'reg',type:'regulatory',col:'#94a3b8',dir:1},
-    {x:155,w:85,label:'NRPS core',type:'biosynthetic',col:COLORS.gc,dir:1},
-    {x:250,w:65,label:'tailoring',type:'tailoring',col:COLORS.gb,dir:1},
-    {x:325,w:95,label:'NRPS core 2',type:'biosynthetic',col:COLORS.gc,dir:1},
-    {x:430,w:50,label:'mod',type:'tailoring',col:COLORS.gb,dir:-1},
-    {x:490,w:60,label:'transport',type:'transport',col:COLORS.gd,dir:1},
-    {x:560,w:45,label:'resist',type:'resistance',col:COLORS.bad,dir:-1},
-    {x:615,w:30,label:'hyp',type:'unknown',col:'#cbd5e1',dir:1}
+    {x:60,w:50,label:'reg',type:'Regulatory',col:'#94a3b8',dir:1},
+    {x:125,w:90,label:'NRPS A1',type:'Core biosynthetic',col:COLORS.gc,dir:1},
+    {x:230,w:75,label:'NRPS C1',type:'Core biosynthetic',col:COLORS.gc,dir:1},
+    {x:320,w:60,label:'tailoring',type:'Tailoring',col:COLORS.gb,dir:-1},
+    {x:395,w:100,label:'NRPS A2',type:'Core biosynthetic',col:COLORS.gc,dir:1},
+    {x:510,w:55,label:'export',type:'Transport',col:COLORS.gd,dir:1},
+    {x:580,w:50,label:'resist',type:'Resistance',col:COLORS.bad,dir:-1},
+    {x:645,w:65,label:'reg2',type:'Regulatory',col:'#94a3b8',dir:1},
   ];
 
-  const geneY=bgcY+10,geneH=34;
-
+  const geneY=cy+20,geneH=36;
   for(const g of genes){
-    const gx=cx+g.x,gw=g.w;
-    ctx.fillStyle=g.col+'cc';
-    ctx.beginPath();
-    if(g.dir===1){
-      ctx.moveTo(gx,geneY);ctx.lineTo(gx+gw-10,geneY);ctx.lineTo(gx+gw,geneY+geneH/2);
-      ctx.lineTo(gx+gw-10,geneY+geneH);ctx.lineTo(gx,geneY+geneH);
-    } else {
-      ctx.moveTo(gx+gw,geneY);ctx.lineTo(gx+10,geneY);ctx.lineTo(gx,geneY+geneH/2);
-      ctx.lineTo(gx+10,geneY+geneH);ctx.lineTo(gx+gw,geneY+geneH);
-    }
-    ctx.closePath();ctx.fill();
-    ctx.strokeStyle=g.col;ctx.lineWidth=1;ctx.stroke();
-
-    _label(ctx,g.label,gx+gw/2,geneY+geneH/2,g.label.length>8?7:8,'#fff','center','700');
+    _geneArrow(ctx,g.x,geneY,g.w,geneH,g.dir,g.col+'cc',g.col);
+    _label(ctx,g.label,g.x+g.w/2,geneY+geneH/2,g.label.length>7?8:10,'#fff','center','700');
   }
 
-  // Legend for gene types
-  const legY=geneY+geneH+20;
+  /* Leader lines to type labels */
+  const typeGroups=[
+    {type:'Core biosynthetic',col:COLORS.gc,genes:[1,2,4],labelY:geneY+geneH+60},
+    {type:'Tailoring',col:COLORS.gb,genes:[3],labelY:geneY+geneH+60},
+    {type:'Transport',col:COLORS.gd,genes:[5],labelY:geneY+geneH+60},
+    {type:'Regulatory',col:'#94a3b8',genes:[0,7],labelY:geneY+geneH+60},
+    {type:'Resistance',col:COLORS.bad,genes:[6],labelY:geneY+geneH+60},
+  ];
+
+  /* Legend with descriptions */
+  const legY=195;
   const legItems=[
-    {label:'Core biosynthetic',col:COLORS.gc},
-    {label:'Tailoring',col:COLORS.gb},
-    {label:'Transport',col:COLORS.gd},
-    {label:'Regulatory',col:'#94a3b8'},
-    {label:'Resistance',col:COLORS.bad},
-    {label:'Hypothetical',col:'#cbd5e1'}
+    {label:'Core biosynthetic',desc:'The heart of the cluster',col:COLORS.gc},
+    {label:'Tailoring',desc:'Modify the product',col:COLORS.gb},
+    {label:'Transport',desc:'Export the product',col:COLORS.gd},
+    {label:'Regulatory',desc:'Control expression',col:'#94a3b8'},
+    {label:'Resistance',desc:'Self-protection',col:COLORS.bad},
   ];
+  const lw=145,lGap=10,lTotal=legItems.length*lw+(legItems.length-1)*lGap;
+  const lx0=400-lTotal/2;
   for(let i=0;i<legItems.length;i++){
-    const lx=70+i*120;
-    ctx.fillStyle=legItems[i].col+'cc';ctx.fillRect(lx,legY,12,12);
-    _label(ctx,legItems[i].label,lx+18,legY+6,9,COLORS.ink3,'left','500');
+    const it=legItems[i];
+    const lx=lx0+i*(lw+lGap);
+    _roundRect(ctx,lx,legY,lw,55,6,it.col+'0c',it.col,1.5);
+    ctx.fillStyle=it.col+'cc';ctx.fillRect(lx+8,legY+10,14,14);
+    _label(ctx,it.label,lx+28,legY+17,10,it.col,'left','700');
+    _label(ctx,it.desc,lx+lw/2,legY+40,10,COLORS.ink3,'center','500');
   }
 
-  // antiSMASH workflow below
-  const wfY=legY+40;
-  _label(ctx,'antiSMASH workflow',400,wfY,12,COLORS.ink2,'center','700');
+  /* Product flow at bottom */
+  const flowY=290;
+  _label(ctx,'Together they produce:',400,flowY,13,COLORS.ink2,'center','700');
+  _arrow(ctx,400,flowY+10,400,flowY+30,COLORS.gc,2);
 
-  const steps=[
-    {label:'Predicted\nproteins',x:100,col:COLORS.ink3},
-    {label:'Biosynthetic\ndomains/rules',x:270,col:COLORS.gc},
-    {label:'Cluster\ntype',x:440,col:COLORS.gb},
-    {label:'Similarity to\nknown BGCs',x:610,col:COLORS.gd}
+  const prodBoxes=[
+    {label:'Core scaffold',desc:'Built by NRPS/PKS',col:COLORS.gc,x:200},
+    {label:'Modified product',desc:'Tailored for activity',col:COLORS.gb,x:400},
+    {label:'Exported compound',desc:'Secreted to environment',col:COLORS.gd,x:600},
   ];
+  for(const p of prodBoxes){
+    _roundRect(ctx,p.x-80,flowY+35,160,50,8,p.col+'0c',p.col,1.5);
+    _label(ctx,p.label,p.x,flowY+52,11,p.col,'center','700');
+    _label(ctx,p.desc,p.x,flowY+70,10,COLORS.ink3,'center','500');
+  }
+  _arrow(ctx,280,flowY+60,320,flowY+60,COLORS.ink4,1.5);
+  _arrow(ctx,480,flowY+60,520,flowY+60,COLORS.ink4,1.5);
+
+  _label(ctx,'Genes are color-coded by their role in the biosynthetic pathway',400,410,11,COLORS.ink3,'center','500');
+}
+
+/* ── Step 2: Common BGC types ── */
+function drawBgcStep2(ctx){
+  _label(ctx,'BGCs are classified by the biosynthetic logic they use',400,24,14,COLORS.ink,'center','700');
+
+  const types=[
+    {name:'NRPS',full:'Nonribosomal\npeptide synthetase',example:'Vancomycin',col:COLORS.gc,
+     desc:'Multi-module enzymes\nassemble amino acids\nwithout ribosomes'},
+    {name:'PKS',full:'Polyketide\nsynthase',example:'Erythromycin',col:COLORS.gb,
+     desc:'Iterative or modular\nenzymes build polyketide\nchains from acyl units'},
+    {name:'RiPP',full:'Ribosomally synthesized\npost-translationally modified',example:'Nisin',col:COLORS.gd,
+     desc:'Ribosome makes a\nprecursor peptide,\nthen enzymes modify it'},
+    {name:'Terpene',full:'Terpene\nsynthase',example:'Geosmin',col:COLORS.ga,
+     desc:'Cyclize isoprene\nunits into diverse\nring structures'},
+    {name:'Siderophore',full:'Iron-chelating\ncompound',example:'Enterobactin',col:COLORS.bad,
+     desc:'Scavenge iron from\nthe environment using\nhigh-affinity chelators'},
+  ];
+
+  const bw=140,bGap=10,bTotal=types.length*bw+(types.length-1)*bGap;
+  const bx0=400-bTotal/2;
+  const by=55;
+
+  for(let i=0;i<types.length;i++){
+    const t=types[i];
+    const bx=bx0+i*(bw+bGap);
+
+    /* Main box */
+    _roundRect(ctx,bx,by,bw,340,8,t.col+'08',t.col,1.5);
+
+    /* Name */
+    _label(ctx,t.name,bx+bw/2,by+22,16,t.col,'center','800');
+
+    /* Full name */
+    const fLines=t.full.split('\n');
+    for(let j=0;j<fLines.length;j++){
+      _label(ctx,fLines[j],bx+bw/2,by+42+j*14,10,COLORS.ink3,'center','500');
+    }
+
+    /* Divider */
+    ctx.strokeStyle=t.col+'44';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(bx+10,by+75);ctx.lineTo(bx+bw-10,by+75);ctx.stroke();
+
+    /* Description */
+    const dLines=t.desc.split('\n');
+    for(let j=0;j<dLines.length;j++){
+      _label(ctx,dLines[j],bx+bw/2,by+95+j*16,10,COLORS.ink2,'center','500');
+    }
+
+    /* Divider */
+    ctx.beginPath();ctx.moveTo(bx+10,by+155);ctx.lineTo(bx+bw-10,by+155);ctx.stroke();
+
+    /* Example product */
+    _label(ctx,'Example:',bx+bw/2,by+175,10,COLORS.ink4,'center','600');
+    _roundRect(ctx,bx+15,by+188,bw-30,30,6,t.col+'14',t.col+'66',1);
+    _label(ctx,t.example,bx+bw/2,by+203,11,t.col,'center','700');
+
+    /* Schematic hint at bottom */
+    const schY=by+240;
+    _label(ctx,'Schematic:',bx+bw/2,schY,10,COLORS.ink4,'center','600');
+    /* Mini gene arrows for the type */
+    const nGenes=3+i%2;
+    const gw=(bw-40)/nGenes-4;
+    for(let g=0;g<nGenes;g++){
+      const gx=bx+20+g*(gw+4);
+      _geneArrow(ctx,gx,schY+10,gw,18,g%2===0?1:-1,t.col+'66',t.col);
+    }
+    /* Bracket */
+    ctx.strokeStyle=t.col;ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(bx+15,schY+34);ctx.lineTo(bx+15,schY+38);ctx.lineTo(bx+bw-15,schY+38);ctx.lineTo(bx+bw-15,schY+34);
+    ctx.stroke();
+  }
+
+  _label(ctx,'Each type uses a different enzymatic strategy to assemble its product',400,420,11,COLORS.ink3,'center','500');
+}
+
+/* ── Step 3: antiSMASH detects BGCs ── */
+function drawBgcStep3(ctx){
+  _label(ctx,'antiSMASH uses rules and profile HMMs to find BGC signatures',400,24,14,COLORS.ink,'center','700');
+
+  /* Workflow boxes */
+  const steps=[
+    {label:'Predicted\nproteins',x:100,col:COLORS.ink2},
+    {label:'Biosynthetic\ndomain detection',x:260,col:COLORS.gc},
+    {label:'Cluster\nrules',x:420,col:COLORS.gb},
+    {label:'BGC type\nassignment',x:560,col:COLORS.gd},
+    {label:'MIBiG\ncomparison',x:700,col:COLORS.ga},
+  ];
+  const wfY=55,bw=120,bh=55;
 
   for(let i=0;i<steps.length;i++){
     const s=steps[i];
-    _roundRect(ctx,s.x-60,wfY+18,120,48,8,s.col+'11',s.col+'88',1.5);
+    _roundRect(ctx,s.x-bw/2,wfY,bw,bh,8,s.col+'11',s.col,1.5);
     const lines=s.label.split('\n');
-    _label(ctx,lines[0],s.x,wfY+35,10,s.col,'center','600');
-    if(lines[1])_label(ctx,lines[1],s.x,wfY+50,10,s.col,'center','600');
+    _label(ctx,lines[0],s.x,wfY+20,11,s.col,'center','700');
+    if(lines[1])_label(ctx,lines[1],s.x,wfY+36,11,s.col,'center','500');
 
     if(i<steps.length-1){
-      _arrow(ctx,s.x+62,wfY+42,steps[i+1].x-62,wfY+42,COLORS.border,1.5);
+      _arrow(ctx,s.x+bw/2+2,wfY+bh/2,steps[i+1].x-bw/2-2,wfY+bh/2,COLORS.border,1.5);
     }
   }
 
-  // Bottom caveat
-  _roundRect(ctx,160,wfY+80,480,28,6,'#f5f3ff',COLORS.gc+'66',1);
-  _label(ctx,'antiSMASH predicts biosynthetic potential — not proof of compound production',400,wfY+94,10,COLORS.gc,'center','600');
+  /* Detail boxes below each step */
+  const detY=130;
+  const details=[
+    {desc:'Prodigal/Pyrodigal\nfinds ORFs in the\ninput sequence',x:100,col:COLORS.ink2},
+    {desc:'pHMMs scan for\nknown biosynthetic\ndomains (KS, C, A...)',x:260,col:COLORS.gc},
+    {desc:'Rule-based logic\nchecks if domains\nco-occur as expected',x:420,col:COLORS.gb},
+    {desc:'Classify the cluster\nas NRPS, PKS, RiPP,\nterpene, etc.',x:560,col:COLORS.gd},
+    {desc:'Compare to known\nBGCs in the MIBiG\nreference database',x:700,col:COLORS.ga},
+  ];
+
+  for(const d of details){
+    ctx.setLineDash([3,3]);
+    ctx.strokeStyle=d.col+'44';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(d.x,wfY+bh);ctx.lineTo(d.x,detY+5);ctx.stroke();
+    ctx.setLineDash([]);
+    const lines=d.desc.split('\n');
+    for(let j=0;j<lines.length;j++){
+      _label(ctx,lines[j],d.x,detY+12+j*15,10,COLORS.ink3,'center','500');
+    }
+  }
+
+  /* Visual: example contig being scanned */
+  const scanY=220;
+  _label(ctx,'Example: scanning a contig for BGCs',400,scanY,12,COLORS.ink2,'center','700');
+
+  /* Contig backbone */
+  _roundRect(ctx,60,scanY+18,680,6,3,'#e2e8f0','#cbd5e1',1);
+
+  /* Genes on contig */
+  const genes=[
+    {x:70,w:40,dir:1,col:'#cbd5e1'},{x:120,w:35,dir:-1,col:'#cbd5e1'},
+    {x:190,w:60,dir:1,col:COLORS.gc},{x:260,w:50,dir:1,col:COLORS.gc},
+    {x:320,w:40,dir:-1,col:COLORS.gb},{x:370,w:70,dir:1,col:COLORS.gc},
+    {x:450,w:45,dir:1,col:COLORS.gd},{x:505,w:35,dir:-1,col:COLORS.bad},
+    {x:570,w:40,dir:1,col:'#cbd5e1'},{x:620,w:50,dir:-1,col:'#cbd5e1'},
+    {x:680,w:40,dir:1,col:'#cbd5e1'},
+  ];
+  const gY=scanY+32,gH=24;
+  for(const g of genes){
+    _geneArrow(ctx,g.x,gY,g.w,gH,g.dir,g.col+'99',g.col);
+  }
+
+  /* Highlight detected BGC region */
+  const hStart=183,hEnd=545;
+  _roundRect(ctx,hStart,gY-8,hEnd-hStart,gH+16,6,COLORS.gc+'08',COLORS.gc,2);
+  _label(ctx,'Detected BGC',hStart+(hEnd-hStart)/2,gY-16,11,COLORS.gc,'center','700');
+
+  /* antiSMASH output table at bottom */
+  const tY=330;
+  _label(ctx,'antiSMASH output summary',400,tY,12,COLORS.ink2,'center','700');
+
+  const cols=['Region','Type','From','To','Most similar known cluster'];
+  const colX=[80,180,290,370,570];
+  const colW=[80,90,60,60,280];
+  /* Header */
+  _roundRect(ctx,60,tY+12,680,24,4,COLORS.ink+'0a',COLORS.border,1);
+  for(let i=0;i<cols.length;i++){
+    _label(ctx,cols[i],colX[i],tY+24,10,COLORS.ink,'left','700');
+  }
+  /* Rows */
+  const rows=[
+    ['Region 1','NRPS','12.1 kb','47.3 kb','Vancomycin (78%)'],
+    ['Region 2','Terpene','89.5 kb','102.1 kb','Geosmin (92%)'],
+  ];
+  for(let r=0;r<rows.length;r++){
+    const ry=tY+38+r*22;
+    if(r%2===0)_roundRect(ctx,60,ry-4,680,22,3,COLORS.ink+'05','transparent',0);
+    for(let c=0;c<rows[r].length;c++){
+      _monoLabel(ctx,rows[r][c],colX[c],ry+6,10,COLORS.ink3,'left');
+    }
+  }
+}
+
+/* ── Step 4: What BGCs tell you about your MAG ── */
+function drawBgcStep4(ctx){
+  _label(ctx,'What BGCs tell you about your MAG',400,24,14,COLORS.ink,'center','700');
+
+  /* Summary header */
+  _roundRect(ctx,200,45,400,40,8,COLORS.gc+'11',COLORS.gc,2);
+  _label(ctx,'Your MAG: 8 BGCs detected',400,65,14,COLORS.gc,'center','800');
+
+  /* Bar chart showing BGC types */
+  const chartY=110,chartH=160,chartX=100,chartW=600;
+  const types=[
+    {name:'NRPS',count:3,col:COLORS.gc},
+    {name:'PKS',count:2,col:COLORS.gb},
+    {name:'Terpene',count:1,col:COLORS.gd},
+    {name:'RiPP',count:1,col:COLORS.ga},
+    {name:'Siderophore',count:1,col:COLORS.bad},
+  ];
+  const maxCount=4;
+  const barW=80,barGap=25;
+  const barTotal=types.length*barW+(types.length-1)*barGap;
+  const barX0=400-barTotal/2;
+
+  /* Y axis */
+  ctx.strokeStyle=COLORS.border;ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(chartX-10,chartY);ctx.lineTo(chartX-10,chartY+chartH);ctx.stroke();
+  for(let i=0;i<=maxCount;i++){
+    const y=chartY+chartH-i*(chartH/maxCount);
+    ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.5;
+    ctx.beginPath();ctx.moveTo(chartX-15,y);ctx.lineTo(chartX+chartW,y);ctx.stroke();
+    _monoLabel(ctx,''+i,chartX-22,y+4,10,COLORS.ink4,'right');
+  }
+  _label(ctx,'Count',chartX-40,chartY+chartH/2,11,COLORS.ink3,'center','600');
+
+  /* Bars */
+  for(let i=0;i<types.length;i++){
+    const t=types[i];
+    const bx=barX0+i*(barW+barGap);
+    const bh=t.count*(chartH/maxCount);
+    const by=chartY+chartH-bh;
+    _roundRect(ctx,bx,by,barW,bh,3,t.col+'cc',t.col,1);
+    _label(ctx,''+t.count,bx+barW/2,by-10,13,t.col,'center','800');
+    _label(ctx,t.name,bx+barW/2,chartY+chartH+14,11,t.col,'center','700');
+  }
+
+  /* Interpretation notes */
+  const notesY=315;
+  _label(ctx,'Interpretation',400,notesY,12,COLORS.ink2,'center','700');
+
+  const notes=[
+    {icon:'!',text:'Multiple NRPS clusters suggest diverse peptide arsenal',x:230,col:COLORS.gc},
+    {icon:'!',text:'Siderophore BGC indicates iron acquisition strategy',x:570,col:COLORS.bad},
+  ];
+  for(const n of notes){
+    _roundRect(ctx,n.x-160,notesY+10,320,35,6,n.col+'0c',n.col+'44',1);
+    _label(ctx,n.text,n.x,notesY+28,10,COLORS.ink2,'center','500');
+  }
+
+  /* Caveat box */
+  _roundRect(ctx,120,notesY+60,560,40,8,'#fef3c7','#f59e0b66',1.5);
+  _label(ctx,'antiSMASH predicts potential -- not proof of production',400,notesY+74,12,'#92400e','center','700');
+  _label(ctx,'Fragmented MAGs may split clusters across contigs, reducing detection',400,notesY+90,10,'#92400e','center','500');
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -3381,10 +4490,10 @@ Reveal.initialize({
     if(i===SID('gtdb-tk')){setTimeout(()=>{const f=Reveal.getState().indexf;const s=f>=0?f+1:0;drawTkCanvas(s);tkHighlight(s)},300)}
     if(i===SID('gene-prediction')){setTimeout(()=>{const f=Reveal.getState().indexf;const s=f>=0?f+1:0;drawGpCanvas(s);gpHighlight(s)},300)}
     if(i===SID('hmmer-concept')){setTimeout(()=>{const f=Reveal.getState().indexf;const s=f>=0?f+1:0;drawHmmerCanvas(s);hmHighlight(s)},300)}
-    if(i===SID('kegg')){setTimeout(()=>drawKeggCanvas(),300)}
-    if(i===SID('pfam')){setTimeout(()=>drawPfamCanvas(),300)}
-    if(i===SID('cazymes')){setTimeout(()=>drawCazyCanvas(),300)}
-    if(i===SID('bgcs')){setTimeout(()=>drawBgcCanvas(),300)}
+    if(i===SID('kegg')){setTimeout(()=>{const f=Reveal.getState().indexf;const s=f>=0?f+1:0;drawKeggCanvas(s);keggHighlight(s)},300)}
+    if(i===SID('pfam')){setTimeout(()=>{const f=Reveal.getState().indexf;const s=f>=0?f+1:0;drawPfamCanvas(s);pfamHighlight(s)},300)}
+    if(i===SID('cazymes')){setTimeout(()=>{const f=Reveal.getState().indexf;const s=f>=0?f+1:0;drawCazyCanvas(s);cazyHighlight(s)},300)}
+    if(i===SID('bgcs')){setTimeout(()=>{const f=Reveal.getState().indexf;const s=f>=0?f+1:0;drawBgcCanvas(s);bgcHighlight(s)},300)}
     if(i===SID('synthesis')){setTimeout(()=>drawSynthCanvas(),300)}
   }
 
@@ -3421,6 +4530,22 @@ Reveal.initialize({
       const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
       drawHmmerCanvas(idx+1);hmHighlight(idx+1);
     }
+    if(si===SID('kegg')){
+      const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
+      drawKeggCanvas(idx+1);keggHighlight(idx+1);
+    }
+    if(si===SID('pfam')){
+      const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
+      drawPfamCanvas(idx+1);pfamHighlight(idx+1);
+    }
+    if(si===SID('cazymes')){
+      const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
+      drawCazyCanvas(idx+1);cazyHighlight(idx+1);
+    }
+    if(si===SID('bgcs')){
+      const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
+      drawBgcCanvas(idx+1);bgcHighlight(idx+1);
+    }
   });
 
   Reveal.on('fragmenthidden',e=>{
@@ -3451,6 +4576,22 @@ Reveal.initialize({
     if(si===SID('hmmer-concept')){
       const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
       drawHmmerCanvas(idx);hmHighlight(idx);
+    }
+    if(si===SID('kegg')){
+      const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
+      drawKeggCanvas(idx);keggHighlight(idx);
+    }
+    if(si===SID('pfam')){
+      const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
+      drawPfamCanvas(idx);pfamHighlight(idx);
+    }
+    if(si===SID('cazymes')){
+      const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
+      drawCazyCanvas(idx);cazyHighlight(idx);
+    }
+    if(si===SID('bgcs')){
+      const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
+      drawBgcCanvas(idx);bgcHighlight(idx);
     }
   });
 

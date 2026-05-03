@@ -712,17 +712,12 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
         <div style="font-size:11px;font-weight:700;color:var(--gc)">antiSMASH</div>
         <div style="font-size:9px;color:var(--ink-3);margin-top:2px">Biosynthetic gene clusters</div>
       </div>
-      <div class="card" style="position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:135px;padding:12px 14px;border-left:3px solid var(--ink-4)">
-        <div style="font-size:11px;font-weight:700;color:var(--ink-3)">eggNOG / COG</div>
-        <div style="font-size:9px;color:var(--ink-3);margin-top:2px">Ortholog groups</div>
-      </div>
       <!-- Connecting lines (SVG) -->
       <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1" viewBox="0 0 700 360">
         <line x1="290" y1="165" x2="135" y2="60" stroke="var(--ink-4)" stroke-width="1.5" stroke-dasharray="4 3"/>
         <line x1="410" y1="165" x2="565" y2="60" stroke="var(--ink-4)" stroke-width="1.5" stroke-dasharray="4 3"/>
         <line x1="410" y1="195" x2="565" y2="300" stroke="var(--ink-4)" stroke-width="1.5" stroke-dasharray="4 3"/>
         <line x1="290" y1="195" x2="135" y2="300" stroke="var(--ink-4)" stroke-width="1.5" stroke-dasharray="4 3"/>
-        <line x1="350" y1="240" x2="350" y2="310" stroke="var(--ink-4)" stroke-width="1.5" stroke-dasharray="4 3"/>
       </svg>
     </div>
   </div>
@@ -818,11 +813,6 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
         <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">Can it produce specialized metabolites?</div>
         <div style="font-size:11px;color:var(--ink-3)">antiSMASH / MIBiG (biosynthetic gene clusters)</div>
       </div>
-      <div class="card fragment" data-fragment-index="4" style="border-left:4px solid var(--ink-4);padding:16px 20px;grid-column:span 2">
-        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink-4);margin-bottom:6px">Question</div>
-        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">What broad ortholog group does this protein belong to?</div>
-        <div style="font-size:11px;color:var(--ink-3)">eggNOG / COG (clusters of orthologous groups)</div>
-      </div>
     </div>
   </div>
 
@@ -835,29 +825,36 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
 <section data-slide-id="kegg">
   <div class="tag tag-func">Functional databases</div>
   <h2 class="stitle">KEGG links genes to metabolism</h2>
-  <p class="sub">Each gene is assigned a KO number that maps to metabolic pathways and modules.</p>
+  <p class="sub" id="kegg-header">Step 1: KEGG organizes biology in a hierarchy</p>
 
   <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-10 sidebar sidebar-wide">
+      <div class="card info-card" id="kegg-card-0" style="border-left:3px solid var(--gd)">
+        <div class="info-card-title">KEGG hierarchy</div>
+        <div class="info-card-text">Genes get KO numbers. KOs map to reactions, pathways, and modules.</div>
+      </div>
+      <div class="card info-card" id="kegg-card-1" style="border-left:3px solid var(--ga)">
+        <div class="info-card-title">Pathway mapping</div>
+        <div class="info-card-text">Each KO maps to reactions in metabolic pathways. Module completeness tells you how much of a pathway is present.</div>
+      </div>
+      <div class="card info-card" id="kegg-card-2" style="border-left:3px solid var(--gc)">
+        <div class="info-card-title">Interpretation</div>
+        <div class="info-card-text">Missing annotations have multiple explanations. Never over-interpret gaps in pathway completeness.</div>
+      </div>
+    </div>
+
     <div class="f1 col" style="min-height:0;">
       <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
-        <div class="card-header">Simplified pathway: present vs missing enzymes</div>
+        <div class="card-header" id="kegg-canvas-header">KEGG hierarchy: Gene to Pathway</div>
         <div class="canvas-wrap"><canvas id="kegg-canvas" class="canvas-fill"></canvas></div>
       </div>
     </div>
-
-    <div class="f0 col g-8 sidebar sidebar-wide">
-      <div class="card" style="padding:14px 16px;border-left:3px solid var(--gd)">
-        <div style="font-size:11px;font-weight:700;color:var(--gd);margin-bottom:8px">Why might a gene be missing?</div>
-        <div style="font-size:10.5px;color:var(--ink-2);line-height:1.7">
-          1. Truly absent from the organism<br>
-          2. Present but too divergent to match<br>
-          3. Gene is on a missing contig<br>
-          4. Gene was not predicted (edge, frameshift)<br>
-          5. Non-homologous replacement enzyme
-        </div>
-      </div>
-    </div>
   </div>
+
+  <span class="fragment" data-fragment-index="0"></span>
+  <span class="fragment" data-fragment-index="1"></span>
+  <span class="fragment" data-fragment-index="2"></span>
+  <span class="fragment" data-fragment-index="3"></span>
 
   <div class="takeaways" style="margin-top:8px">
     <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Missing annotation is not always missing biology. The gene may be absent, fragmented, divergent, or replaced.</div>
@@ -868,17 +865,39 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
 <section data-slide-id="pfam">
   <div class="tag tag-func">Functional databases</div>
   <h2 class="stitle">Pfam identifies protein domains</h2>
-  <p class="sub">Proteins are modular. Pfam detects conserved functional units within a protein sequence.</p>
+  <p class="sub" id="pfam-header">Step 1: What is a protein domain?</p>
 
-  <div style="flex:1;display:flex;flex-direction:column;min-height:0;">
-    <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
-      <div class="card-header">Proteins with colored domain architectures</div>
-      <div class="canvas-wrap"><canvas id="pfam-canvas" class="canvas-fill"></canvas></div>
+  <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-10 sidebar sidebar-wide">
+      <div class="card info-card" id="pfam-card-0" style="border-left:3px solid var(--gb)">
+        <div class="info-card-title">Protein domains</div>
+        <div class="info-card-text">Proteins are built from reusable modules called domains. Each domain folds and functions independently.</div>
+      </div>
+      <div class="card info-card" id="pfam-card-1" style="border-left:3px solid var(--ga)">
+        <div class="info-card-title">Domain architecture</div>
+        <div class="info-card-text">The combination of domains in a protein determines its function. Same domain can appear in many different proteins.</div>
+      </div>
+      <div class="card info-card" id="pfam-card-2" style="border-left:3px solid var(--gc)">
+        <div class="info-card-title">MAG interpretation</div>
+        <div class="info-card-text">Pfam annotation gives a functional fingerprint. Domain families reveal metabolic capabilities.</div>
+      </div>
+    </div>
+
+    <div class="f1 col" style="min-height:0;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <div class="card-header" id="pfam-canvas-header">Protein domains: reusable functional units</div>
+        <div class="canvas-wrap"><canvas id="pfam-canvas" class="canvas-fill"></canvas></div>
+      </div>
     </div>
   </div>
 
+  <span class="fragment" data-fragment-index="0"></span>
+  <span class="fragment" data-fragment-index="1"></span>
+  <span class="fragment" data-fragment-index="2"></span>
+  <span class="fragment" data-fragment-index="3"></span>
+
   <div class="takeaways" style="margin-top:8px">
-    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Proteins are modular. The same domain can appear in many proteins, and one protein can have several domains.</div>
+    <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Proteins are modular. The same domain can appear in many proteins, and domain shuffling creates new functions.</div>
   </div>
 </section>
 
@@ -886,43 +905,36 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
 <section data-slide-id="cazymes">
   <div class="tag tag-func">Functional databases</div>
   <h2 class="stitle">CAZymes reveal carbohydrate metabolism</h2>
-  <p class="sub">Carbohydrate-active enzymes are classified into families that predict substrate specificity.</p>
+  <p class="sub" id="cazy-header">Step 1: What are CAZymes?</p>
 
   <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-10 sidebar sidebar-wide">
+      <div class="card info-card" id="cazy-card-0" style="border-left:3px solid var(--ga)">
+        <div class="info-card-title">CAZyme classes</div>
+        <div class="info-card-text">Six classes of enzymes that process carbohydrates: GH, GT, PL, CE, CBM, AA.</div>
+      </div>
+      <div class="card info-card" id="cazy-card-1" style="border-left:3px solid var(--gb)">
+        <div class="info-card-title">Families and substrates</div>
+        <div class="info-card-text">Each class contains numbered families. The family predicts which substrate the enzyme acts on.</div>
+      </div>
+      <div class="card info-card" id="cazy-card-2" style="border-left:3px solid var(--gc)">
+        <div class="info-card-title">Metabolic niche</div>
+        <div class="info-card-text">The CAZyme profile of a MAG suggests what carbohydrates it can use. But family-level predictions can be broad.</div>
+      </div>
+    </div>
+
     <div class="f1 col" style="min-height:0;">
       <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
-        <div class="card-header">Polysaccharide degradation</div>
+        <div class="card-header" id="cazy-canvas-header">Carbohydrate-Active enZymes</div>
         <div class="canvas-wrap"><canvas id="cazy-canvas" class="canvas-fill"></canvas></div>
       </div>
     </div>
-
-    <div class="f0 col g-8 sidebar sidebar-wide">
-      <div class="card" style="padding:10px 14px;border-left:3px solid var(--ga)">
-        <div style="font-size:11px;font-weight:700;color:var(--ga)">GH</div>
-        <div style="font-size:9.5px;color:var(--ink-3)">Glycoside hydrolases. Break glycosidic bonds.</div>
-      </div>
-      <div class="card" style="padding:10px 14px;border-left:3px solid var(--gb)">
-        <div style="font-size:11px;font-weight:700;color:var(--gb)">GT</div>
-        <div style="font-size:9.5px;color:var(--ink-3)">Glycosyltransferases. Form glycosidic bonds.</div>
-      </div>
-      <div class="card" style="padding:10px 14px;border-left:3px solid var(--gc)">
-        <div style="font-size:11px;font-weight:700;color:var(--gc)">PL</div>
-        <div style="font-size:9.5px;color:var(--ink-3)">Polysaccharide lyases. Cleave via elimination.</div>
-      </div>
-      <div class="card" style="padding:10px 14px;border-left:3px solid var(--gd)">
-        <div style="font-size:11px;font-weight:700;color:var(--gd)">CE</div>
-        <div style="font-size:9.5px;color:var(--ink-3)">Carbohydrate esterases. Remove ester groups.</div>
-      </div>
-      <div class="card" style="padding:10px 14px;border-left:3px solid var(--ink-3)">
-        <div style="font-size:11px;font-weight:700;color:var(--ink-3)">CBM</div>
-        <div style="font-size:9.5px;color:var(--ink-3)">Carbohydrate-binding modules. Target substrates.</div>
-      </div>
-      <div class="card" style="padding:10px 14px;border-left:3px solid var(--bad)">
-        <div style="font-size:11px;font-weight:700;color:var(--bad)">AA</div>
-        <div style="font-size:9.5px;color:var(--ink-3)">Auxiliary activities. Redox enzymes aiding degradation.</div>
-      </div>
-    </div>
   </div>
+
+  <span class="fragment" data-fragment-index="0"></span>
+  <span class="fragment" data-fragment-index="1"></span>
+  <span class="fragment" data-fragment-index="2"></span>
+  <span class="fragment" data-fragment-index="3"></span>
 
   <div class="takeaways" style="margin-top:8px">
     <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> CAZyme profiles suggest what substrates a MAG might use, but families can be broad.</div>
@@ -933,39 +945,36 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
 <section data-slide-id="bgcs">
   <div class="tag tag-func">Functional databases</div>
   <h2 class="stitle">BGCs encode specialized metabolic potential</h2>
-  <p class="sub">Biosynthetic gene clusters are physically linked genes that produce specialized metabolites.</p>
+  <p class="sub" id="bgc-header">Step 1: What is a BGC?</p>
 
   <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
+    <div class="f0 col g-10 sidebar sidebar-wide">
+      <div class="card info-card" id="bgc-card-0" style="border-left:3px solid var(--ga)">
+        <div class="info-card-title">Gene clusters</div>
+        <div class="info-card-text">BGCs are physically linked genes that cooperate to produce a metabolite. The cluster encodes everything needed: biosynthesis, transport, regulation, resistance.</div>
+      </div>
+      <div class="card info-card" id="bgc-card-1" style="border-left:3px solid var(--gb)">
+        <div class="info-card-title">BGC types and detection</div>
+        <div class="info-card-text">BGCs are classified by their biosynthetic machinery (NRPS, PKS, RiPP, etc.). antiSMASH detects them using domain signatures and rules.</div>
+      </div>
+      <div class="card info-card" id="bgc-card-2" style="border-left:3px solid var(--gc)">
+        <div class="info-card-title">MAG interpretation</div>
+        <div class="info-card-text">BGC predictions reveal specialized metabolic potential. But fragmented MAGs may split clusters across contigs.</div>
+      </div>
+    </div>
+
     <div class="f1 col" style="min-height:0;">
       <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
-        <div class="card-header">Gene cluster with biosynthetic, transport, and regulatory genes</div>
+        <div class="card-header" id="bgc-canvas-header">Biosynthetic Gene Clusters</div>
         <div class="canvas-wrap"><canvas id="bgc-canvas" class="canvas-fill"></canvas></div>
       </div>
     </div>
-
-    <div class="f0 col g-8 sidebar sidebar-wide">
-      <div class="card" style="padding:10px 14px;border-left:3px solid var(--gc)">
-        <div style="font-size:11px;font-weight:700;color:var(--gc)">NRPS</div>
-        <div style="font-size:9.5px;color:var(--ink-3)">Nonribosomal peptide synthetases</div>
-      </div>
-      <div class="card" style="padding:10px 14px;border-left:3px solid var(--gb)">
-        <div style="font-size:11px;font-weight:700;color:var(--gb)">PKS</div>
-        <div style="font-size:9.5px;color:var(--ink-3)">Polyketide synthases</div>
-      </div>
-      <div class="card" style="padding:10px 14px;border-left:3px solid var(--ga)">
-        <div style="font-size:11px;font-weight:700;color:var(--ga)">RiPP</div>
-        <div style="font-size:9.5px;color:var(--ink-3)">Ribosomally synthesized peptides</div>
-      </div>
-      <div class="card" style="padding:10px 14px;border-left:3px solid var(--gd)">
-        <div style="font-size:11px;font-weight:700;color:var(--gd)">Terpene</div>
-        <div style="font-size:9.5px;color:var(--ink-3)">Terpene / terpenoid clusters</div>
-      </div>
-      <div class="card" style="padding:10px 14px;border-left:3px solid var(--bad)">
-        <div style="font-size:11px;font-weight:700;color:var(--bad)">Siderophore</div>
-        <div style="font-size:9.5px;color:var(--ink-3)">Iron-chelating compound biosynthesis</div>
-      </div>
-    </div>
   </div>
+
+  <span class="fragment" data-fragment-index="0"></span>
+  <span class="fragment" data-fragment-index="1"></span>
+  <span class="fragment" data-fragment-index="2"></span>
+  <span class="fragment" data-fragment-index="3"></span>
 
   <div class="takeaways" style="margin-top:8px">
     <div class="tw tw-a" style="padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> antiSMASH predicts biosynthetic potential. It does not prove the compound is produced.</div>
@@ -1377,5 +1386,5 @@ document.addEventListener('keydown',e=>{
 </script>
 
 <script src="reveal.min.js"></script>
-<script src="slides.js?v=20260504v"></script>
+<script src="slides.js?v=20260504z"></script>
 </body></html>
