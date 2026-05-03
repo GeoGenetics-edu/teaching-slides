@@ -2633,82 +2633,117 @@ function drawHmMsa(ctx){
 function drawHmBuild(ctx){
   const cx=400;
 
-  /* MSA (compact) */
+  /* ── Biological context ── */
+  _label(ctx,'Pfam family PF00005 — ABC transporter (4 known members)',cx,14,12,COLORS.ink3,'center','600');
+
+  /* MSA grid */
   const seqs=[
     ['M','K','T','V','G'],
     ['M','K','T','V','G'],
     ['M','R','T','I','G'],
     ['M','K','S','V','G'],
   ];
-  const nC=5, cW=44, cH=34;
-  const msaX=60, msaY=20;
+  const nC=5, cW=50, cH=32;
+  const msaX=cx-(nC*cW)/2, msaY=28;
+  const colColors=[COLORS.gc,COLORS.gb,'#8b5cf6','#0ea5e9',COLORS.gc]; /* unique color per column */
 
-  _label(ctx,'Family alignment',msaX+nC*cW/2,msaY,12,COLORS.gc,'center','700');
+  for(let c=0;c<nC;c++){
+    /* Column highlight strip behind cells */
+    const stripX=msaX+c*cW, stripY=msaY;
+    ctx.fillStyle=colColors[c]+'0a';
+    ctx.fillRect(stripX,stripY,cW-2,4*cH);
+  }
   for(let r=0;r<4;r++){
     for(let c=0;c<nC;c++){
-      const x=msaX+c*cW, y=msaY+16+r*cH;
-      const cons=c===0||c===4;
-      ctx.fillStyle=cons?COLORS.gc+'22':'#f8fafc';
-      ctx.fillRect(x,y,cW-3,cH-3);
-      ctx.strokeStyle=cons?COLORS.gc+'55':COLORS.border;ctx.lineWidth=1;
-      ctx.strokeRect(x,y,cW-3,cH-3);
-      _monoLabel(ctx,seqs[r][c],x+cW/2-1,y+cH/2,16,cons?COLORS.gc:COLORS.ink2,'center');
+      const x=msaX+c*cW, y=msaY+r*cH;
+      ctx.fillStyle=colColors[c]+'15';
+      ctx.fillRect(x,y,cW-2,cH-2);
+      ctx.strokeStyle=colColors[c]+'55';ctx.lineWidth=1;
+      ctx.strokeRect(x,y,cW-2,cH-2);
+      _monoLabel(ctx,seqs[r][c],x+cW/2-1,y+cH/2,15,colColors[c],'center');
     }
   }
 
-  /* Vertical dashed lines from columns to states */
-  const msaBtm=msaY+16+4*cH;
-  const stY=msaBtm+80;
+  /* ── Color-coded arrows from each column to its state ── */
+  const msaBtm=msaY+4*cH;
+  const stY=msaBtm+70;
+  _label(ctx,'Each column → one state',cx,msaBtm+16,12,COLORS.ink3,'center','600');
+
   for(let c=0;c<nC;c++){
     const x=msaX+c*cW+cW/2-1;
-    ctx.setLineDash([4,4]);ctx.strokeStyle=COLORS.gc+'44';ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.moveTo(x,msaBtm+2);ctx.lineTo(x,stY-30);ctx.stroke();
-    ctx.setLineDash([]);
+    _arrow(ctx,x,msaBtm+4,x,stY-22,colColors[c],2);
   }
 
-  /* Arrow label */
-  _label(ctx,'Each column becomes one state',msaX+nC*cW/2,msaBtm+36,13,COLORS.gc,'center','700');
-
-  /* HMM chain — show dominant AA and frequency inside each state */
-  const sR=18, gap=44;
-  const hmX=msaX;
+  /* ── M states with dominant AA ── */
+  const sR=16;
   const domAA=['M','K','T','V','G'];
-  const freq=['4/4','3/4','2/4','3/4','4/4'];
-  const consCol=[true,false,false,false,true];
   for(let i=0;i<nC;i++){
-    const x=hmX+i*cW+cW/2-1;
-    const cons=consCol[i];
-    const col=cons?COLORS.gc:COLORS.gb;
-    _roundRect(ctx,x-sR,stY-sR,sR*2,sR*2,5,col+'22',col,2);
-    _label(ctx,'M'+(i+1),x,stY-6,10,col,'center','700');
-    _monoLabel(ctx,domAA[i],x,stY+10,12,col,'center');
-    /* Frequency below the state */
-    _label(ctx,freq[i],x,stY+sR+14,10,cons?COLORS.gc:COLORS.ink4,'center','600');
+    const x=msaX+i*cW+cW/2-1;
+    _roundRect(ctx,x-sR,stY-sR,sR*2,sR*2,5,colColors[i]+'22',colColors[i],2);
+    _label(ctx,'M'+(i+1),x,stY-4,9,colColors[i],'center','700');
+    _monoLabel(ctx,domAA[i],x,stY+10,11,colColors[i],'center');
     if(i<nC-1){
-      const nx=hmX+(i+1)*cW+cW/2-1;
-      _arrow(ctx,x+sR+3,stY,nx-sR-3,stY,col+'55',1.5);
+      const nx=msaX+(i+1)*cW+cW/2-1;
+      _arrow(ctx,x+sR+2,stY,nx-sR-2,stY,COLORS.gc+'44',1.2);
     }
   }
 
-  /* Right side — concrete example of what a state stores */
-  const exX=msaX+nC*cW+40;
-  _label(ctx,'What each state stores:',exX+110,msaY+10,14,COLORS.gc,'center','700');
+  /* ── Mini bar charts below each state ── */
+  const barY=stY+sR+8;
+  const barData=[
+    [{aa:'M',f:1.0}], /* M1: 100% M */
+    [{aa:'K',f:0.75},{aa:'R',f:0.25}], /* M2 */
+    [{aa:'T',f:0.50},{aa:'S',f:0.25},{aa:'other',f:0.25}], /* M3 */
+    [{aa:'V',f:0.75},{aa:'I',f:0.25}], /* M4 */
+    [{aa:'G',f:1.0}], /* M5: 100% G */
+  ];
+  const barW=36, barH=60;
 
-  /* Example for M1 (conserved) */
-  _roundRect(ctx,exX,msaY+28,220,70,8,COLORS.gc+'0a',COLORS.gc+'33',1);
-  _label(ctx,'M1 — conserved',exX+110,msaY+44,11,COLORS.gc,'center','700');
-  _label(ctx,'M appears 4/4 times → 100%',exX+110,msaY+62,10,COLORS.ink3,'center','500');
-  _label(ctx,'Very high confidence',exX+110,msaY+78,10,COLORS.gc,'center','600');
+  for(let i=0;i<nC;i++){
+    const bx=msaX+i*cW+cW/2-1-barW/2;
+    const bd=barData[i];
+    /* Background bar */
+    _roundRect(ctx,bx,barY,barW,barH,3,'#f8fafc',COLORS.border,0.5);
+    /* Stacked segments from bottom */
+    let segY=barY+barH;
+    for(const seg of bd){
+      const sh=Math.max(seg.f*barH,6);
+      segY-=sh;
+      ctx.fillStyle=colColors[i]+(seg.aa==='other'?'15':'33');
+      ctx.fillRect(bx+1,segY,barW-2,sh-1);
+      if(sh>10) _monoLabel(ctx,seg.aa==='other'?'…':seg.aa,bx+barW/2,segY+sh/2,seg.aa==='other'?8:9,colColors[i],'center');
+    }
+    /* Percentage label below */
+    const topPct=Math.round(bd[0].f*100)+'%';
+    _label(ctx,topPct,bx+barW/2,barY+barH+12,10,colColors[i],'center','700');
+  }
 
-  /* Example for M2 (variable) */
-  _roundRect(ctx,exX,msaY+108,220,70,8,COLORS.gb+'0a',COLORS.gb+'33',1);
-  _label(ctx,'M2 — variable',exX+110,msaY+124,11,COLORS.gb,'center','700');
-  _label(ctx,'K appears 3/4, R appears 1/4',exX+110,msaY+142,10,COLORS.ink3,'center','500');
-  _label(ctx,'Both are plausible',exX+110,msaY+158,10,COLORS.gb,'center','600');
+  /* ── Right side: what does this mean? ── */
+  const exX=msaX+nC*cW+26;
+  const exW=800-exX-10;
 
-  /* Bottom summary */
-  _roundRect(ctx,cx-240,stY+sR+36,480,40,8,COLORS.gc+'0c',COLORS.gc+'33',1);
-  _label(ctx,'The model captures the "rules" of the family at every position',cx,stY+sR+56,13,COLORS.gc,'center','600');
+  _label(ctx,'What the model learns:',exX+exW/2,msaY+6,13,COLORS.gc,'center','700');
+
+  /* Conserved example */
+  _roundRect(ctx,exX,msaY+20,exW,62,8,COLORS.gc+'0a',COLORS.gc+'33',1);
+  _label(ctx,'Conserved (M1, M5)',exX+exW/2,msaY+36,11,COLORS.gc,'center','700');
+  _label(ctx,'One AA dominates → model is',exX+exW/2,msaY+52,10,COLORS.ink3,'center','500');
+  _label(ctx,'very strict at this position',exX+exW/2,msaY+66,10,COLORS.gc,'center','600');
+
+  /* Variable example */
+  _roundRect(ctx,exX,msaY+92,exW,62,8,COLORS.gb+'0a',COLORS.gb+'33',1);
+  _label(ctx,'Variable (M2, M3, M4)',exX+exW/2,msaY+108,11,COLORS.gb,'center','700');
+  _label(ctx,'Several AAs seen → model is',exX+exW/2,msaY+124,10,COLORS.ink3,'center','500');
+  _label(ctx,'flexible at this position',exX+exW/2,msaY+140,10,COLORS.gb,'center','600');
+
+  /* Summary */
+  _roundRect(ctx,exX,msaY+166,exW,46,8,COLORS.ink+'06',COLORS.ink4+'44',1);
+  _label(ctx,'The bars are the "fingerprint"',exX+exW/2,msaY+182,11,COLORS.ink2,'center','600');
+  _label(ctx,'of this protein family',exX+exW/2,msaY+198,11,COLORS.ink2,'center','600');
+
+  /* Bottom takeaway */
+  _roundRect(ctx,cx-280,barY+barH+28,560,36,8,COLORS.gc+'0c',COLORS.gc+'33',1);
+  _label(ctx,'hmmbuild reads the alignment and outputs a Profile HMM file (.hmm)',cx,barY+barH+46,12,COLORS.gc,'center','600');
 }
 
 /* ── Step 5: HMM architecture — Match / Insert / Delete states ── */
