@@ -2669,33 +2669,46 @@ function drawHmBuild(ctx){
   /* Arrow label */
   _label(ctx,'Each column becomes one state',msaX+nC*cW/2,msaBtm+36,13,COLORS.gc,'center','700');
 
-  /* HMM chain */
+  /* HMM chain — show dominant AA and frequency inside each state */
   const sR=18, gap=44;
   const hmX=msaX;
+  const domAA=['M','K','T','V','G'];
+  const freq=['4/4','3/4','2/4','3/4','4/4'];
+  const consCol=[true,false,false,false,true];
   for(let i=0;i<nC;i++){
     const x=hmX+i*cW+cW/2-1;
-    const cons=i===0||i===4;
+    const cons=consCol[i];
     const col=cons?COLORS.gc:COLORS.gb;
     _roundRect(ctx,x-sR,stY-sR,sR*2,sR*2,5,col+'22',col,2);
-    _label(ctx,'M'+(i+1),x,stY,12,col,'center','700');
+    _label(ctx,'M'+(i+1),x,stY-6,10,col,'center','700');
+    _monoLabel(ctx,domAA[i],x,stY+10,12,col,'center');
+    /* Frequency below the state */
+    _label(ctx,freq[i],x,stY+sR+14,10,cons?COLORS.gc:COLORS.ink4,'center','600');
     if(i<nC-1){
       const nx=hmX+(i+1)*cW+cW/2-1;
       _arrow(ctx,x+sR+3,stY,nx-sR-3,stY,col+'55',1.5);
     }
   }
 
-  /* Right side explanation */
-  const exX=msaX+nC*cW+60;
-  _label(ctx,'Profile HMM',exX+100,msaY+10,16,COLORS.gc,'center','700');
-  _roundRect(ctx,exX,msaY+30,200,120,10,COLORS.gc+'08',COLORS.gc+'33',1.5);
-  _label(ctx,'Each state remembers:',exX+100,msaY+54,13,COLORS.gc,'center','600');
-  _label(ctx,'Which AAs appeared',exX+100,msaY+78,12,COLORS.ink2,'center','500');
-  _label(ctx,'at that position',exX+100,msaY+96,12,COLORS.ink2,'center','500');
-  _label(ctx,'and how often',exX+100,msaY+114,12,COLORS.ink2,'center','500');
+  /* Right side — concrete example of what a state stores */
+  const exX=msaX+nC*cW+40;
+  _label(ctx,'What each state stores:',exX+110,msaY+10,14,COLORS.gc,'center','700');
+
+  /* Example for M1 (conserved) */
+  _roundRect(ctx,exX,msaY+28,220,70,8,COLORS.gc+'0a',COLORS.gc+'33',1);
+  _label(ctx,'M1 — conserved',exX+110,msaY+44,11,COLORS.gc,'center','700');
+  _label(ctx,'M appears 4/4 times → 100%',exX+110,msaY+62,10,COLORS.ink3,'center','500');
+  _label(ctx,'Very high confidence',exX+110,msaY+78,10,COLORS.gc,'center','600');
+
+  /* Example for M2 (variable) */
+  _roundRect(ctx,exX,msaY+108,220,70,8,COLORS.gb+'0a',COLORS.gb+'33',1);
+  _label(ctx,'M2 — variable',exX+110,msaY+124,11,COLORS.gb,'center','700');
+  _label(ctx,'K appears 3/4, R appears 1/4',exX+110,msaY+142,10,COLORS.ink3,'center','500');
+  _label(ctx,'Both are plausible',exX+110,msaY+158,10,COLORS.gb,'center','600');
 
   /* Bottom summary */
-  _roundRect(ctx,cx-240,stY+sR+30,480,40,8,COLORS.gc+'0c',COLORS.gc+'33',1);
-  _label(ctx,'The model captures the "rules" of the family at every position',cx,stY+sR+50,13,COLORS.gc,'center','600');
+  _roundRect(ctx,cx-240,stY+sR+36,480,40,8,COLORS.gc+'0c',COLORS.gc+'33',1);
+  _label(ctx,'The model captures the "rules" of the family at every position',cx,stY+sR+56,13,COLORS.gc,'center','600');
 }
 
 /* ── Step 5: HMM architecture — Match / Insert / Delete states ── */
@@ -2741,11 +2754,13 @@ function drawHmArchitecture(ctx){
     _arrow(ctx,x-5,mY-sR-3,x-5,iY+15,COLORS.gb,1.5);
     /* Arrow I→M (back down, right side) */
     _arrow(ctx,x+5,iY+15,x+5,mY-sR-3,COLORS.gb,1.5);
-    /* Self-loop arc on I */
-    ctx.beginPath();ctx.arc(x,iY-20,9,0.25*Math.PI,0.75*Math.PI);
+    /* Self-loop arc on I — curves over the top, arrow points back down */
+    const slCy=iY-20, slR=10;
+    ctx.beginPath();ctx.arc(x,slCy,slR,-0.7,Math.PI+0.7,true);
     ctx.strokeStyle=COLORS.gb;ctx.lineWidth=1.8;ctx.stroke();
-    const aX2=x+9*Math.cos(0.75*Math.PI), aY2=iY-20+9*Math.sin(0.75*Math.PI);
-    ctx.beginPath();ctx.moveTo(aX2,aY2);ctx.lineTo(aX2+5,aY2-3);ctx.lineTo(aX2+2,aY2+4);ctx.fillStyle=COLORS.gb;ctx.fill();
+    /* Arrowhead at left end, pointing down into circle */
+    const aeX=x+slR*Math.cos(Math.PI+0.7), aeY=slCy+slR*Math.sin(Math.PI+0.7);
+    ctx.beginPath();ctx.moveTo(aeX,aeY);ctx.lineTo(aeX+5,aeY-2);ctx.lineTo(aeX+4,aeY+4);ctx.fillStyle=COLORS.gb;ctx.fill();
 
     /* Delete state (diamond below, between this M and next M) */
     if(i<nSt-1){
@@ -2774,9 +2789,9 @@ function drawHmArchitecture(ctx){
   /* ── Legend below ── */
   const lY=mY+110;
   const items=[
-    {col:COLORS.gc, label:'Match (M)', desc:'Emit an amino acid (the expected one)'},
-    {col:COLORS.gb, label:'Insert (I)', desc:'Extra AA not in the model (insertion in query)'},
-    {col:COLORS.gd, label:'Delete (D)', desc:'Skip a position (deletion in query)'},
+    {col:COLORS.gc, label:'Match (M)', desc:'Emit the expected amino acid'},
+    {col:COLORS.gb, label:'Insert (I)', desc:'Extra AA in the query'},
+    {col:COLORS.gd, label:'Delete (D)', desc:'Skip a model position'},
   ];
   const lW=220, lX0=cx-(items.length*lW)/2;
   for(let i=0;i<items.length;i++){
