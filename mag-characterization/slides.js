@@ -2702,71 +2702,77 @@ function drawHmBuild(ctx){
 function drawHmArchitecture(ctx){
   const cx=400;
 
-  _label(ctx,'Profile HMM: three types of state',cx,20,16,COLORS.gc,'center','700');
+  _label(ctx,'Profile HMM: three types of state',cx,18,16,COLORS.gc,'center','700');
+  _label(ctx,'Same model we just built — now showing Insert and Delete states too',cx,38,11,COLORS.ink4,'center','500');
 
-  /* ── Main chain: M states ── */
-  const nSt=4, sR=22, gap=140;
-  const stX0=cx-((nSt-1)*gap)/2, mY=170;
+  /* ── Main chain: 5 M states matching the family alignment ── */
+  const nSt=5, sR=18, gap=110;
+  const stX0=cx-((nSt-1)*gap)/2, mY=168;
+  /* Dominant AAs from the family alignment (columns from the MSA) */
+  const domAA=['M','K','T','V','G'];
+  const domCons=[true,false,false,false,true]; /* conserved columns */
 
   /* Begin node */
-  const bX=stX0-74;
-  _roundRect(ctx,bX-16,mY-16,32,32,16,COLORS.ink4+'22',COLORS.ink4,1.5);
-  _label(ctx,'B',bX,mY,11,COLORS.ink4,'center','700');
-  _arrow(ctx,bX+18,mY,stX0-sR-4,mY,COLORS.ink4+'66',1.5);
+  const bX=stX0-56;
+  _roundRect(ctx,bX-14,mY-14,28,28,14,COLORS.ink4+'22',COLORS.ink4,1.5);
+  _label(ctx,'B',bX,mY,10,COLORS.ink4,'center','700');
+  _arrow(ctx,bX+16,mY,stX0-sR-4,mY,COLORS.ink4+'66',1.5);
 
   for(let i=0;i<nSt;i++){
     const x=stX0+i*gap;
 
     /* Match state (square) */
     _roundRect(ctx,x-sR,mY-sR,sR*2,sR*2,5,COLORS.gc+'22',COLORS.gc,2.5);
-    _label(ctx,'M'+(i+1),x,mY,13,COLORS.gc,'center','700');
+    _label(ctx,'M'+(i+1),x,mY-4,11,COLORS.gc,'center','700');
+    /* Dominant AA from family alignment below the state label */
+    _monoLabel(ctx,domAA[i],x,mY+12,12,domCons[i]?COLORS.gc:COLORS.gb,'center');
 
     /* Arrow to next M */
-    if(i<nSt-1) _arrow(ctx,x+sR+4,mY,x+gap-sR-4,mY,COLORS.gc+'66',2);
+    if(i<nSt-1) _arrow(ctx,x+sR+4,mY,x+gap-sR-4,mY,COLORS.gc+'66',1.8);
 
     /* Insert state (circle above) */
-    const iY=mY-78;
-    ctx.beginPath();ctx.arc(x,iY,15,0,Math.PI*2);
+    const iY=mY-68;
+    ctx.beginPath();ctx.arc(x,iY,13,0,Math.PI*2);
     ctx.fillStyle=COLORS.gb+'22';ctx.fill();
     ctx.strokeStyle=COLORS.gb;ctx.lineWidth=1.5;ctx.stroke();
-    _label(ctx,'I'+(i+1),x,iY,11,COLORS.gb,'center','700');
+    _label(ctx,'I'+(i+1),x,iY,9,COLORS.gb,'center','700');
 
     /* Arrow M→I (up, left side) */
-    _arrow(ctx,x-6,mY-sR-3,x-6,iY+17,COLORS.gb,1.5);
+    _arrow(ctx,x-5,mY-sR-3,x-5,iY+15,COLORS.gb,1.5);
     /* Arrow I→M (back down, right side) */
-    _arrow(ctx,x+6,iY+17,x+6,mY-sR-3,COLORS.gb,1.5);
+    _arrow(ctx,x+5,iY+15,x+5,mY-sR-3,COLORS.gb,1.5);
     /* Self-loop arc on I */
-    ctx.beginPath();ctx.arc(x,iY-22,10,0.25*Math.PI,0.75*Math.PI);
-    ctx.strokeStyle=COLORS.gb;ctx.lineWidth=2;ctx.stroke();
-    const aX2=x+10*Math.cos(0.75*Math.PI), aY2=iY-22+10*Math.sin(0.75*Math.PI);
-    ctx.beginPath();ctx.moveTo(aX2,aY2);ctx.lineTo(aX2+6,aY2-3);ctx.lineTo(aX2+2,aY2+5);ctx.fillStyle=COLORS.gb;ctx.fill();
+    ctx.beginPath();ctx.arc(x,iY-20,9,0.25*Math.PI,0.75*Math.PI);
+    ctx.strokeStyle=COLORS.gb;ctx.lineWidth=1.8;ctx.stroke();
+    const aX2=x+9*Math.cos(0.75*Math.PI), aY2=iY-20+9*Math.sin(0.75*Math.PI);
+    ctx.beginPath();ctx.moveTo(aX2,aY2);ctx.lineTo(aX2+5,aY2-3);ctx.lineTo(aX2+2,aY2+4);ctx.fillStyle=COLORS.gb;ctx.fill();
 
     /* Delete state (diamond below, between this M and next M) */
     if(i<nSt-1){
-      const dY=mY+78, dR=14;
+      const dY=mY+68, dR=12;
       const dX=x+gap/2;
       ctx.save();ctx.translate(dX,dY);ctx.rotate(Math.PI/4);
       ctx.fillStyle=COLORS.gd+'22';ctx.fillRect(-dR,-dR,dR*2,dR*2);
       ctx.strokeStyle=COLORS.gd;ctx.lineWidth=1.5;ctx.strokeRect(-dR,-dR,dR*2,dR*2);
       ctx.restore();
-      _label(ctx,'D'+(i+2),dX,dY,10,COLORS.gd,'center','700');
+      _label(ctx,'D'+(i+2),dX,dY,9,COLORS.gd,'center','700');
 
-      /* M→D arrow (from bottom-right of M to top-left of D) */
-      _arrow(ctx,x+sR/2+4,mY+sR+4,dX-dR-2,dY-dR-2,COLORS.gd+'aa',1.5);
-      /* D→next M arrow (from top-right of D to bottom-left of next M) */
+      /* M→D arrow */
+      _arrow(ctx,x+sR/2+3,mY+sR+3,dX-dR-1,dY-dR-1,COLORS.gd+'aa',1.3);
+      /* D→next M arrow */
       const nx=stX0+(i+1)*gap;
-      _arrow(ctx,dX+dR+2,dY-dR-2,nx-sR/2-4,mY+sR+4,COLORS.gd+'aa',1.5);
+      _arrow(ctx,dX+dR+1,dY-dR-1,nx-sR/2-3,mY+sR+3,COLORS.gd+'aa',1.3);
     }
   }
 
   /* End node */
-  const eX=stX0+(nSt-1)*gap+74;
-  _roundRect(ctx,eX-16,mY-16,32,32,16,COLORS.ink4+'22',COLORS.ink4,1.5);
-  _label(ctx,'E',eX,mY,11,COLORS.ink4,'center','700');
-  _arrow(ctx,stX0+(nSt-1)*gap+sR+4,mY,eX-18,mY,COLORS.ink4+'66',1.5);
+  const eX=stX0+(nSt-1)*gap+56;
+  _roundRect(ctx,eX-14,mY-14,28,28,14,COLORS.ink4+'22',COLORS.ink4,1.5);
+  _label(ctx,'E',eX,mY,10,COLORS.ink4,'center','700');
+  _arrow(ctx,stX0+(nSt-1)*gap+sR+4,mY,eX-16,mY,COLORS.ink4+'66',1.5);
 
   /* ── Legend below ── */
-  const lY=mY+128;
+  const lY=mY+110;
   const items=[
     {col:COLORS.gc, label:'Match (M)', desc:'Emit an amino acid (the expected one)'},
     {col:COLORS.gb, label:'Insert (I)', desc:'Extra AA not in the model (insertion in query)'},
