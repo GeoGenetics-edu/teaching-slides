@@ -2439,10 +2439,10 @@ function drawHmmerCanvas(step){
 function drawHmSeed(ctx){
   const cx=400, cW=56, cH=44;
   const query='MKTVVIG';
-  const qW=query.length*cW, qX=cx-qW/2, qY=60;
+  const qW=query.length*cW, qX=cx-qW/2, qY=115;
 
-  _label(ctx,'Your unknown protein',cx,30,16,COLORS.gb,'center','700');
-  _label(ctx,'You want to know: what is this protein?',cx,52,12,COLORS.ink3,'center','500');
+  _label(ctx,'Your unknown protein',cx,85,16,COLORS.gb,'center','700');
+  _label(ctx,'You want to know: what is this protein?',cx,107,12,COLORS.ink3,'center','500');
 
   for(let i=0;i<query.length;i++){
     const x=qX+i*cW, inSeed=i>=2&&i<=4;
@@ -2480,13 +2480,13 @@ function drawHmExtend(ctx){
   const cx=400, cW=50, cH=38;
 
   /* seed match found */
-  _label(ctx,'A seed word matched a database sequence!',cx,20,14,COLORS.ok,'center','700');
+  _label(ctx,'A seed word matched a database sequence!',cx,55,14,COLORS.ok,'center','700');
 
   const qSeq='MKTVVIG', dbSeq='QRTVVIG';
   const qW=qSeq.length*cW, qX=cx-qW/2;
 
   /* Query row */
-  const qY=50;
+  const qY=85;
   _label(ctx,'Query',qX-12,qY+cH/2,12,COLORS.gb,'right','700');
   for(let i=0;i<qSeq.length;i++){
     const x=qX+i*cW, inSeed=i>=2&&i<=4;
@@ -2540,13 +2540,13 @@ function drawHmExtend(ctx){
 function drawHmProblem(ctx){
   const cx=400, cW=56, cH=44;
 
-  _label(ctx,'What if the family member is very different?',cx,24,16,COLORS.bad,'center','700');
+  _label(ctx,'What if the family member is very different?',cx,49,16,COLORS.bad,'center','700');
 
   const qSeq='MKTVVIG', divSeq='LRSWFAG';
   const qW=qSeq.length*cW, qX=cx-qW/2;
 
   /* Query */
-  const qY=60;
+  const qY=85;
   _label(ctx,'Query',qX-12,qY+cH/2,13,COLORS.gb,'right','700');
   for(let i=0;i<qSeq.length;i++){
     const x=qX+i*cW;
@@ -2585,7 +2585,7 @@ function drawHmProblem(ctx){
 function drawHmMsa(ctx){
   const cx=400;
 
-  _label(ctx,'Solution: align known family members to find patterns',cx,20,15,COLORS.gc,'center','700');
+  _label(ctx,'Solution: align known family members to find patterns',cx,50,15,COLORS.gc,'center','700');
 
   const seqs=[
     ['M','K','T','-','V','G'],
@@ -2594,7 +2594,7 @@ function drawHmMsa(ctx){
     ['M','K','S','-','V','G'],
   ];
   const nC=6, cW=60, cH=48;
-  const msaX=cx-nC*cW/2, msaY=56;
+  const msaX=cx-nC*cW/2, msaY=86;
 
   /* Column labels */
   const colLabels=['conserved','variable','variable','gaps','variable','conserved'];
@@ -2698,7 +2698,7 @@ function drawHmBuild(ctx){
   /* ═══════════════════════════════════════════════════════════════
      MAIN: MSA → column-to-state mapping → bar charts
      ═══════════════════════════════════════════════════════════════ */
-  const msaTopY=60;
+  const msaTopY=72;
 
   /* MSA grid */
   const seqs=[
@@ -2733,11 +2733,11 @@ function drawHmBuild(ctx){
 
   /* Column → state arrows */
   const msaBtm=msaY+4*cH;
-  const stY=msaBtm+54;
-  _label(ctx,'Each column → one state',cx,msaBtm+12,11,COLORS.ink3,'center','600');
+  const stY=msaBtm+66;
+  _label(ctx,'Each column → one state',cx,msaBtm+14,11,COLORS.ink3,'center','600');
   for(let c=0;c<nC;c++){
     const x=msaX+c*cW+cW/2-1;
-    _arrow(ctx,x,msaBtm+2,x,stY-18,colColors[c],1.8);
+    _arrow(ctx,x,msaBtm+24,x,stY-18,colColors[c],1.8);
   }
 
   /* M states with dominant AA */
@@ -2815,12 +2815,12 @@ function drawHmBuild(ctx){
 function drawHmArchitecture(ctx){
   const cx=400;
 
-  _label(ctx,'Profile HMM: three types of state',cx,18,16,COLORS.gc,'center','700');
-  _label(ctx,'Same model we just built — now showing Insert and Delete states too',cx,38,11,COLORS.ink4,'center','500');
+  _label(ctx,'Profile HMM: three types of state',cx,38,16,COLORS.gc,'center','700');
+  _label(ctx,'Same model we just built — now showing Insert and Delete states too',cx,58,11,COLORS.ink4,'center','500');
 
   /* ── Main chain: 5 M states matching the family alignment ── */
   const nSt=5, sR=18, gap=110;
-  const stX0=cx-((nSt-1)*gap)/2, mY=168;
+  const stX0=cx-((nSt-1)*gap)/2, mY=188;
   /* Dominant AAs from the family alignment (columns from the MSA) */
   const domAA=['M','K','T','V','G'];
   const domCons=[true,false,false,false,true]; /* conserved columns */
@@ -2913,7 +2913,7 @@ function drawHmViterbi(ctx){
   _hmPipeline(ctx,2,'MKVG');
 
   /* ── Left: 3-step search process ── */
-  const procX=30, procW=170, procY=62;
+  const procX=30, procW=170, procY=72;
   _label(ctx,'How hmmsearch works:',procX+procW/2,procY,11,COLORS.gb,'center','700');
 
   const steps=[
@@ -2935,7 +2935,7 @@ function drawHmViterbi(ctx){
 
   /* Query sequence — 4 AAs against 5 model states → one deletion */
   const query=['M','K','V','G'];
-  const qCW=44, qY=62;
+  const qCW=44, qY=72;
   const qX0=modelX+200;
   _label(ctx,'Query:',qX0-10,qY+14,11,COLORS.gb,'right','700');
   for(let i=0;i<query.length;i++){
@@ -2946,7 +2946,7 @@ function drawHmViterbi(ctx){
 
   /* HMM states — 5 positions matching the build step (M,K,T,V,G) */
   const nSt=5, sR=14, gap=88;
-  const stX0=modelX+60, mY=148;
+  const stX0=modelX+60, mY=158;
   const domAA=['M','K','T','V','G'];
 
   /* B node */
@@ -3062,10 +3062,10 @@ function drawHmViterbi(ctx){
 function drawHmExpect(ctx){
   const cx=400;
 
-  _label(ctx,'What does each state "expect"?',cx,24,16,COLORS.gc,'center','700');
+  _label(ctx,'What does each state "expect"?',cx,32,16,COLORS.gc,'center','700');
 
   /* Conserved callout (left) */
-  const boxY=60;
+  const boxY=68;
   _roundRect(ctx,30,boxY,350,310,12,COLORS.gc+'08',COLORS.gc+'44',1.5);
   _label(ctx,'Conserved position (M1)',205,boxY+28,14,COLORS.gc,'center','700');
 
@@ -3135,7 +3135,7 @@ function drawHmScoreCompare(ctx){
     {query:'V', model:'V', st:'M4',fit:true, pct:'75%', note:'common',    type:'match'},
     {query:'G', model:'G', st:'M5',fit:true, pct:'100%',note:'dominant',  type:'match'},
   ];
-  const cW=76, cH=68, qY=54;
+  const cW=76, cH=68, qY=60;
   const qX=cx-(data.length*cW)/2;
 
   /* Column headers */
