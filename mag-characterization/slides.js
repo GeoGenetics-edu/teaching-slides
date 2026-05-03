@@ -2855,13 +2855,13 @@ function drawHmArchitecture(ctx){
     /* Arrow I→M (right side, going down) */
     _arrow(ctx,x+10,iY+iR+3,x+10,mY-sR-3,COLORS.gb,1.2);
 
-    /* Self-loop arc on I */
-    const slCy=iY-22, slR=14;
-    ctx.beginPath();ctx.arc(x,slCy,slR,-0.4,Math.PI+0.4,true);
-    ctx.strokeStyle=COLORS.gb;ctx.lineWidth=1.2;ctx.stroke();
-    /* Arrowhead at left end */
-    const aeX=x+slR*Math.cos(Math.PI+0.5), aeY=slCy+slR*Math.sin(Math.PI+0.5);
-    ctx.beginPath();ctx.moveTo(aeX,aeY);ctx.lineTo(aeX+6,aeY-1);ctx.lineTo(aeX+3,aeY+5);ctx.fillStyle=COLORS.gb;ctx.fill();
+    /* Self-loop indicator — arrowhead centred on circle stroke at top */
+    const ahX=x-3, ahY=iY-iR;
+    ctx.beginPath();
+    ctx.moveTo(ahX+6, ahY);           /* tip pointing right */
+    ctx.lineTo(ahX-3, ahY-4);
+    ctx.lineTo(ahX-3, ahY+4);
+    ctx.closePath();ctx.fillStyle=COLORS.gb;ctx.fill();
 
     /* Delete state (diamond below, between this M and next M) */
     if(i<nSt-1){
