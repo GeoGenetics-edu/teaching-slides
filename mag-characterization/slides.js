@@ -2637,15 +2637,16 @@ function drawHmScore(ctx){
   _label(ctx,'High-scoring positions outweigh the one poor fit',cx,sY+38,11,COLORS.ink4,'center','500');
 
   /* ── Comparison table ── */
-  const tY=sY+66;
+  const tY=sY+58;
   _label(ctx,'BLAST vs HMMER',cx,tY,13,COLORS.ink2,'center','700');
   const rows=[
     ['','BLAST','HMMER'],
     ['Searches','Sequence vs sequence','Sequence vs family model'],
+    ['Sensitivity','Needs exact seed match','Sums weak matches across positions'],
     ['Best for','Close homologs','Remote / divergent homologs'],
     ['Tools','Diamond, BLAST+','hmmsearch, hmmscan'],
   ];
-  const tCW=[140,240,240], tCH=28;
+  const tCW=[140,240,240], tCH=26;
   const tX=cx-(tCW[0]+tCW[1]+tCW[2])/2;
   for(let r=0;r<rows.length;r++){
     for(let c=0;c<3;c++){
