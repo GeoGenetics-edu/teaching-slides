@@ -2384,124 +2384,464 @@ function drawIlluCanvas(step){
    11. HMMER-CANVAS — Multiple alignment → profile HMM → query
    ═══════════════════════════════════════════════════════════ */
 
-function drawHmmerCanvas(){
+/* ── HMMER/BLAST concept — stepped animation ── */
+const hmHeaders=[
+  'Step 1: BLAST — seed-and-extend pairwise search',
+  'Step 2: Profile HMM — family model with M/I/D states',
+  'Step 3: Score a query against the profile HMM',
+];
+const hmCanvasHeaders=[
+  'BLAST: seed words and local alignment',
+  'Profile HMM architecture from a family MSA',
+  'Query scored through the HMM — Viterbi path',
+];
+
+function hmHighlight(step){
+  for(let i=0;i<3;i++){
+    const el=document.getElementById('hm-card-'+i);
+    if(el) el.style.opacity=step<=i?(step===i?1:0.35):(i<step?0.5:0.35);
+  }
+  const h=document.getElementById('hm-header');
+  if(h) h.textContent=hmHeaders[Math.min(step,2)];
+  const ch=document.getElementById('hm-canvas-header');
+  if(ch) ch.textContent=hmCanvasHeaders[Math.min(step,2)];
+}
+
+function drawHmmerCanvas(step){
+  step=step||0;
   const ctx=_c('hmmer-canvas');if(!ctx)return;
   ctx.clearRect(0,0,800,440);
 
-  const mx=30,my=20;
+  if(step===0) drawHmBlast(ctx);
+  else if(step===1) drawHmProfile(ctx);
+  else drawHmScore(ctx);
+}
 
-  // --- Part 1: Multiple alignment (top) ---
-  _label(ctx,'1. Multiple alignment of family members',mx+200,my+10,12,COLORS.gc,'left','700');
+/* ── Step 0: BLAST mechanics ── */
+function drawHmBlast(ctx){
+  const mx=25,my=10;
+  // Query sequence
+  const query='MKTVVIGAGFLASS';
+  const cW=28,cH=22,qX=mx+90,qY=my+22;
+  _label(ctx,'Query',mx+58,qY+cH/2,10,COLORS.gb,'right','700');
+  _label(ctx,'protein',mx+58,qY+cH/2+13,9,COLORS.gb,'right','500');
+  for(let i=0;i<query.length;i++){
+    const x=qX+i*cW;
+    ctx.fillStyle=i>=2&&i<5?COLORS.gb+'22':'#f8fafc';
+    ctx.fillRect(x,qY,cW-1,cH-1);
+    ctx.strokeStyle=i>=2&&i<5?COLORS.gb+'88':COLORS.border;ctx.lineWidth=0.5;ctx.strokeRect(x,qY,cW-1,cH-1);
+    _monoLabel(ctx,query[i],x+cW/2,qY+cH/2,10,i>=2&&i<5?COLORS.gb:COLORS.ink3,'center');
+  }
+  // Highlight seed word
+  _roundRect(ctx,qX+2*cW-2,qY-3,3*cW+3,cH+5,4,null,COLORS.gb,2);
+  _label(ctx,'seed word (k=3)',qX+3.5*cW,qY-14,9,COLORS.gb,'center','600');
 
+  // More seed words shown with light outlines
+  for(const si of [0,5,8]){
+    if(si+3>query.length)continue;
+    ctx.setLineDash([3,2]);ctx.strokeStyle=COLORS.gb+'44';ctx.lineWidth=1;
+    ctx.strokeRect(qX+si*cW-1,qY-1,3*cW+1,cH+1);
+    ctx.setLineDash([]);
+  }
+
+  // Arrow down: "scan database"
+  const arrowMidX=qX+7*cW;
+  _arrow(ctx,arrowMidX,qY+cH+6,arrowMidX,qY+cH+32,COLORS.ink3,1.5);
+  _label(ctx,'Scan database for matching seeds',arrowMidX+8,qY+cH+20,9,COLORS.ink3,'left','500');
+
+  // Database hits
+  const dbY=qY+cH+40;
+  const dbSeqs=[
+    {name:'Ref 1',seq:'QRTVVIGAGFL',hit:true,seedPos:1},
+    {name:'Ref 2',seq:'YPMLKWDRAGT',hit:false,seedPos:-1},
+    {name:'Ref 3',seq:'AKTVVVGAGFL',hit:true,seedPos:1},
+  ];
+  const dbX=mx+4,dbStartY=dbY+16;
+  for(let r=0;r<dbSeqs.length;r++){
+    const s=dbSeqs[r];
+    _monoLabel(ctx,s.name,qX-8,dbStartY+r*26+cH/2,8,COLORS.ink4,'right');
+    for(let i=0;i<s.seq.length;i++){
+      const x=qX+i*cW,y=dbStartY+r*26;
+      const inSeed=s.hit&&i>=s.seedPos&&i<s.seedPos+3;
+      ctx.fillStyle=inSeed?COLORS.ok+'22':s.hit?'#f0fdf4':'#fef2f2';
+      ctx.fillRect(x,y,cW-1,cH-1);
+      ctx.strokeStyle=inSeed?COLORS.ok+'88':COLORS.border;ctx.lineWidth=0.5;ctx.strokeRect(x,y,cW-1,cH-1);
+      _monoLabel(ctx,s.seq[i],x+cW/2,y+cH/2,9,s.hit?COLORS.ink2:COLORS.ink4,'center');
+    }
+    // Hit/miss marker
+    if(s.hit){
+      _label(ctx,'seed hit',qX+s.seq.length*cW+12,dbStartY+r*26+cH/2,8,COLORS.ok,'left','600');
+    }else{
+      _label(ctx,'no match',qX+s.seq.length*cW+12,dbStartY+r*26+cH/2,8,COLORS.ink4,'left','500');
+    }
+  }
+
+  // BLOSUM62 matrix excerpt
+  const matX=450,matY=my+8;
+  _label(ctx,'BLOSUM62 substitution matrix (excerpt)',matX+130,matY,10,COLORS.gd,'center','700');
+  const matAA=['A','V','I','G','F'];
+  const matData=[
+    [ 4,-1,-1, 0,-3],
+    [-1, 5, 4,-4,-1],
+    [-1, 4, 5,-4, 0],
+    [ 0,-4,-4, 8,-4],
+    [-3,-1, 0,-4, 8],
+  ];
+  const mCW=32,mCH=22,mOX=matX+16,mOY=matY+14;
+  // Header row
+  for(let c=0;c<matAA.length;c++){
+    _monoLabel(ctx,matAA[c],mOX+32+c*mCW+mCW/2,mOY+mCH/2,9,COLORS.gd,'center');
+  }
+  for(let r=0;r<matAA.length;r++){
+    _monoLabel(ctx,matAA[r],mOX+mCW/2,mOY+(r+1)*mCH+mCH/2,9,COLORS.gd,'center');
+    for(let c=0;c<matAA.length;c++){
+      const x=mOX+32+c*mCW,y=mOY+(r+1)*mCH;
+      const v=matData[r][c];
+      const bg=v>=4?COLORS.ok+'22':v>0?COLORS.ok+'0c':v<0?COLORS.bad+'0c':'#f8fafc';
+      ctx.fillStyle=bg;ctx.fillRect(x,y,mCW-1,mCH-1);
+      ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.5;ctx.strokeRect(x,y,mCW-1,mCH-1);
+      _monoLabel(ctx,v>0?'+'+v:''+v,x+mCW/2,y+mCH/2,9,v>=4?COLORS.ok:v>0?COLORS.ink2:v<0?COLORS.bad:COLORS.ink3,'center');
+    }
+  }
+  _label(ctx,'Positive = favoured substitution',matX+130,mOY+(matAA.length+1)*mCH+10,8,COLORS.ink4,'center','500');
+
+  // Extension diagram
+  const exY=dbStartY+3*26+20;
+  _label(ctx,'Extend seed hit into HSP (High-Scoring Segment Pair)',mx+220,exY,11,COLORS.ok,'center','700');
+
+  // Show aligned pair with scores
+  const extQ='MKTVVIGAGFLAS';
+  const extD='QRTVVIGAGFL--';
+  const extRowY=exY+16;
+  _monoLabel(ctx,'Query:',qX-8,extRowY+cH/2,9,COLORS.gb,'right');
+  _monoLabel(ctx,'Hit:  ',qX-8,extRowY+cH+4+cH/2,9,COLORS.ok,'right');
+  for(let i=0;i<extQ.length;i++){
+    const x=qX+i*cW;
+    const qAA=extQ[i],dAA=extD[i];
+    const match=qAA===dAA;const similar=!match&&dAA!=='-'&&'VI IV'.includes(qAA+dAA);
+    const bg=match?COLORS.ok+'22':similar?COLORS.gb+'15':dAA==='-'?'#fef2f2':'#f8fafc';
+    // Query row
+    ctx.fillStyle=bg;ctx.fillRect(x,extRowY,cW-1,cH-1);
+    ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.5;ctx.strokeRect(x,extRowY,cW-1,cH-1);
+    _monoLabel(ctx,qAA,x+cW/2,extRowY+cH/2,10,match?COLORS.ok:COLORS.ink2,'center');
+    // Hit row
+    ctx.fillStyle=bg;ctx.fillRect(x,extRowY+cH+4,cW-1,cH-1);
+    ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.5;ctx.strokeRect(x,extRowY+cH+4,cW-1,cH-1);
+    _monoLabel(ctx,dAA,x+cW/2,extRowY+cH+4+cH/2,10,match?COLORS.ok:dAA==='-'?COLORS.bad:COLORS.ink3,'center');
+    // Match symbol
+    const sym=match?'|':similar?':':' ';
+    _monoLabel(ctx,sym,x+cW/2,extRowY+cH+1,8,match?COLORS.ok:COLORS.ink4,'center');
+  }
+
+  // Score & E-value box
+  const resX=qX+extQ.length*cW+16;
+  _roundRect(ctx,resX,extRowY-2,155,52,8,'#dcfce7',COLORS.ok,1.5);
+  _label(ctx,'Score: 89 bits',resX+78,extRowY+10,11,COLORS.ok,'center','700');
+  _label(ctx,'E-value: 3.2e-21',resX+78,extRowY+28,10,COLORS.ok,'center','600');
+  _label(ctx,'E = m·n · 2^(-S)',resX+78,extRowY+42,8,COLORS.ink4,'center','400');
+}
+
+/* ── Step 1: Profile HMM architecture ── */
+function drawHmProfile(ctx){
+  const mx=20,my=4;
+
+  // ── Row 1: Mini MSA + arrow + heading ──
+  _label(ctx,'1. Multiple sequence alignment',mx,my+10,10,COLORS.gc,'left','700');
   const seqs=[
-    {name:'Prot A',seq:['M','K','T','-','-','V','V','I','G','A','G','F','L','A','S','S']},
-    {name:'Prot B',seq:['M','K','T','A','A','V','V','V','G','A','G','F','L','A','S','S']},
-    {name:'Prot C',seq:['M','R','T','-','-','V','I','I','G','A','G','F','L','A','S','S']},
-    {name:'Prot D',seq:['M','K','S','-','-','V','V','I','G','A','G','Y','L','A','S','T']}
+    {name:'A',seq:['M','K','T','-','V','V','I','G','A','G','F','L']},
+    {name:'B',seq:['M','K','T','A','V','V','V','G','A','G','F','L']},
+    {name:'C',seq:['M','R','T','-','V','I','I','G','A','G','F','L']},
+    {name:'D',seq:['M','K','S','-','V','V','I','G','A','G','Y','L']},
   ];
   const nCols=seqs[0].seq.length;
-  const cellW=34,cellH=22,seqX=mx+70,seqY=my+25;
-
-  // Conservation score per column
+  const cW=20,cH=14,seqX=mx+20,seqY=my+20;
   const conservation=[];
   for(let c=0;c<nCols;c++){
     const aas=seqs.map(s=>s.seq[c]).filter(a=>a!=='-');
     const unique=new Set(aas);
     conservation.push(unique.size===1?1:unique.size===2?0.7:0.3);
   }
-
   for(let r=0;r<seqs.length;r++){
-    _monoLabel(ctx,seqs[r].name,mx+40,seqY+r*cellH+cellH/2,9,COLORS.ink3,'right');
+    _monoLabel(ctx,seqs[r].name,mx+14,seqY+r*cH+cH/2,6,COLORS.ink4,'right');
     for(let c=0;c<nCols;c++){
-      const x=seqX+c*cellW,y=seqY+r*cellH;
-      const aa=seqs[r].seq[c];
-      const isGap=aa==='-';
-      const cons=conservation[c];
+      const x=seqX+c*cW,y=seqY+r*cH;
+      const aa=seqs[r].seq[c],isGap=aa==='-',cons=conservation[c];
+      ctx.fillStyle=isGap?'#f1f5f9':cons>=1?COLORS.gc+'33':cons>=0.7?COLORS.gc+'18':'#f8fafc';
+      ctx.fillRect(x,y,cW-1,cH-1);
+      ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.3;ctx.strokeRect(x,y,cW-1,cH-1);
+      _monoLabel(ctx,aa,x+cW/2,y+cH/2,7,isGap?COLORS.ink4:cons>=1?COLORS.gc:COLORS.ink3,'center');
+    }
+  }
+  // Arrow pointing down from MSA
+  const msaBottom=seqY+4*cH+4;
+  const msaMid=seqX+nCols*cW/2;
+  _arrow(ctx,msaMid,msaBottom,msaMid,msaBottom+22,COLORS.gc,1.5);
+  _label(ctx,'build model',msaMid+8,msaBottom+12,8,COLORS.gc,'left','600');
 
-      // Cell background
-      const bg=isGap?'#f1f5f9':cons>=1?COLORS.gc+'33':cons>=0.7?COLORS.gc+'18':'#f8fafc';
-      ctx.fillStyle=bg;ctx.fillRect(x,y,cellW-1,cellH-1);
-      ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.5;ctx.strokeRect(x,y,cellW-1,cellH-1);
+  // ── Row 2: HMM architecture (full width) ──
+  const hmmTop=msaBottom+30;
+  _label(ctx,'2. Profile HMM architecture (match / insert / delete states)',mx,hmmTop,10,COLORS.gc,'left','700');
 
-      // Amino acid
-      const col=isGap?COLORS.ink4:cons>=1?COLORS.gc:cons>=0.7?COLORS.gb:COLORS.ink3;
-      _monoLabel(ctx,aa,x+cellW/2,y+cellH/2,11,col,'center');
+  const nStates=7;
+  const stGap=88,stY=hmmTop+52,stX0=mx+60;
+  const sR=14;
+
+  // BEGIN state
+  _roundRect(ctx,stX0-34,stY-10,26,20,5,COLORS.ink3+'22',COLORS.ink3,1.5);
+  _label(ctx,'B',stX0-21,stY,8,'#fff','center','700');
+  _arrow(ctx,stX0-8,stY,stX0+sR*0.5,stY,COLORS.ink3,1);
+
+  for(let i=0;i<nStates;i++){
+    const x=stX0+sR+i*stGap;
+    const cons=i<conservation.length?conservation[i]:0.7;
+    const mCol=cons>=1?COLORS.gc:cons>=0.7?COLORS.gb:'#64748b';
+
+    // Match state (square)
+    _roundRect(ctx,x-sR,stY-sR,sR*2,sR*2,3,mCol+'22',mCol,1.5);
+    _label(ctx,'M'+(i+1),x,stY,8,mCol,'center','700');
+
+    // Insert state (diamond) above
+    if(i<nStates-1){
+      const iY=stY-42;
+      ctx.save();ctx.translate(x+stGap/2,iY);ctx.rotate(Math.PI/4);
+      _roundRect(ctx,-8,-8,16,16,2,COLORS.gd+'22',COLORS.gd,1.5);
+      ctx.restore();
+      _label(ctx,'I'+(i+1),x+stGap/2,iY,7,COLORS.gd,'center','600');
+      // Self-loop
+      ctx.save();ctx.strokeStyle=COLORS.gd+'55';ctx.lineWidth=0.8;ctx.setLineDash([2,2]);
+      ctx.beginPath();ctx.arc(x+stGap/2,iY-14,6,0.3*Math.PI,0.7*Math.PI);ctx.stroke();
+      ctx.setLineDash([]);ctx.restore();
+    }
+
+    // Delete state (circle) below
+    if(i<nStates-1){
+      const dY=stY+42;
+      ctx.beginPath();ctx.arc(x+stGap/2,dY,9,0,Math.PI*2);
+      ctx.fillStyle=COLORS.bad+'12';ctx.fill();
+      ctx.strokeStyle=COLORS.bad+'77';ctx.lineWidth=1.2;ctx.stroke();
+      _label(ctx,'D'+(i+1),x+stGap/2,dY,7,COLORS.bad,'center','600');
+    }
+
+    // M→M transition arrow with probability
+    if(i<nStates-1){
+      _arrow(ctx,x+sR+2,stY,x+stGap-sR-2,stY,mCol+'77',1.2);
+      const tProbs=['0.97','0.98','0.95','0.99','0.96','0.98'];
+      _label(ctx,tProbs[i]||'',x+stGap/2,stY+11,6,COLORS.ink4,'center','500');
+    }
+
+    // M→I (up-right)
+    if(i<nStates-1){
+      const iY=stY-42;
+      ctx.save();ctx.strokeStyle=COLORS.gd+'44';ctx.lineWidth=0.8;
+      ctx.beginPath();ctx.moveTo(x+sR-2,stY-sR);ctx.lineTo(x+stGap/2-6,iY+10);ctx.stroke();ctx.restore();
+      // I→M (down-right)
+      ctx.save();ctx.strokeStyle=COLORS.gd+'44';ctx.lineWidth=0.8;
+      ctx.beginPath();ctx.moveTo(x+stGap/2+6,iY+10);ctx.lineTo(x+stGap-sR+2,stY-sR);ctx.stroke();ctx.restore();
+    }
+
+    // M→D (down-right)
+    if(i<nStates-1){
+      const dY=stY+42;
+      ctx.save();ctx.strokeStyle=COLORS.bad+'33';ctx.lineWidth=0.8;
+      ctx.beginPath();ctx.moveTo(x+sR-2,stY+sR);ctx.lineTo(x+stGap/2-6,dY-10);ctx.stroke();ctx.restore();
+      // D→M (up-right)
+      ctx.save();ctx.strokeStyle=COLORS.bad+'33';ctx.lineWidth=0.8;
+      ctx.beginPath();ctx.moveTo(x+stGap/2+6,dY-10);ctx.lineTo(x+stGap-sR+2,stY+sR);ctx.stroke();ctx.restore();
+    }
+
+    // D→D (horizontal)
+    if(i<nStates-2){
+      const dY=stY+42;
+      ctx.save();ctx.strokeStyle=COLORS.bad+'22';ctx.lineWidth=0.8;ctx.setLineDash([2,2]);
+      ctx.beginPath();ctx.moveTo(x+stGap/2+10,dY);ctx.lineTo(x+stGap+stGap/2-10,dY);ctx.stroke();
+      ctx.setLineDash([]);ctx.restore();
     }
   }
 
-  // Conservation bar below alignment
-  const barY=seqY+seqs.length*cellH+6;
-  for(let c=0;c<nCols;c++){
-    const x=seqX+c*cellW,h=conservation[c]*18;
-    const col=conservation[c]>=1?COLORS.gc:conservation[c]>=0.7?COLORS.gb:'#cbd5e1';
-    ctx.fillStyle=col+'88';ctx.fillRect(x,barY+18-h,cellW-1,h);
-  }
-  _label(ctx,'Conservation',mx+40,barY+9,8,COLORS.ink4,'right','500');
+  // END state
+  const endX=stX0+sR+(nStates-1)*stGap+sR+6;
+  _arrow(ctx,endX,stY,endX+18,stY,COLORS.ink3,1);
+  _roundRect(ctx,endX+18,stY-10,26,20,5,COLORS.ink3+'22',COLORS.ink3,1.5);
+  _label(ctx,'E',endX+31,stY,8,'#fff','center','700');
 
-  // Arrow down
-  const arrowX=seqX+nCols*cellW/2,arrowY=barY+30;
-  _arrow(ctx,arrowX,arrowY,arrowX,arrowY+30,COLORS.gc,2);
-  _label(ctx,'Build model',arrowX+35,arrowY+15,10,COLORS.gc,'left','600');
+  // Legend (inline, right of END)
+  const lgX=endX+54;
+  _roundRect(ctx,lgX,stY-42,120,84,5,'#f8fafc',COLORS.border,0.8);
+  _label(ctx,'State types',lgX+60,stY-34,8,COLORS.ink2,'center','700');
+  _roundRect(ctx,lgX+8,stY-22,10,10,2,COLORS.gc+'22',COLORS.gc,1);
+  _label(ctx,'Match (emit AA)',lgX+24,stY-17,7,COLORS.ink3,'left','500');
+  ctx.save();ctx.translate(lgX+13,stY-2);ctx.rotate(Math.PI/4);
+  _roundRect(ctx,-4,-4,8,8,1,COLORS.gd+'22',COLORS.gd,0.8);
+  ctx.restore();
+  _label(ctx,'Insert (extra AA)',lgX+24,stY-2,7,COLORS.ink3,'left','500');
+  ctx.beginPath();ctx.arc(lgX+13,stY+16,4,0,Math.PI*2);
+  ctx.fillStyle=COLORS.bad+'15';ctx.fill();ctx.strokeStyle=COLORS.bad+'77';ctx.lineWidth=0.8;ctx.stroke();
+  _label(ctx,'Delete (skip pos)',lgX+24,stY+16,7,COLORS.ink3,'left','500');
 
-  // --- Part 2: Profile HMM model ---
-  const hmmY=arrowY+40;
-  _label(ctx,'2. Profile HMM (position-specific probabilities)',mx+200,hmmY,12,COLORS.gc,'left','700');
+  // ── Row 3: Emission + Transition side by side ──
+  const btmY=stY+70;
 
-  const modelY=hmmY+16;
-  // Show model states as rounded boxes with probability info
-  for(let c=0;c<nCols;c++){
-    const x=seqX+c*cellW,y=modelY;
-    const cons=conservation[c];
-    const isInsert=seqs[0].seq[c]==='-'&&seqs[1].seq[c]!=='-'; // insert columns
-
-    // Model state box
-    const bg=cons>=1?COLORS.gc+'44':cons>=0.7?COLORS.gb+'33':'#f1f5f9';
-    _roundRect(ctx,x,y,cellW-1,cellH+8,4,bg,cons>=0.7?COLORS.gc+'88':COLORS.border,1);
-
-    // Most likely amino acid
-    const aas=seqs.map(s=>s.seq[c]).filter(a=>a!=='-');
-    const counts={};aas.forEach(a=>{counts[a]=(counts[a]||0)+1});
-    const best=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
-    if(best){
-      _monoLabel(ctx,best[0],x+cellW/2,y+10,12,cons>=1?COLORS.gc:COLORS.ink2,'center');
-      const prob=Math.round(best[1]/aas.length*100);
-      _monoLabel(ctx,prob+'%',x+cellW/2,y+24,7,COLORS.ink4,'center');
+  // Emission bars (left half)
+  _label(ctx,'Emission probabilities per match state',mx,btmY,10,COLORS.gc,'left','700');
+  const emAA=['A','V','I','G','F','L','M','K','T','S'];
+  const emProbs=[
+    [0.02,0.25,0.20,0.28,0.05,0.10,0.03,0.02,0.03,0.02],
+    [0.08,0.02,0.02,0.68,0.02,0.02,0.02,0.02,0.02,0.10],
+  ];
+  const emLabels=['M1','M5 (cons.)'];
+  const eBarW=12,eBarMax=48,eX0=mx+76;
+  for(let m=0;m<2;m++){
+    const ey=btmY+12+m*62;
+    _label(ctx,emLabels[m],mx+48,ey+eBarMax/2,8,COLORS.gc,'right','600');
+    for(let a=0;a<emAA.length;a++){
+      const x=eX0+a*(eBarW+4);
+      const h=emProbs[m][a]*eBarMax;
+      ctx.fillStyle=emProbs[m][a]>0.2?COLORS.gc+'55':COLORS.gc+'22';
+      ctx.fillRect(x,ey+eBarMax-h,eBarW,h);
+      ctx.strokeStyle=COLORS.gc+'33';ctx.lineWidth=0.4;ctx.strokeRect(x,ey+eBarMax-h,eBarW,h);
+      _monoLabel(ctx,emAA[a],x+eBarW/2,ey+eBarMax+8,6,COLORS.ink3,'center');
     }
   }
 
-  // Arrow down to query
-  const arrowY2=modelY+cellH+20;
-  _arrow(ctx,arrowX,arrowY2,arrowX,arrowY2+30,COLORS.gb,2);
-  _label(ctx,'Score query',arrowX+35,arrowY2+15,10,COLORS.gb,'left','600');
+  // Transition table (right half)
+  const tmX=380,tmY2=btmY;
+  _label(ctx,'Transition probabilities (example)',tmX,tmY2,10,COLORS.gc,'left','700');
+  const tmLabels=['M→M','M→I','M→D','I→M','I→I','D→M','D→D'];
+  const tmVals=['0.97','0.02','0.01','0.85','0.15','0.90','0.10'];
+  const tmCols=[COLORS.gc,COLORS.gd,COLORS.bad,COLORS.gd,COLORS.gd,COLORS.bad,COLORS.bad];
+  const tmColW=130,tmRowH=22;
+  for(let i=0;i<tmLabels.length;i++){
+    const row=Math.floor(i/3),col=i%3;
+    const x=tmX+col*tmColW,y=tmY2+14+row*tmRowH;
+    _roundRect(ctx,x,y,tmColW-6,tmRowH-2,3,tmCols[i]+'0c',tmCols[i]+'44',0.8);
+    _monoLabel(ctx,tmLabels[i],x+38,y+tmRowH/2-1,8,tmCols[i],'center');
+    _monoLabel(ctx,tmVals[i],x+tmColW-30,y+tmRowH/2-1,9,COLORS.ink2,'center');
+  }
+}
 
-  // --- Part 3: Query matching ---
-  const queryY=arrowY2+40;
-  _label(ctx,'3. Query protein scored against model',mx+200,queryY,12,COLORS.gb,'left','700');
+/* ── Step 2: Score query against HMM ── */
+function drawHmScore(ctx){
+  const mx=25,my=8;
 
-  const query=['M','K','R','L','I','V','A','A','F','L','A','G','F','L','A','S'];
-  const qY=queryY+16;
-  for(let c=0;c<nCols;c++){
-    const x=seqX+c*cellW;
-    const aa=query[c]||'?';
-    const cons=conservation[c];
+  // Show HMM states at top (compact chain)
+  _label(ctx,'Profile HMM model (8 match positions)',mx,my+10,11,COLORS.gc,'left','700');
+  const nSt=8,stGap=62,stX0=mx+50,stY=my+40,sR=14;
 
-    // Check if query matches consensus
-    const aas=seqs.map(s=>s.seq[c]).filter(a=>a!=='-');
-    const isMatch=aas.includes(aa);
+  for(let i=0;i<nSt;i++){
+    const x=stX0+i*stGap;
+    const cons=[1,0.7,0.7,0.3,1,1,0.7,1];
+    const mCol=cons[i]>=1?COLORS.gc:cons[i]>=0.7?COLORS.gb:'#64748b';
+    _roundRect(ctx,x-sR,stY-sR,sR*2,sR*2,3,mCol+'22',mCol,1.5);
+    _label(ctx,'M'+(i+1),x,stY,8,mCol,'center','700');
+    if(i<nSt-1) _arrow(ctx,x+sR+2,stY,x+stGap-sR-2,stY,mCol+'66',1);
 
-    const bg=isMatch?(cons>=1?'#dcfce7':'#ecfdf5'):'#fef2f2';
-    const col=isMatch?COLORS.ok:COLORS.bad;
-    ctx.fillStyle=bg;ctx.fillRect(x,qY,cellW-1,cellH-1);
-    ctx.strokeStyle=col+'66';ctx.lineWidth=1;ctx.strokeRect(x,qY,cellW-1,cellH-1);
-    _monoLabel(ctx,aa,x+cellW/2,qY+cellH/2,11,col,'center');
+    // Insert above (small)
+    const iY=stY-32;
+    ctx.save();ctx.translate(x+stGap/2,iY);ctx.rotate(Math.PI/4);
+    _roundRect(ctx,-6,-6,12,12,1,COLORS.gd+'15',COLORS.gd+'66',1);
+    ctx.restore();
+
+    // Delete below (small)
+    if(i<nSt-1){
+      const dY=stY+32;
+      ctx.beginPath();ctx.arc(x+stGap/2,dY,7,0,Math.PI*2);
+      ctx.fillStyle=COLORS.bad+'0c';ctx.fill();ctx.strokeStyle=COLORS.bad+'44';ctx.lineWidth=1;ctx.stroke();
+    }
   }
 
-  _label(ctx,'Query',mx+40,qY+cellH/2,9,COLORS.gb,'right','600');
+  // Arrow down: "score query"
+  const midX=stX0+4*stGap;
+  _arrow(ctx,midX,stY+sR+6,midX,stY+sR+36,COLORS.gb,1.5);
+  _label(ctx,'Viterbi algorithm: find best state path',midX+10,stY+sR+22,9,COLORS.gb,'left','600');
 
-  // Result box
-  _roundRect(ctx,seqX+nCols*cellW+15,qY-8,175,36,8,'#dcfce7',COLORS.ok,1.5);
-  _label(ctx,'E-value: 2.3e-45',seqX+nCols*cellW+102,qY+2,11,COLORS.ok,'center','700');
-  _label(ctx,'Strong family match!',seqX+nCols*cellW+102,qY+18,9,COLORS.ok,'center','500');
+  // Query sequence
+  const qY=stY+sR+48;
+  _label(ctx,'Query protein',mx,qY+8,10,COLORS.gb,'left','700');
+  const query= ['M','K','T','A','V','V','I','G','A','G','F','L','A','S'];
+  // Viterbi path: M M M I M M M M M M M M D M  (simplified)
+  const path=  ['M1','M2','M3','I3','M4','M5','M6','M7','M8',null,null,null,null,null];
+  const states= [0,1,2,'i',3,4,5,6,7]; // indices into query that map to states
+  const qX=mx+30,cW=40,cH=24;
+
+  // Draw state assignment
+  const saY=qY+20;
+  _label(ctx,'Pos:',mx+16,saY+cH/2,8,COLORS.ink4,'right','500');
+  for(let i=0;i<9;i++){
+    const x=qX+70+i*cW;
+    const qIdx=states[i];
+    const isInsert=qIdx==='i';
+    const aa=isInsert?'A':query[typeof qIdx==='number'?qIdx:0];
+    const stLabel=isInsert?'I3':'M'+(isInsert?0:(typeof qIdx==='number'?qIdx+1:0));
+
+    // Cell
+    const bg=isInsert?COLORS.gd+'15':COLORS.gc+'15';
+    const col=isInsert?COLORS.gd:COLORS.gc;
+    ctx.fillStyle=bg;ctx.fillRect(x,saY,cW-2,cH);
+    ctx.strokeStyle=col+'66';ctx.lineWidth=1;ctx.strokeRect(x,saY,cW-2,cH);
+    _monoLabel(ctx,aa,x+cW/2-1,saY+cH/2,12,col,'center');
+
+    // State label below
+    _label(ctx,stLabel,x+cW/2-1,saY+cH+12,8,col,'center','600');
+
+    // Emission probability below state
+    const emProbs=[0.95,0.75,0.60,0.15,0.88,0.98,0.70,0.92,0.80];
+    const p=emProbs[i];
+    _label(ctx,'P='+p.toFixed(2),x+cW/2-1,saY+cH+26,7,p>0.5?COLORS.gc:COLORS.gd,'center','500');
+  }
+
+  // Transition path arrows
+  for(let i=0;i<8;i++){
+    const x1=qX+70+i*cW+cW-2,x2=qX+70+(i+1)*cW;
+    ctx.save();ctx.strokeStyle=COLORS.gc+'44';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x1,saY+cH+12);ctx.lineTo(x2,saY+cH+12);ctx.stroke();
+    ctx.restore();
+    // Transition prob
+    const tProbs=[0.97,0.98,0.02,0.85,0.96,0.98,0.97,0.99];
+    _label(ctx,tProbs[i].toFixed(2),x1+(x2-x1)/2,saY+cH+6,6,COLORS.ink4,'center','400');
+  }
+
+  // Score calculation
+  const scY=saY+cH+52;
+  _label(ctx,'Score calculation',mx,scY+8,11,COLORS.gb,'left','700');
+
+  // Log-odds formula
+  _roundRect(ctx,mx+20,scY+22,360,50,6,COLORS.gb+'08',COLORS.gb+'44',1);
+  _label(ctx,'log-odds score = Σ log( P(aᵢ|model) / P(aᵢ|null) )',mx+200,scY+38,10,COLORS.ink2,'center','600');
+  _label(ctx,'+ Σ log( transition probs )',mx+200,scY+56,9,COLORS.ink3,'center','500');
+
+  // Bit score conversion
+  _arrow(ctx,mx+400,scY+47,mx+440,scY+47,COLORS.gb,1.5);
+
+  // Result
+  _roundRect(ctx,mx+450,scY+22,130,50,8,'#dcfce7',COLORS.ok,1.5);
+  _label(ctx,'Score: 124.3 bits',mx+515,scY+38,11,COLORS.ok,'center','700');
+  _label(ctx,'E-value: 8.1e-34',mx+515,scY+56,10,COLORS.ok,'center','600');
+
+  // Comparison table at bottom
+  const tY=scY+90;
+  _label(ctx,'BLAST vs HMMER at a glance',mx+200,tY,11,COLORS.ink2,'center','700');
+  const rows=[
+    ['','BLAST','HMMER'],
+    ['Search type','Pairwise (seq vs seq)','Profile (seq vs model)'],
+    ['Scoring','BLOSUM62 matrix','Emission + transition probs'],
+    ['Sensitivity','Close homologs','Remote homologs'],
+    ['Speed','Very fast (Diamond)','Moderate'],
+    ['Key tool','Diamond, BLAST+','hmmsearch, hmmscan'],
+  ];
+  const tX=mx+20,tCW=[110,200,220],tCH=20;
+  for(let r=0;r<rows.length;r++){
+    for(let c=0;c<3;c++){
+      const x=tX+tCW.slice(0,c).reduce((a,b)=>a+b,0);
+      const y=tY+12+r*tCH;
+      const isHeader=r===0;
+      ctx.fillStyle=isHeader?COLORS.ink+'08':r%2===0?'#f8fafc':'#fff';
+      ctx.fillRect(x,y,tCW[c]-2,tCH-1);
+      ctx.strokeStyle=COLORS.border;ctx.lineWidth=0.4;ctx.strokeRect(x,y,tCW[c]-2,tCH-1);
+      const col=isHeader?COLORS.ink2:c===0?COLORS.ink3:c===1?COLORS.gb:COLORS.gc;
+      const wt=isHeader||c===0?'700':'500';
+      _label(ctx,rows[r][c],x+tCW[c]/2-1,y+tCH/2,isHeader?9:8,col,'center',wt);
+    }
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2678,7 +3018,7 @@ Reveal.initialize({
     if(i===SID('gtdb')){setTimeout(()=>{const f=Reveal.getState().indexf;drawGtdbCanvas(f>=0?f+1:0)},300)}
     if(i===SID('gtdb-tk')){setTimeout(()=>{const f=Reveal.getState().indexf;const s=f>=0?f+1:0;drawTkCanvas(s);tkHighlight(s)},300)}
     if(i===SID('gene-prediction')){setTimeout(()=>{const f=Reveal.getState().indexf;const s=f>=0?f+1:0;drawGpCanvas(s);gpHighlight(s)},300)}
-    if(i===SID('hmmer-concept')){setTimeout(()=>drawHmmerCanvas(),300)}
+    if(i===SID('hmmer-concept')){setTimeout(()=>{const f=Reveal.getState().indexf;const s=f>=0?f+1:0;drawHmmerCanvas(s);hmHighlight(s)},300)}
     if(i===SID('kegg')){setTimeout(()=>drawKeggCanvas(),300)}
     if(i===SID('pfam')){setTimeout(()=>drawPfamCanvas(),300)}
     if(i===SID('cazymes')){setTimeout(()=>drawCazyCanvas(),300)}
@@ -2715,6 +3055,10 @@ Reveal.initialize({
       const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
       drawGpCanvas(idx+1);gpHighlight(idx+1);
     }
+    if(si===SID('hmmer-concept')){
+      const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
+      drawHmmerCanvas(idx+1);hmHighlight(idx+1);
+    }
   });
 
   Reveal.on('fragmenthidden',e=>{
@@ -2741,6 +3085,10 @@ Reveal.initialize({
     if(si===SID('gene-prediction')){
       const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
       drawGpCanvas(idx);gpHighlight(idx);
+    }
+    if(si===SID('hmmer-concept')){
+      const idx=parseInt(e.fragment.getAttribute('data-fragment-index'));
+      drawHmmerCanvas(idx);hmHighlight(idx);
     }
   });
 

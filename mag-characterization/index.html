@@ -735,35 +735,38 @@ p.sub{font-size:.8em;font-weight:400;color:var(--ink-3);margin:0 0 12px;max-widt
 <!-- ═══════════════════ SLIDE 16: HMMER CONCEPT ═══════════════════ -->
 <section data-slide-id="hmmer-concept">
   <div class="tag tag-gene">Annotation logic</div>
-  <h2 class="stitle">Some tools search against family models</h2>
-  <p class="sub">Pairwise search matches sequences. Profile HMMs match families.</p>
+  <h2 class="stitle">BLAST vs HMMER: two ways to search</h2>
+  <p class="sub" id="hm-header">Step 1: BLAST — seed-and-extend pairwise search</p>
 
   <div class="row g-16" style="flex:1;min-height:0;align-items:stretch;">
     <div class="f0 col g-10 sidebar sidebar-wide">
-      <div class="card info-card" style="border-left:3px solid var(--gb)">
-        <div class="info-card-title">Pairwise (BLAST-like)</div>
-        <div class="info-card-text">Compare your protein to each known sequence individually. Fast, good for close homologs. Misses remote relatives.</div>
+      <div class="card info-card" id="hm-card-0" style="border-left:3px solid var(--gb)">
+        <div class="info-card-title">BLAST (seed & extend)</div>
+        <div class="info-card-text">Break query into <em>k</em>-mer word seeds. Find database matches using a substitution matrix (BLOSUM62). Extend seeds into High-Scoring Segment Pairs (HSPs). E-value depends on database size and alignment score.</div>
       </div>
-      <div class="card info-card" style="border-left:3px solid var(--gc)">
+      <div class="card info-card" id="hm-card-1" style="border-left:3px solid var(--gc)">
         <div class="info-card-title">Profile HMM (HMMER)</div>
-        <div class="info-card-text">Compare your protein to a statistical model of a whole family. Each position has probabilities for every amino acid. Detects remote homologs.</div>
+        <div class="info-card-text">Build a statistical model from a family MSA. Each position has <em>match</em>, <em>insert</em> and <em>delete</em> states. Transition probabilities between states capture indel patterns. Emission probabilities capture residue conservation.</div>
       </div>
-      <div class="card info-card" style="border-left:3px solid var(--gd)">
-        <div class="info-card-title">Where it appears</div>
-        <div class="info-card-text">Pfam, dbCAN, GTDB-Tk markers, biosynthetic domain detection all use profile-HMM-based searches.</div>
+      <div class="card info-card" id="hm-card-2" style="border-left:3px solid var(--gd)">
+        <div class="info-card-title">BLAST vs HMMER in practice</div>
+        <div class="info-card-text">BLAST: fast, best for close homologs (Diamond in annotation pipelines). HMMER: slower, detects remote homology. Used by Pfam, dbCAN, GTDB-Tk, antiSMASH domain detection.</div>
       </div>
     </div>
 
     <div class="f1 col" style="min-height:0;">
       <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
-        <div class="card-header">From alignment to profile HMM to query matching</div>
+        <div class="card-header" id="hm-canvas-header">BLAST: seed words and local alignment</div>
         <div class="canvas-wrap"><canvas id="hmmer-canvas" class="canvas-fill"></canvas></div>
       </div>
     </div>
   </div>
 
+  <span class="fragment" data-fragment-index="0"></span>
+  <span class="fragment" data-fragment-index="1"></span>
+
   <div style="display:flex;gap:12px;margin-top:8px">
-    <div class="tw tw-b" style="flex:1;padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> Profile HMMs capture the variation pattern of a whole family, not just one sequence.</div>
+    <div class="tw tw-b" style="flex:1;padding:10px 16px;font-size:12.5px;line-height:1.5"><strong>Key idea:</strong> BLAST compares one sequence against many; HMMER compares one sequence against a family model. Both give E-values — lower is better.</div>
     <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;background:linear-gradient(135deg,#eff6ff 0%,#f0f9ff 100%);border:1px solid #bfdbfe;border-radius:8px;flex:1">
       <span style="font-size:1.2em">&#x1F4AD;</span>
       <span style="font-size:12px;color:var(--ink-2);font-weight:500"><strong>Reflection:</strong> A gene is annotated as "hypothetical protein." Does that mean it has no function?</span>
@@ -1368,5 +1371,5 @@ document.addEventListener('keydown',e=>{
 </script>
 
 <script src="reveal.min.js"></script>
-<script src="slides.js?v=20260503c"></script>
+<script src="slides.js?v=20260503h"></script>
 </body></html>
