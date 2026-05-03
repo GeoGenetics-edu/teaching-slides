@@ -2850,29 +2850,15 @@ function drawHmArchitecture(ctx){
     ctx.strokeStyle=COLORS.gb;ctx.lineWidth=1.5;ctx.stroke();
     _label(ctx,'I'+(i+1),x,iY,9,COLORS.gb,'center','700');
 
-    /* Arrow M→I (curved left) */
-    const mTop=mY-sR-2, iBot=iY+iR+2;
-    ctx.beginPath();
-    ctx.moveTo(x-4,mTop);
-    ctx.bezierCurveTo(x-22,mTop-12, x-22,iBot+12, x-4,iBot);
-    ctx.strokeStyle=COLORS.gb;ctx.lineWidth=1.3;ctx.stroke();
-    /* arrowhead pointing into I */
-    ctx.beginPath();ctx.moveTo(x-4,iBot);ctx.lineTo(x-9,iBot+5);ctx.lineTo(x+1,iBot+3);
-    ctx.fillStyle=COLORS.gb;ctx.fill();
-
-    /* Arrow I→M (curved right) */
-    ctx.beginPath();
-    ctx.moveTo(x+4,iBot);
-    ctx.bezierCurveTo(x+22,iBot+12, x+22,mTop-12, x+4,mTop);
-    ctx.strokeStyle=COLORS.gb;ctx.lineWidth=1.3;ctx.stroke();
-    /* arrowhead pointing into M */
-    ctx.beginPath();ctx.moveTo(x+4,mTop);ctx.lineTo(x+9,mTop-5);ctx.lineTo(x-1,mTop-3);
-    ctx.fillStyle=COLORS.gb;ctx.fill();
+    /* Arrow M→I (left side, going up) */
+    _arrow(ctx,x-10,mY-sR-3,x-10,iY+iR+3,COLORS.gb,1.2);
+    /* Arrow I→M (right side, going down) */
+    _arrow(ctx,x+10,iY+iR+3,x+10,mY-sR-3,COLORS.gb,1.2);
 
     /* Self-loop arc on I */
-    const slCy=iY-22, slR=13;
-    ctx.beginPath();ctx.arc(x,slCy,slR,-0.5,Math.PI+0.5,true);
-    ctx.strokeStyle=COLORS.gb;ctx.lineWidth=1.3;ctx.stroke();
+    const slCy=iY-22, slR=14;
+    ctx.beginPath();ctx.arc(x,slCy,slR,-0.4,Math.PI+0.4,true);
+    ctx.strokeStyle=COLORS.gb;ctx.lineWidth=1.2;ctx.stroke();
     /* Arrowhead at left end */
     const aeX=x+slR*Math.cos(Math.PI+0.5), aeY=slCy+slR*Math.sin(Math.PI+0.5);
     ctx.beginPath();ctx.moveTo(aeX,aeY);ctx.lineTo(aeX+6,aeY-1);ctx.lineTo(aeX+3,aeY+5);ctx.fillStyle=COLORS.gb;ctx.fill();
