@@ -394,10 +394,13 @@ function drawGtdbCanvas(step){
     _label(ctx,t.lbl,tx+8,t.y+1,9,COLORS.ink2,'left','500');
   }
 
-  // ── 5. Root marker ──
-  ctx.beginPath();ctx.arc(redX(0),tree.y,5,0,Math.PI*2);
+  // ── 5. Root marker — offset left, not overlapping tree ──
+  const rootX=redX(0)-20;
+  ctx.strokeStyle=COLORS.ink3+'cc';ctx.lineWidth=1.2;
+  ctx.beginPath();ctx.moveTo(rootX,tree.y);ctx.lineTo(redX(0),tree.y);ctx.stroke();
+  ctx.beginPath();ctx.arc(rootX,tree.y,4,0,Math.PI*2);
   ctx.fillStyle=COLORS.ink;ctx.fill();
-  _label(ctx,'Root',redX(0)-4,tree.y-12,10,COLORS.ink,'center','700');
+  _label(ctx,'Root',rootX-4,tree.y-12,10,COLORS.ink,'center','700');
 
   // ── 6. Node dots at every split ──
   const rankCol=function(red){
@@ -676,10 +679,9 @@ function drawTkStep2(ctx){
   ctx.moveTo(edgeX,edgeY);
   ctx.lineTo(edgeX-aLen*Math.cos(arrowAngle+aAng),edgeY-aLen*Math.sin(arrowAngle+aAng));
   ctx.stroke();
-  // Label on white pill along arrow
-  const midAX=(aCl.cx+edgeX)/2+2,midAY=(aCl.cy+edgeY)/2+2;
-  _roundRect(ctx,midAX-26,midAY-7,52,14,3,'#ffffffee',aCl.col+'55',1);
-  _label(ctx,'95% ANI',midAX,midAY,8,aCl.col,'center','700');
+  // Label alongside the arrow, offset below midpoint
+  const midAX=(aCl.cx+edgeX)/2,midAY=(aCl.cy+edgeY)/2;
+  _label(ctx,'95% ANI',midAX+12,midAY+18,8,aCl.col,'left','700');
 
   // MAG: inside Species B — lower-left, clear of all ref dots and centroid
   const magX=355,magY=178;
@@ -690,16 +692,37 @@ function drawTkStep2(ctx){
   ctx.shadowBlur=0;
   _label(ctx,'MAG',magX,magY+1,7.5,COLORS.bad,'center','700');
 
-  // ANI distance line: MAG → nearest ref genome in B (dx:15,dy:-35 → 395,120)
-  // Goes upward to avoid crossing the centroid cross
+  // ANI distance line: MAG ↔ nearest ref genome dot in B
   const bCl=clusters[1];
+  // Connect to actual dot at {dx:15,dy:-35} = (395,120)
   const nearX=bCl.cx+15,nearY=bCl.cy-35;
+  // Compute direction and start/end at circle edges
+  const adx=nearX-magX,ady=nearY-magY;
+  const alen=Math.sqrt(adx*adx+ady*ady);
+  const aux=adx/alen,auy=ady/alen;
+  const magR=9; // MAG circle radius
+  const lineX0=magX+aux*magR,lineY0=magY+auy*magR;
+  const lineX1=nearX-aux*dotR,lineY1=nearY-auy*dotR;
   ctx.strokeStyle=COLORS.ok;ctx.lineWidth=1;ctx.setLineDash([3,2]);
-  ctx.beginPath();ctx.moveTo(magX+4,magY-9);ctx.lineTo(nearX+2,nearY+dotR+1);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(lineX0,lineY0);ctx.lineTo(lineX1,lineY1);ctx.stroke();
   ctx.setLineDash([]);
-  // 97.8% label on white pill — offset right, clear of centroid at (380,155)
-  const lblX=(magX+nearX)/2+35,lblY=(magY+nearY)/2-8;
-  _roundRect(ctx,lblX-24,lblY-7,48,14,4,'#ffffffee',COLORS.ok+'55',1);
+  // Arrowheads on both ends
+  const aH=6,aW=0.4;
+  ctx.fillStyle=COLORS.ok;
+  // Arrow at ref end (top)
+  ctx.beginPath();
+  ctx.moveTo(lineX1,lineY1);
+  ctx.lineTo(lineX1-aH*(aux+aW*auy),lineY1-aH*(auy-aW*aux));
+  ctx.lineTo(lineX1-aH*(aux-aW*auy),lineY1-aH*(auy+aW*aux));
+  ctx.closePath();ctx.fill();
+  // Arrow at MAG end (bottom)
+  ctx.beginPath();
+  ctx.moveTo(lineX0,lineY0);
+  ctx.lineTo(lineX0+aH*(aux+aW*auy),lineY0+aH*(auy-aW*aux));
+  ctx.lineTo(lineX0+aH*(aux-aW*auy),lineY0+aH*(auy+aW*aux));
+  ctx.closePath();ctx.fill();
+  // 97.8% label — alongside the dashed line, offset right
+  const lblX=(lineX0+lineX1)/2+16,lblY=(lineY0+lineY1)/2;
   _label(ctx,'97.8%',lblX,lblY,8.5,COLORS.ok,'center','700');
 
   // Inter-cluster gap lines (A↔B and B↔C)
@@ -713,7 +736,7 @@ function drawTkStep2(ctx){
     ctx.strokeStyle=COLORS.ink4+'55';ctx.lineWidth=0.7;ctx.setLineDash([2,3]);
     ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x2,y);ctx.stroke();
     ctx.setLineDash([]);
-    _label(ctx,'< 80%',(x1+x2)/2,y-9,8,COLORS.ink4,'center','500');
+    _label(ctx,'< 95%',(x1+x2)/2,y-9,8,COLORS.ink4,'center','500');
   }
 
   // ── 2. Lineage result ──
@@ -746,7 +769,7 @@ function drawTkStep2(ctx){
   const startX=(800-totalW)/2;
   const points=[
     {icon:'Within species:',val:'ANI > 95%',col:COLORS.ok},
-    {icon:'Between species:',val:'ANI < 80–90%',col:COLORS.ink3},
+    {icon:'Between species:',val:'ANI < 95%',col:COLORS.ink3},
     {icon:'Your MAG:',val:'97.8% → s__Bacteroides_A',col:COLORS.bad},
   ];
   for(let i=0;i<points.length;i++){
@@ -1353,7 +1376,17 @@ function drawKeggStep5(ctx){
   for(let i=0;i<reasons.length;i++){
     const bx=x0+i*(boxW+gapX);
     const by=startY+44;
-    _arrow(ctx,cx,startY,bx+boxW/2,by-4,reasons[i].col+'88',1.5);
+    /* Corner/elbow arrow: down from top, horizontal to box, down to box */
+    const boxMidX=bx+boxW/2;
+    const elbowY=startY+18;
+    ctx.strokeStyle=reasons[i].col+'88';ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(cx,startY);ctx.lineTo(cx,elbowY);
+    ctx.lineTo(boxMidX,elbowY);ctx.lineTo(boxMidX,by-4);
+    ctx.stroke();
+    /* Arrowhead */
+    ctx.beginPath();ctx.moveTo(boxMidX-4,by-9);ctx.lineTo(boxMidX,by-4);
+    ctx.lineTo(boxMidX+4,by-9);ctx.stroke();
     _roundRect(ctx,bx,by,boxW,boxH,8,reasons[i].col+'10',reasons[i].col+'66',1.2);
     _label(ctx,reasons[i].txt,bx+boxW/2,by+16,10.5,reasons[i].col,'center','700');
 
@@ -1570,14 +1603,28 @@ function drawPfamStep0(ctx){
   _label(ctx,'C',px+pw+16,py+20,11,COLORS.ink4,'center','600');
   _monoLabel(ctx,'~480 aa',px+pw,py+38,10,COLORS.ink4,'center');
 
-  /* Annotations below each domain */
-  for(const d of doms){
+  /* Annotations below each domain — corner arrows */
+  const descY=py+80;
+  const descH=28,descW=148;
+  for(let i=0;i<doms.length;i++){
+    const d=doms[i];
     const dx=px+d.s,dw=d.e-d.s;
+    const domCx=dx+dw/2;
+    /* Offset each description box slightly outward for cleaner elbows */
+    const offsets=[-40,0,40];
+    const boxCx=domCx+offsets[i];
 
-    /* Description below each domain */
-    _arrow(ctx,dx+dw/2,py+40,dx+dw/2,py+60,d.c,1.5);
-    _roundRect(ctx,dx+dw/2-70,py+64,140,28,6,d.c+'12',d.c,1);
-    _label(ctx,d.desc,dx+dw/2,py+78,10,d.c,'center','500');
+    /* Corner arrow: down from domain bottom, then horizontal to box */
+    const midY=py+56;
+    ctx.strokeStyle=d.c;ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(domCx,py+40);ctx.lineTo(domCx,midY);
+    ctx.lineTo(boxCx,midY);ctx.lineTo(boxCx,descY);ctx.stroke();
+    /* Arrowhead */
+    ctx.beginPath();ctx.moveTo(boxCx-4,descY-5);ctx.lineTo(boxCx,descY);
+    ctx.lineTo(boxCx+4,descY-5);ctx.stroke();
+
+    _roundRect(ctx,boxCx-descW/2,descY,descW,descH,6,d.c+'12',d.c,1);
+    _label(ctx,d.desc,boxCx,descY+descH/2,10,d.c,'center','500');
   }
 
   /* Linker regions */
@@ -1959,7 +2006,7 @@ function drawPfamStep5(ctx){
   _label(ctx,'From individual proteins to a functional fingerprint',cx,22,14,COLORS.ink,'center','700');
 
   /* ── Left: MAG protein box ── */
-  const bx=30,bw=340,by=42,bh=195;
+  const bx=30,bw=340,by=42,bh=210;
   _roundRect(ctx,bx,by,bw,bh,10,COLORS.gb+'08',COLORS.gb+'33',1);
   _label(ctx,'Your MAG: 2,847 predicted proteins',bx+bw/2,by+16,10,COLORS.gb,'center','700');
 
